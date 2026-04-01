@@ -763,24 +763,28 @@ function renderAssignTab(){
   function priDays(p){return p==="High"?"24 hrs":p==="Medium"?"3 days":"7 days";}
   function priReason(c,fp){
     const reasons=[];
-    // Check if GPS was used or POD fallback
-    if(fp.lat&&fp.lng){
+    // Explain why this agent was picked
+    if(fp.lastHub && fp.lastHub.toLowerCase()===(c.hub||"").toLowerCase()){
+      reasons.push("🏢 Hub match: "+fp.lastHub);
+    } else if(fp.lat&&fp.lng){
       const hubC=getHubCoords(c.hub);
       if(hubC){
         const d=haversine(hubC.lat,hubC.lng,fp.lat,fp.lng);
         reasons.push("📍 "+d.toFixed(0)+"km from hub");
       } else {
-        reasons.push("📍 GPS matched");
+        reasons.push("📍 GPS nearby");
       }
+    } else if(fp.lastCity && c.city && fp.lastCity.toLowerCase().includes((c.city||"").toLowerCase())){
+      reasons.push("🏙️ City: "+fp.lastCity);
     } else {
-      reasons.push("⚠️ No GPS — matched by POD ("+fp.pod+")");
+      reasons.push("⚠️ No GPS — POD match ("+fp.pod+")");
     }
     const t=(c.type||"").toLowerCase();
     if((t.includes("x-ray")||t.includes("pv"))&&c.val>50000) reasons.push("X-Ray/PV >₹50K → High");
     else if(t.includes("dbnu")&&c.val>=30000&&c.val<=50000)  reasons.push("DBNU ₹30K-50K → Medium");
-    else if(c.val>50000) reasons.push("Value >₹50K → High");
-    else if(c.val>15000) reasons.push("Value >₹15K → Medium");
-    else reasons.push("Value <₹15K → Low");
+    else if(c.val>50000) reasons.push("₹"+(c.val/1000).toFixed(0)+"K → High");
+    else if(c.val>15000) reasons.push("₹"+(c.val/1000).toFixed(0)+"K → Medium");
+    else reasons.push("₹"+(c.val/1000).toFixed(0)+"K → Low");
     return "🤖 "+reasons.join(" · ");
   }
 
@@ -1340,27 +1344,53 @@ function autoAssignBestFPI(c){
   const priority  = calcPriority(c.type, c.val);
   const candidates = FPI.filter(p=>p.email&&p.email.includes("@"));
 
-  // Enrich agents with last-known GPS from Field Portal logins (stored in localStorage)
+  // Enrich agents with last-known GPS from Field Portal logins
   candidates.forEach(p=>{
     if(!p.lat||!p.lng){
       try{
+        // Check fpi_loc_ key (set by Field Portal login)
         const loc=JSON.parse(localStorage.getItem("fpi_loc_"+p.email)||"{}");
-        if(loc.lat){p.lat=loc.lat;p.lng=loc.lng;}
+        if(loc.lat){ p.lat=loc.lat; p.lng=loc.lng; p.lastHub=loc.hub||""; p.lastCity=loc.city||""; }
+      }catch(e){}
+    }
+    if(!p.lat||!p.lng){
+      try{
+        // Also check fpi_agents store
+        const agents=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
+        const match=agents.find(a=>(a.email||"").toLowerCase()===(p.email||"").toLowerCase());
+        if(match&&match.lat){ p.lat=match.lat; p.lng=match.lng; p.lastHub=match.lastHub||""; p.lastCity=match.lastCity||""; }
       }catch(e){}
     }
   });
 
+  // PRIORITY ORDER: 1) Hub match  2) GPS distance  3) City  4) State/POD
+  
+  // 1. Exact hub match — agent's last logged-in hub matches case hub
+  if(c.hub){
+    const hubMatch = candidates.filter(p=>
+      p.lastHub && p.lastHub.toLowerCase()===c.hub.toLowerCase()
+    ).sort((a,b)=>(a.active||0)-(b.active||0));
+    if(hubMatch.length) return {fpi:hubMatch[0], priority};
+  }
+
+  // 2. GPS distance to hub (agents within 150km)
   if(hubCoords){
-    // Primary: distance-based (agents who have logged into Field Portal with GPS)
     const withGPS = candidates.filter(p=>p.lat&&p.lng);
     if(withGPS.length){
       const scored = withGPS
         .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
         .filter(x=>x.dist<=150)
-        .sort((a,b)=>a.dist-b.dist||a.p.active-b.p.active);
+        .sort((a,b)=>a.dist-b.dist||(a.p.active||0)-(b.p.active||0));
       if(scored.length) return {fpi:scored[0].p, priority};
     }
-    // No GPS data yet — fall through to POD/state matching
+  }
+
+  // 3. City match — agent's last known city matches case city
+  if(c.city){
+    const cityMatch = candidates.filter(p=>
+      p.lastCity && p.lastCity.toLowerCase().includes(c.city.toLowerCase())
+    ).sort((a,b)=>(a.active||0)-(b.active||0));
+    if(cityMatch.length) return {fpi:cityMatch[0], priority};
   }
 
   // POD/state match — used when no GPS data available
