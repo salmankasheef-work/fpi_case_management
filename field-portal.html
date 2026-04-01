@@ -751,12 +751,20 @@ function submitUpdate(){
       if(idx>=0){all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates});}
       localStorage.setItem("fpi_cases",JSON.stringify(all));
     }catch(e){}
-    // Sync to Apps Script (non-blocking, no-cors always works)
+    // Sync status update to Apps Script via JSONP GET (reliable cross-origin)
     try{
-      fetch(APPS_SCRIPT_URL,{method:"POST",mode:"no-cors",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({action:"update_case_status",case_id:caseId,status,recovery:amt,utr,police})
-      }).catch(()=>{});
+      const syncCb="fpiUpdCb_"+Date.now();
+      const syncParams=new URLSearchParams({
+        action:"update_case_status",
+        case_id:caseId, status, recovery:amt, utr, police,
+        callback:syncCb
+      });
+      window[syncCb]=function(r){try{delete window[syncCb];}catch(e){}};
+      const syncS=document.createElement("script");
+      syncS.src=APPS_SCRIPT_URL+"?"+syncParams.toString();
+      syncS.onerror=()=>{try{delete window[syncCb];}catch(e){}};
+      document.head.appendChild(syncS);
+      setTimeout(()=>{try{syncS.remove();delete window[syncCb];}catch(e){}},8000);
     }catch(e){}
   }
   // Attach slip reference if uploaded
