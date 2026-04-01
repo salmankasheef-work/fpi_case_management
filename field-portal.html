@@ -10388,7 +10388,7 @@ async function completeOnboarding(){
       lat       :userLocation.lat||"",
       lng       :userLocation.lng||"",
       location  :userLocation.address||selectedHub||"",
-      selfie    :selfieBase64?"captured_"+new Date().toISOString().split("T")[0]:"none",
+      selfie    :selfieBase64||"none",
       callback  :cb
     });
     const url=APPS_SCRIPT_URL+"?"+params.toString();
