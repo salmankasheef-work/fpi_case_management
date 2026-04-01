@@ -10370,10 +10370,27 @@ function goOnboardStep1(){
 async function completeOnboarding(){
   if(!selectedHub){showWarn("Please select your hub first.");goOnboardStep1();return;}
 
-  // Save hub to localStorage
+  // Save hub + GPS coords to localStorage so Case Management can use for assignment
   try{
-    const locData={hub:selectedHub,city:selectedHub,ts:new Date().toISOString()};
-    localStorage.setItem("fpi_loc_"+currentUser.email,JSON.stringify(locData));
+    const locData={
+      hub  : selectedHub,
+      city : userLocation.address || selectedHub,
+      lat  : userLocation.lat  || null,
+      lng  : userLocation.lng  || null,
+      ts   : new Date().toISOString()
+    };
+    localStorage.setItem("fpi_loc_"+currentUser.email, JSON.stringify(locData));
+    // Also update shared fpi_agents store so CT portal picks it up immediately
+    const agents = JSON.parse(localStorage.getItem("fpi_agents")||"[]");
+    const idx = agents.findIndex(a=>(a.email||"").toLowerCase()===currentUser.email);
+    if(idx>=0){
+      agents[idx].lat      = locData.lat;
+      agents[idx].lng      = locData.lng;
+      agents[idx].lastCity = locData.city;
+      agents[idx].lastHub  = locData.hub;
+      agents[idx].lastLogin= locData.ts;
+      localStorage.setItem("fpi_agents", JSON.stringify(agents));
+    }
   }catch(e){}
 
   // Log to Sheet2 via JSONP GET (most reliable cross-origin method)
@@ -10388,7 +10405,7 @@ async function completeOnboarding(){
       lat       :userLocation.lat||"",
       lng       :userLocation.lng||"",
       location  :userLocation.address||selectedHub||"",
-      selfie    :selfieBase64||"none",
+      selfie    :selfieBase64?"captured":"none",
       callback  :cb
     });
     const url=APPS_SCRIPT_URL+"?"+params.toString();
