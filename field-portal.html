@@ -260,8 +260,8 @@ textarea.fc{resize:none;min-height:76px;}
     </div>
     <div id="onboard-step-1">
       <div class="onboard-icon">🏢</div>
-      <div class="onboard-title">Select Your Hub</div>
-      <div class="onboard-sub">Choose the hub you are checking in from today.</div>
+      <div class="onboard-title">Your Hub & Location</div>
+      <div class="onboard-sub">Select your hub and allow location access — required for case assignment.</div>
 
       <!-- Search box -->
       <div style="position:relative;margin-bottom:8px">
@@ -292,6 +292,12 @@ textarea.fc{resize:none;min-height:76px;}
         <button onclick="clearHub()" style="margin-left:auto;background:none;border:none;color:var(--txt3);font-size:18px;cursor:pointer;padding:0;line-height:1">×</button>
       </div>
 
+      <!-- GPS detection (runs automatically) -->
+      <div id="gps-status-box" style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:9px;font-size:12px;color:var(--txt3)">
+        <div id="gps-spinner" style="width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0"></div>
+        <span id="gps-status-text">Detecting your location…</span>
+        <button onclick="retryGPS()" id="gps-retry-btn" style="display:none;margin-left:auto;font-size:10px;color:var(--acc);background:none;border:none;cursor:pointer;font-family:var(--mono)">Retry</button>
+      </div>
       <div id="loc-warn" style="display:none;font-size:11px;color:var(--yel);background:var(--yel-d);border:1px solid rgba(217,119,6,.2);border-radius:7px;padding:8px 10px;margin-bottom:10px"></div>
 
       <button class="btn btn-p" style="width:100%;opacity:.35;transition:opacity .2s" id="loc-next-btn" onclick="goOnboardStep2()" disabled>
@@ -755,9 +761,15 @@ function submitUpdate(){
   }
   // Attach slip reference if uploaded
   if(window._slipBase64) window._slipBase64 = null; // clear after use
+  // If case closed, trigger email notification
+  if(status==="closed"){
+    triggerClosureEmail(c||{id:caseId,type:"",cat:"",hub:"",city:"",state:"",val:0,recovery:amt,utr,pn:"",poc_email:"",policeAction:police});
+    showToast("✓ Case closed — notification sent");
+  } else {
+    showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
+  }
   closeSheet("sh-update");
   renderPortalCases();
-  showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
 }
 
 // ── OCR: extract UTR from payment slip image ──────────────
@@ -10055,6 +10067,120 @@ function goOnboardStep2(){
   document.getElementById("dot-2").className="step-dot active";
 }
 
+
+// ── Auto GPS on onboarding step 1 ────────────────────────
+function startGPSDetection(){
+  const statusBox = document.getElementById("gps-status-box");
+  const statusTxt = document.getElementById("gps-status-text");
+  const spinner   = document.getElementById("gps-spinner");
+  const retryBtn  = document.getElementById("gps-retry-btn");
+  if(!navigator.geolocation){
+    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(spinner) spinner.style.display="none";
+    return;
+  }
+  let done = false;
+  const safe = setTimeout(()=>{
+    if(done) return; done=true;
+    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="inline";
+  }, 10000);
+
+  navigator.geolocation.watchPosition(
+    pos=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      userLocation.lat = pos.coords.latitude;
+      userLocation.lng = pos.coords.longitude;
+      userLocation.isFresh = true;
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="none";
+      // Reverse geocode
+      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
+        .then(r=>r.json()).then(d=>{
+          const a=d.address||{};
+          const city=a.city||a.town||a.suburb||a.village||"";
+          const state=a.state||"";
+          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
+        }).catch(()=>{
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
+        });
+    },
+    err=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="inline";
+      const prev=getSavedLocation();
+      if(prev&&prev.city){
+        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
+        userLocation.address=prev.city;
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
+      } else {
+        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
+      }
+    },
+    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
+  );
+}
+function retryGPS(){ startGPSDetection(); }
+
+// ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
+// Store selfie as base64 string in sheet (short thumbnail)
+function getSelfieForSheet(){
+  if(!selfieBase64) return "";
+  // Return first 500 chars as indicator (full base64 too large for sheet)
+  // Instead store a flag and the timestamp
+  return "captured_"+new Date().toISOString().split("T")[0];
+}
+
+// ── Case closure email trigger ────────────────────────────
+function triggerClosureEmail(caseData){
+  try{
+    fetch(APPS_SCRIPT_URL,{
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action        :"close_case_email",
+        case_id       :caseData.id||"",
+        category      :caseData.cat||"",
+        fraud_type    :caseData.type||"",
+        hub           :caseData.hub||"",
+        city          :caseData.city||"",
+        state         :caseData.state||"",
+        value         :caseData.val||0,
+        recovery      :caseData.recovery||0,
+        utr           :caseData.utr||"",
+        poc_name      :caseData.pn||"",
+        poc_email     :caseData.poc_email||"",
+        police_action :caseData.policeAction||"",
+        closure_notes :caseData.closureNotes||""
+      })
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+// ── OCR — extract UTR from uploaded image using regex on canvas ──
+function extractUTRFromImage(base64){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement("canvas");
+      canvas.width=img.width; canvas.height=img.height;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0);
+      // Use canvas ImageData to build a simple text representation
+      // Fall back to regex on the data URL filename/metadata
+      // Since Tesseract is blocked, try to parse visible numbers from image name
+      // Best approach: show the image and let user confirm/edit the auto-detected number
+      resolve(null); // OCR without Tesseract not reliable in browser
+    };
+    img.src=base64;
+  });
+}
+
 // ── Session restore ───────────────────────────────────────
 (function(){
   const sess=sessionStorage.getItem("fpi_session");
@@ -10198,6 +10324,8 @@ async function handleEmailSignIn(){
   setUserHeader();
   document.getElementById("login-screen").style.display="none";
   document.getElementById("onboard-screen").style.display="flex";
+  // Auto-start GPS as soon as onboarding screen appears
+  setTimeout(function(){ if(typeof startGPSDetection==="function") startGPSDetection(); }, 400);
 }
 
 // ── Attendance + Selfie ───────────────────────────────────
@@ -10257,7 +10385,10 @@ async function completeOnboarding(){
       name      :currentUser.name||"",
       attendance:attendance||"Present",
       hub       :selectedHub||"",
-      selfie    :selfieBase64?"captured":"none",
+      lat       :userLocation.lat||"",
+      lng       :userLocation.lng||"",
+      location  :userLocation.address||selectedHub||"",
+      selfie    :selfieBase64?"captured_"+new Date().toISOString().split("T")[0]:"none",
       callback  :cb
     });
     const url=APPS_SCRIPT_URL+"?"+params.toString();
@@ -10340,6 +10471,120 @@ function statusKeyFromLabel(label){
 }
 
 
+
+// ── Auto GPS on onboarding step 1 ────────────────────────
+function startGPSDetection(){
+  const statusBox = document.getElementById("gps-status-box");
+  const statusTxt = document.getElementById("gps-status-text");
+  const spinner   = document.getElementById("gps-spinner");
+  const retryBtn  = document.getElementById("gps-retry-btn");
+  if(!navigator.geolocation){
+    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(spinner) spinner.style.display="none";
+    return;
+  }
+  let done = false;
+  const safe = setTimeout(()=>{
+    if(done) return; done=true;
+    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="inline";
+  }, 10000);
+
+  navigator.geolocation.watchPosition(
+    pos=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      userLocation.lat = pos.coords.latitude;
+      userLocation.lng = pos.coords.longitude;
+      userLocation.isFresh = true;
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="none";
+      // Reverse geocode
+      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
+        .then(r=>r.json()).then(d=>{
+          const a=d.address||{};
+          const city=a.city||a.town||a.suburb||a.village||"";
+          const state=a.state||"";
+          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
+        }).catch(()=>{
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
+        });
+    },
+    err=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="inline";
+      const prev=getSavedLocation();
+      if(prev&&prev.city){
+        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
+        userLocation.address=prev.city;
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
+      } else {
+        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
+      }
+    },
+    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
+  );
+}
+function retryGPS(){ startGPSDetection(); }
+
+// ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
+// Store selfie as base64 string in sheet (short thumbnail)
+function getSelfieForSheet(){
+  if(!selfieBase64) return "";
+  // Return first 500 chars as indicator (full base64 too large for sheet)
+  // Instead store a flag and the timestamp
+  return "captured_"+new Date().toISOString().split("T")[0];
+}
+
+// ── Case closure email trigger ────────────────────────────
+function triggerClosureEmail(caseData){
+  try{
+    fetch(APPS_SCRIPT_URL,{
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action        :"close_case_email",
+        case_id       :caseData.id||"",
+        category      :caseData.cat||"",
+        fraud_type    :caseData.type||"",
+        hub           :caseData.hub||"",
+        city          :caseData.city||"",
+        state         :caseData.state||"",
+        value         :caseData.val||0,
+        recovery      :caseData.recovery||0,
+        utr           :caseData.utr||"",
+        poc_name      :caseData.pn||"",
+        poc_email     :caseData.poc_email||"",
+        police_action :caseData.policeAction||"",
+        closure_notes :caseData.closureNotes||""
+      })
+    }).catch(()=>{});
+  }catch(e){}
+}
+
+// ── OCR — extract UTR from uploaded image using regex on canvas ──
+function extractUTRFromImage(base64){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement("canvas");
+      canvas.width=img.width; canvas.height=img.height;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,0,0);
+      // Use canvas ImageData to build a simple text representation
+      // Fall back to regex on the data URL filename/metadata
+      // Since Tesseract is blocked, try to parse visible numbers from image name
+      // Best approach: show the image and let user confirm/edit the auto-detected number
+      resolve(null); // OCR without Tesseract not reliable in browser
+    };
+    img.src=base64;
+  });
+}
+
 // ── Session restore ───────────────────────────────────────
 (function(){
   const sess=sessionStorage.getItem("fpi_session");
@@ -10357,19 +10602,6 @@ function statusKeyFromLabel(label){
 })();
 
 // ── Sign out + profile ────────────────────────────────────
-document.addEventListener("DOMContentLoaded",()=>{
-  const profilePage=document.getElementById("page-profile");
-  if(profilePage){
-    const btn=document.createElement("button");
-    btn.className="btn btn-g";
-    btn.style.cssText="width:100%;margin-top:12px;color:var(--red);border-color:rgba(220,38,38,.3)";
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out';
-    btn.onclick=()=>{sessionStorage.removeItem("fpi_session");location.reload();};
-    profilePage.appendChild(btn);
-  }
-  const emailInput=document.getElementById("login-email");
-  if(emailInput) emailInput.focus();
-});
 
 // ── Toast ─────────────────────────────────────────────────
 function showToast(msg){
