@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FPI Case Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#dbeafe;--bg2:#eff6ff;--sf:#ffffff;--sf2:#f0f7ff;--sf3:#e0eeff;
+  --bd:#bfdbfe;--bd2:#93c5fd;
+  --acc:#1d4ed8;--acc2:#2563eb;--navy:#0f172a;--navy2:#1e293b;
+  --red:#dc2626;--red-d:rgba(220,38,38,.1);
+  --grn:#16a34a;--grn-d:rgba(22,163,74,.1);
+  --yel:#d97706;--yel-d:rgba(217,119,6,.1);
+  --blue:#1d4ed8;--blue-d:rgba(29,78,216,.1);
+  --pur:#7c3aed;--pur-d:rgba(124,58,237,.1);
+  --org:#ea580c;--org-d:rgba(234,88,12,.1);
+  --txt:#0f172a;--txt2:#334155;--txt3:#64748b;--txt4:#94a3b8;
+  --mono:"DM Mono",monospace;--sans:"DM Sans",sans-serif;--disp:"Syne",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;}
+.app{display:flex;min-height:100vh;}
+.sb{width:256px;background:var(--navy);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto;}
+.logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);}
+.logo-top{display:flex;align-items:center;gap:9px;}
+.lbadge{display:inline-flex;align-items:center;gap:6px;background:var(--acc);color:#fff;font-family:var(--disp);font-weight:800;font-size:12.5px;padding:5px 10px;border-radius:6px;}
+.lbadge svg{width:13px;height:13px;}
+.lnm{font-family:var(--disp);font-size:11px;font-weight:700;color:rgba(255,255,255,.65);}
+.lsub{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,.3);letter-spacing:.14em;text-transform:uppercase;}
+.nav{flex:1;padding:8px 7px;}
+.ns{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:rgba(255,255,255,.28);text-transform:uppercase;padding:9px 10px 3px;margin-top:5px;}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);transition:all .15s;margin-bottom:1px;}
+.ni:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85);}
+.ni.active{background:var(--acc);color:#fff;}
+.ni svg{width:14px;height:14px;flex-shrink:0;}
+.nb{margin-left:auto;background:var(--red);color:#fff;font-family:var(--mono);font-size:9px;font-weight:600;padding:1px 6px;border-radius:20px;}
+.nb.blue{background:var(--acc2);}
+.sbft{padding:10px;border-top:1px solid rgba(255,255,255,.07);}
+.uc{display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,.05);border-radius:7px;}
+.ua{width:27px;height:27px;background:var(--acc);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:10px;color:#fff;flex-shrink:0;}
+.un{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.8);}
+.ur{font-size:9px;color:rgba(255,255,255,.3);font-family:var(--mono);}
+.main{margin-left:256px;flex:1;display:flex;flex-direction:column;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 26px;border-bottom:1px solid var(--bd);background:rgba(219,234,254,.88);backdrop-filter:blur(8px);position:sticky;top:0;z-index:50;}
+.tbtitle{font-family:var(--disp);font-size:16px;font-weight:700;color:var(--navy);}
+.tbacts{display:flex;gap:8px;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:var(--sans);}
+.btn svg{width:13px;height:13px;}
+.btn-p{background:var(--acc);color:#fff;}.btn-p:hover{background:var(--acc2);box-shadow:0 3px 10px rgba(29,78,216,.3);}
+.btn-p:disabled{opacity:.45;pointer-events:none;}
+.btn-g{background:#fff;color:var(--txt2);border:1.5px solid var(--bd);}.btn-g:hover{background:var(--sf2);}
+.btn-grn{background:var(--grn);color:#fff;}.btn-grn:hover{opacity:.9;}
+.btn-dk{background:var(--navy2);color:#fff;}.btn-dk:hover{background:var(--navy);}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.content{padding:20px 26px;flex:1;}
+.page{display:none;animation:fi .2s ease;}.page.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* METRICS */
+.mrow5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}
+.mrow4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.mc{background:#fff;border:1.5px solid var(--bd);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+.mc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;}
+.mc.r::before{background:var(--red)}.mc.g::before{background:var(--grn)}.mc.b::before{background:var(--blue)}.mc.y::before{background:var(--yel)}.mc.p::before{background:var(--pur)}.mc.o::before{background:var(--org)}
+.ml{font-size:9px;color:var(--txt3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
+.mv{font-family:var(--disp);font-size:24px;font-weight:800;line-height:1;margin-bottom:2px;}
+.mc.r .mv{color:var(--red)}.mc.g .mv{color:var(--grn)}.mc.b .mv{color:var(--blue)}.mc.y .mv{color:var(--yel)}.mc.p .mv{color:var(--pur)}.mc.o .mv{color:var(--org)}
+.md{font-size:10px;color:var(--txt3);}.md span{color:var(--grn);}
+/* LAYOUT */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:13px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.card{background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:13px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+.ch{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1.5px solid var(--bd);background:#fff;}
+.ct{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--navy);display:flex;align-items:center;gap:6px;}
+.ct svg{width:13px;height:13px;color:var(--acc);}
+.cb{padding:13px 16px;}
+/* TABLE */
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:7px 11px;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);border-bottom:1.5px solid var(--bd);background:var(--sf2);white-space:nowrap;}
+td{padding:9px 11px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--sf2);}
+/* BADGES */
+.bdg{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mono);white-space:nowrap;}
+.bdg::before{content:"";width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.br{background:var(--red-d);color:var(--red);border:1px solid rgba(220,38,38,.2);}.br::before{background:var(--red);}
+.bb{background:var(--blue-d);color:var(--blue);border:1px solid rgba(29,78,216,.2);}.bb::before{background:var(--blue);}
+.bg{background:var(--grn-d);color:var(--grn);border:1px solid rgba(22,163,74,.2);}.bg::before{background:var(--grn);}
+.by{background:var(--yel-d);color:var(--yel);border:1px solid rgba(217,119,6,.2);}.by::before{background:var(--yel);}
+.bp{background:var(--pur-d);color:var(--pur);border:1px solid rgba(124,58,237,.2);}.bp::before{background:var(--pur);}
+.bgr{background:var(--sf2);color:var(--txt3);border:1px solid var(--bd);}.bgr::before{background:var(--txt4);}
+/* FRAUD PILLS */
+.fp{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:var(--mono);}
+.fp-d{background:rgba(220,38,38,.1);color:var(--red);}
+.fp-x{background:rgba(124,58,237,.1);color:var(--pur);}
+.fp-l{background:rgba(234,88,12,.1);color:var(--org);}
+.fp-p{background:rgba(29,78,216,.1);color:var(--blue);}
+.fp-r{background:rgba(217,119,6,.1);color:var(--yel);}
+.fp-q{background:rgba(22,163,74,.1);color:var(--grn);}
+/* CASE TYPE TAGS */
+.ct-tag{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;font-family:var(--mono);}
+.ct-ship{background:rgba(29,78,216,.1);color:var(--blue);}
+.ct-cod{background:rgba(22,163,74,.1);color:var(--grn);}
+.ct-bcp{background:rgba(234,88,12,.1);color:var(--org);}
+.ct-oth{background:rgba(100,116,139,.1);color:var(--txt3);}
+/* AV */
+.av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:8.5px;color:#fff;flex-shrink:0;}
+.av-row{display:flex;align-items:center;gap:6px;}
+/* FORM */
+.fsec{margin-bottom:18px;}
+.fsec-t{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--navy2);display:flex;align-items:center;gap:6px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd);}
+.sn{width:19px;height:19px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex-shrink:0;}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.fgrp{display:flex;flex-direction:column;gap:4px;}
+.fl{font-size:10px;font-weight:600;color:var(--txt2);font-family:var(--mono);letter-spacing:.04em;}
+.fr{color:var(--red);}
+.fc{background:var(--sf2);border:1.5px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--txt);font-family:var(--sans);outline:none;transition:border-color .15s;width:100%;}
+.fc:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(29,78,216,.1);}
+.fc::placeholder{color:var(--txt4);}
+textarea.fc{resize:vertical;min-height:66px;}
+/* TABS */
+.tab-bar{display:flex;border-bottom:2px solid var(--bd);margin-bottom:16px;}
+.tbb{padding:7px 14px;font-size:12px;font-weight:600;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:var(--sans);display:flex;align-items:center;gap:5px;}
+.tbb:hover{color:var(--txt);}
+.tbb.active{color:var(--acc);border-bottom-color:var(--acc);}
+.tbb svg{width:12px;height:12px;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fi .2s ease;}
+/* CHIPS */
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px;}
+.chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;background:#fff;border:1.5px solid var(--bd);color:var(--txt2);cursor:pointer;transition:all .15s;font-family:var(--mono);}
+.chip:hover,.chip.active{background:var(--acc);border-color:var(--acc);color:#fff;}
+.srch-wrap{position:relative;margin-bottom:11px;}
+.srch{width:100%;background:#fff;border:1.5px solid var(--bd);border-radius:8px;padding:7px 11px 7px 32px;font-size:12px;color:var(--txt);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.srch:focus{border-color:var(--acc);}
+.srch-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--txt3);width:13px;height:13px;}
+/* CASE TYPE SUMMARY */
+.ctgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.ctc{background:#fff;border:1.5px solid var(--bd);border-radius:12px;padding:14px;cursor:pointer;transition:all .18s;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+.ctc:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(15,23,42,.1);}
+.ctc-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:9px;}
+.ctc-title{font-family:var(--disp);font-size:12.5px;font-weight:700;margin-bottom:2px;color:var(--navy);}
+.ctc-sub{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-bottom:7px;}
+.ctc-val{font-family:var(--disp);font-size:26px;font-weight:800;}
+/* DRILL */
+.drill-card{background:var(--sf2);border:1.5px solid var(--bd);border-radius:10px;padding:12px;}
+.drill-val{font-family:var(--disp);font-size:21px;font-weight:800;margin-bottom:1px;}
+.drill-lbl{font-size:9px;color:var(--txt3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;}
+/* POD */
+.pod-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.pod-bar-lbl{font-size:10.5px;font-family:var(--mono);color:var(--txt2);width:120px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pod-bar-track{flex:1;height:15px;background:var(--sf2);border-radius:3px;overflow:hidden;display:flex;border:1px solid var(--bd);}
+.pod-bar-a{background:var(--red);display:flex;align-items:center;justify-content:center;font-size:8px;font-family:var(--mono);color:#fff;font-weight:700;min-width:12px;transition:width .5s;}
+.pod-bar-c{background:var(--grn);display:flex;align-items:center;justify-content:center;font-size:8px;font-family:var(--mono);color:#fff;font-weight:700;min-width:12px;transition:width .5s;}
+/* ASSIGN */
+.acard{background:#fff;border:1.5px solid var(--bd);border-radius:11px;padding:12px;margin-bottom:10px;border-left:3px solid var(--yel);box-shadow:0 1px 3px rgba(15,23,42,.04);}
+.mchip{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-family:var(--mono);color:var(--txt3);}
+.mchip svg{width:9px;height:9px;}
+.rcrd{background:#fff;border:1.5px solid var(--bd);border-radius:11px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.04);}
+.poc-bdg{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--sf2);border:1.5px solid var(--bd);border-radius:6px;font-size:11px;font-weight:600;}
+.dl{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.re-entry{display:flex;gap:6px;padding:5px 0;border-bottom:1px solid var(--bd);font-size:11px;align-items:center;}
+.re-entry:last-child{border-bottom:none;}
+/* TRACKER */
+.fpigrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.fpicard{background:#fff;border:1.5px solid var(--bd);border-radius:11px;padding:12px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+.fpiav{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:11px;color:#fff;flex-shrink:0;}
+.fpi-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;}
+.fpi-sv{font-family:var(--disp);font-weight:700;font-size:16px;}
+.fpi-sl{font-size:8px;color:var(--txt3);font-family:var(--mono);}
+.fpi-cr{display:flex;align-items:center;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--bd);font-size:10.5px;gap:3px;}
+.fpi-cr:last-child{border-bottom:none;}
+.pbar{height:3px;background:var(--sf2);border-radius:2px;overflow:hidden;margin-bottom:8px;}
+.pfill{height:100%;border-radius:2px;transition:width .5s;}
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;}
+.mo.open{display:flex;}
+.mdl{background:#fff;border:1.5px solid var(--bd);border-radius:15px;width:680px;max-width:96vw;max-height:90vh;overflow-y:auto;animation:mIn .2s ease;box-shadow:0 20px 50px rgba(15,23,42,.15);}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:15px 19px;border-bottom:1.5px solid var(--bd);position:sticky;top:0;background:#fff;z-index:1;}
+.mt{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--navy);}
+.mc-btn{background:none;border:none;color:var(--txt3);cursor:pointer;padding:3px;border-radius:5px;}
+.mc-btn:hover{color:var(--txt);background:var(--sf2);}
+.mb{padding:18px;}
+.tl{position:relative;padding-left:18px;}
+.tl::before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:1px;background:var(--bd);}
+.tl-i{position:relative;margin-bottom:9px;}
+.tl-d{position:absolute;left:-16px;top:3px;width:7px;height:7px;border-radius:50%;background:var(--sf2);border:2px solid var(--bd);}
+.tl-d.on{background:var(--acc);border-color:var(--acc);}
+.tl-d.dn{background:var(--grn);border-color:var(--grn);}
+.abanner{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.25);border-radius:8px;margin-bottom:14px;font-size:12px;}
+.abanner svg{width:13px;height:13px;color:var(--yel);flex-shrink:0;}
+.abanner.blue{background:var(--blue-d);border-color:rgba(29,78,216,.2);}
+.abanner.blue svg{color:var(--acc);}
+.abanner.green{background:var(--grn-d);border-color:rgba(22,163,74,.2);}
+.abanner.green svg{color:var(--grn);}
+/* PERF */
+.pc{background:#fff;border:1.5px solid var(--bd);border-radius:11px;padding:13px;box-shadow:0 1px 3px rgba(15,23,42,.05);}
+.pm{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.pmv{background:var(--sf2);border-radius:7px;padding:8px 10px;border:1px solid var(--bd);}
+.pmn{font-family:var(--disp);font-weight:700;font-size:17px;}
+.pml{font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:1px;}
+.rb{display:flex;gap:2px;margin-top:6px;}
+.rd{flex:1;height:3px;border-radius:2px;background:var(--sf3);}
+.rd.f{background:var(--acc);}
+.sr{position:relative;width:56px;height:56px;}
+.sr svg{transform:rotate(-90deg);}
+.sr .rt{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:12px;}
+/* STEPPER */
+.stepper{display:flex;align-items:center;margin-bottom:18px;}
+.st-item{display:flex;align-items:center;gap:6px;}
+.st-c{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:700;font-size:10.5px;flex-shrink:0;border:2px solid var(--bd);color:var(--txt3);background:#fff;transition:all .3s;}
+.st-c.done{background:var(--grn);border-color:var(--grn);color:#fff;}
+.st-c.act{background:var(--acc);border-color:var(--acc);color:#fff;}
+.st-l{font-size:11px;font-weight:600;color:var(--txt3);transition:color .3s;}
+.st-l.act{color:var(--acc);}
+.st-l.done{color:var(--grn);}
+.st-line{flex:1;height:2px;background:var(--bd);margin:0 9px;transition:background .3s;}
+.st-line.done{background:var(--grn);}
+.drop-zone{border:2px dashed var(--bd2);border-radius:11px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--sf2);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--acc);background:var(--blue-d);}
+.drop-zone input{display:none;}
+.tpl-btn{display:inline-flex;align-items:center;gap:5px;margin-top:11px;font-size:11.5px;font-weight:600;color:var(--acc);cursor:pointer;border:1.5px solid rgba(29,78,216,.3);padding:5px 13px;border-radius:6px;transition:all .15s;background:none;font-family:var(--sans);}
+.tpl-btn:hover{background:var(--blue-d);}
+.col-guide{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px;}
+.cg-card{background:#fff;border:1.5px solid var(--bd);border-radius:7px;padding:8px 10px;}
+.cg-name{font-family:var(--mono);font-size:9px;margin-bottom:2px;}
+.cg-desc{font-size:9.5px;color:var(--txt3);}
+.bsum{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:14px;}
+.bs-card{background:#fff;border:1.5px solid var(--bd);border-radius:9px;padding:10px 12px;}
+.bs-val{font-family:var(--disp);font-size:19px;font-weight:800;margin-bottom:1px;}
+.bs-lbl{font-size:8.5px;color:var(--txt3);font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;}
+.bulk-tw{overflow-x:auto;border:1.5px solid var(--bd);border-radius:9px;}
+.bulk-t{width:100%;border-collapse:collapse;font-size:11px;min-width:860px;}
+.bulk-t th{background:var(--sf2);text-align:left;padding:6px 10px;font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);border-bottom:1.5px solid var(--bd);white-space:nowrap;}
+.bulk-t td{padding:6px 10px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+.bulk-t tr:last-child td{border-bottom:none;}
+.bulk-t tr:hover td{background:var(--sf2);}
+.rv td:first-child{border-left:3px solid var(--grn);}
+.re td:first-child{border-left:3px solid var(--red);}
+.re{background:rgba(220,38,38,.02);}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);border:1.5px solid var(--grn);border-radius:9px;padding:11px 14px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:500;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;box-shadow:0 8px 24px rgba(15,23,42,.22);color:#fff;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast svg{width:15px;height:15px;flex-shrink:0;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px;}
+.divider{height:1px;background:var(--bd);margin:12px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="sb">
+  <div class="logo">
+    <div class="logo-top">
+      <div class="lbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>FPI</div>
+      <div><div class="lnm">Case Management</div><div class="lsub">T&S Control Tower</div></div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="ns">Overview</div>
+    <div class="ni active" onclick="showPage('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+    <div class="ni" onclick="showPage('trends')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Fraud Trends<span class="nb blue">3</span></div>
+    <div class="ns">Cases</div>
+    <div class="ni" onclick="showPage('new-case')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>File New Case</div>
+    <div class="ni" onclick="showPage('assignment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Case Assignment<span class="nb blue" id="nb-u" style="display:none">0</span></div>
+    <div class="ni" onclick="showPage('all-cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>All Cases<span class="nb blue" id="nb-all">9</span></div>
+    <div class="ni" onclick="showPage('alerts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Mobile Alerts</div>
+    <div class="ns">Team</div>
+    <div class="ni" onclick="showPage('tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>FPI Tracker</div>
+    <div class="ni" onclick="showPage('performance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Performance</div>
+    <div class="ns">Tools</div>
+    <div class="ni" onclick="downloadCaseSummaryCSV()" style="color:rgba(255,255,255,.6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary</div>
+    <div class="ni" onclick="window.open('fpi-field-portal.html','_blank')" style="color:rgba(255,255,255,.6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>FPI Field Portal ↗</div>
+  </div>
+  <div class="sbft">
+  <button onclick="showSheetSetup()" style="display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;background:rgba(34,197,94,.12);border:1.5px solid rgba(34,197,94,.25);border-radius:7px;color:#4ade80;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px;font-family:var(--sans)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Google Sheets Sync
+  </button>
+  <button onclick="showAgentsSetup()" style="display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.25);border-radius:7px;color:#a5b4fc;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px;font-family:var(--sans)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Manage FPI Agents
+  </button>
+    <div class="uc"><div class="ua">TS</div><div><div class="un">T&S Control Tower</div><div class="ur">ADMIN &middot; CT-01</div></div></div>
+  </div>
+</nav>
+<div class="main">
+  <div class="topbar">
+    <div class="tbtitle" id="page-title">Dashboard</div>
+    <div class="tbacts">
+      <button class="btn btn-g btn-sm" onclick="showPage('tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Live Tracker</button>
+      <button class="btn btn-p btn-sm" onclick="showPage('new-case')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Case</button>
+    </div>
+  </div>
+  <div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="mrow5">
+      <div class="mc b"><div class="ml">Total Cases</div><div class="mv">27</div><div class="md">All types</div></div>
+      <div class="mc r"><div class="ml">Active</div><div class="mv">12</div><div class="md"><span>+3</span> this week</div></div>
+      <div class="mc y"><div class="ml">Unassigned</div><div class="mv">3</div><div class="md">Need POC</div></div>
+      <div class="mc g"><div class="ml">Closed/Month</div><div class="mv">8</div><div class="md"><span>67%</span> recovery</div></div>
+      <div class="mc p"><div class="ml">Value at Risk</div><div class="mv">&#8377;2.4L</div><div class="md">Open cases</div></div>
+    </div>
+    <div style="font-family:var(--disp);font-weight:700;font-size:13.5px;color:var(--navy);margin-bottom:11px;display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Case Type Summary</div>
+    <div class="ctgrid" id="ct-summary-cards"></div>
+    <!-- SHIPMENT DRILLDOWN -->
+    <div class="card" id="shipment-drilldown">
+      <div class="ch">
+        <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Shipment Fraud &mdash; Detailed View</div>
+        <button class="btn btn-dk btn-sm" onclick="downloadCaseSummaryCSV()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary</button>
+      </div>
+      <div class="cb">
+        <div class="g4" id="ship-drill"></div>
+        <div class="divider"></div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:9px;letter-spacing:.1em">HUB-WISE SHIPMENT CASES</div>
+        <div class="tw" id="hub-table"></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="ch"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Recent Cases</div><button class="btn btn-g btn-sm" onclick="showPage('all-cases')">View all</button></div>
+        <div class="tw"><table><thead><tr><th>Case ID</th><th>Category</th><th>Type</th><th>FPI POC</th><th>Status</th></tr></thead><tbody id="recent-tbody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="ch">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>POD-Wise Overview</div>
+          <select class="fc btn-sm" id="pod-zone-filter" onchange="renderPodView()" style="width:auto;padding:3px 9px;font-size:10.5px">
+            <option value="all">All Zones</option><option>North Zone</option><option>East Zone</option><option>West Zone</option><option>South Zone</option><option>Central Zone</option>
+          </select>
+        </div>
+        <div class="cb" id="pod-view" style="max-height:320px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="card"><div class="ch"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Fraud Type Distribution</div></div><div class="cb" id="fraud-dist"></div></div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="page" id="page-trends">
+    <div class="abanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><span><strong>3 new trends</strong> this week. Rider-as-Customer spiked 42% in North Zone.</span></div>
+    <div class="g3">
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">Rider as Customer</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--red)">14</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">DBNU / Unattempted</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:82%;background:var(--red)"></div></div></div></div>
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">Product Mismatch RP</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--yel)">9</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Reverse Pickup</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:53%;background:var(--yel)"></div></div></div></div>
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">GPS Spoofing / RTOD</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--pur)">7</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">RTOD / Location</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:41%;background:var(--pur)"></div></div></div></div>
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">COD Non-Remittance</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--grn)">6</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">COD Shortfall</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:35%;background:var(--grn)"></div></div></div></div>
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">BCP Threats</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--org)">4</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Franchise Threats</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:24%;background:var(--org)"></div></div></div></div>
+      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">LH Theft</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--org)">3</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Night Shift</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:18%;background:var(--org)"></div></div></div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="ch"><div class="ct">Zone Heatmap</div></div><div class="cb"><table><thead><tr><th>Zone</th><th>Cases</th><th>Level</th><th>Trend</th></tr></thead><tbody>
+        <tr><td>North</td><td>18</td><td><span class="bdg br">High</span></td><td style="color:var(--red);font-family:var(--mono);font-size:11px">&#9650; 42%</td></tr>
+        <tr><td>South</td><td>11</td><td><span class="bdg by">Medium</span></td><td style="color:var(--yel);font-family:var(--mono);font-size:11px">&#9650; 12%</td></tr>
+        <tr><td>East</td><td>7</td><td><span class="bdg bb">Low</span></td><td style="color:var(--grn);font-family:var(--mono);font-size:11px">&#9660; 5%</td></tr>
+        <tr><td>West</td><td>9</td><td><span class="bdg by">Medium</span></td><td style="color:var(--yel);font-family:var(--mono);font-size:11px">&#9650; 18%</td></tr>
+        <tr><td>Central</td><td>5</td><td><span class="bdg bb">Low</span></td><td style="color:var(--grn);font-family:var(--mono);font-size:11px">&#9660; 3%</td></tr>
+      </tbody></table></div></div>
+      <div class="card"><div class="ch"><div class="ct">Common Patterns</div></div><div class="cb" style="display:flex;flex-direction:column;gap:9px">
+        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--red)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">Rider as Customer (RaC)</div><div style="font-size:11px;color:var(--txt2)">Fake delivery attempts at own/known addresses. Detected via GPS + CCTV.</div></div>
+        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--grn)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">COD Non-Remittance</div><div style="font-size:11px;color:var(--txt2)">Hub collecting COD but not remitting to system. Identified via reconciliation.</div></div>
+        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--org)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">BCP Threats</div><div style="font-size:11px;color:var(--txt2)">External threats to franchise owner/staff. Escalated to police &amp; management.</div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- FILE NEW CASE -->
+  <div class="page" id="page-new-case">
+    <div class="tab-bar">
+      <div class="tbb active" onclick="switchCaseTab('single',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Single Case</div>
+      <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 25</span></div>
+    </div>
+    <div class="tab-panel active" id="ct-single">
+      <div class="card" style="max-width:800px">
+        <div class="ch"><div class="ct">File New FPI Case</div><span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">T&S CT &middot; Single</span></div>
+        <div class="cb">
+          <div class="fsec">
+            <div class="fsec-t"><div class="sn">1</div>Case Category &amp; Type</div>
+            <div class="fg3" style="margin-bottom:10px">
+              <div class="fgrp"><label class="fl">Case Category <span class="fr">*</span></label>
+                <select class="fc" id="f-cat" onchange="toggleCatFields()"><option value="">Select category...</option><option value="Shipment Fraud">Shipment Fraud</option><option value="COD">COD Fraud</option><option value="BCP">BCP Case</option><option value="Other">Other</option></select>
+              </div>
+              <div class="fgrp"><label class="fl">Fraud Type <span class="fr">*</span></label>
+                <select class="fc" id="f-type"><option value="">Select type...</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Threat to Franchise</option><option>Strike / Agitation</option><option>Other</option></select>
+              </div>
+              <div class="fgrp"><label class="fl">Sub-type / Pattern</label>
+                <select class="fc" id="f-sub"><option value="">Sub-type...</option><option>Rider as Customer</option><option>Unattempted Shipments</option><option>Product Mismatch RP</option><option>GPS Spoofing</option><option>Fake OTP</option><option>Hub Insider Collusion</option><option>COD Shortfall</option><option>External Threat</option><option>Other</option></select>
+              </div>
+            </div>
+            <div class="fg2">
+              <div class="fgrp" id="awb-grp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="3" id="f-awbs"></textarea></div>
+              <div class="fgrp"><label class="fl">Impacted Value (&#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"><label class="fl" style="margin-top:7px">No. of Shipments</label><input type="number" class="fc" placeholder="e.g. 12" id="f-cnt"></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-t"><div class="sn">2</div>Location</div>
+            <div class="fg3">
+              <div class="fgrp"><label class="fl">Hub / Facility <span class="fr">*</span></label><input type="text" class="fc" placeholder="Hub name" id="f-hub"></div>
+              <div class="fgrp"><label class="fl">City <span class="fr">*</span></label><input type="text" class="fc" placeholder="City" id="f-city"></div>
+              <div class="fgrp"><label class="fl">State <span class="fr">*</span></label><select class="fc" id="f-state"><option value="">State...</option><option>Delhi</option><option>Haryana</option><option>Uttar Pradesh</option><option>Maharashtra</option><option>Karnataka</option><option>Tamil Nadu</option><option>Telangana</option><option>Gujarat</option><option>Rajasthan</option><option>West Bengal</option><option>Punjab</option><option>Madhya Pradesh</option><option>Himachal Pradesh</option><option>Bihar</option><option>Kerala</option><option>Other</option></select></div>
+              <div class="fgrp"><label class="fl">Zone</label><select class="fc" id="f-zone"><option value="">Zone...</option><option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option></select></div>
+              <div class="fgrp" style="grid-column:span 2"><label class="fl">Proof Links</label><textarea class="fc" placeholder="Drive/CCTV/GPS links, one per line" rows="2" id="f-links"></textarea></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-t"><div class="sn">3</div>Description</div>
+            <div class="fgrp"><label class="fl">Short Description <span class="fr">*</span></label><textarea class="fc" placeholder="e.g. Rider creating fake deliveries at cluster addresses in Sector 14. GPS no movement. CCTV confirms." rows="3" id="f-desc"></textarea></div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--bd)">
+            <button class="btn btn-g" onclick="showPage('all-cases')">Cancel</button>
+            <button class="btn btn-p" onclick="submitSingle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Create &amp; Assign</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ct-bulk">
+      <div class="stepper">
+        <div class="st-item"><div class="st-c act" id="s1c">1</div><div class="st-l act" id="s1l">Upload</div></div>
+        <div class="st-line" id="sl1"></div>
+        <div class="st-item"><div class="st-c" id="s2c">2</div><div class="st-l" id="s2l">Review &amp; Validate</div></div>
+        <div class="st-line" id="sl2"></div>
+        <div class="st-item"><div class="st-c" id="s3c">3</div><div class="st-l" id="s3l">Confirm &amp; Submit</div></div>
+      </div>
+      <div id="bstep1">
+        <div class="card">
+          <div class="ch"><div class="ct">Bulk Case Upload</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">MAX 25 CASES/BATCH</span></div>
+          <div class="cb">
+            <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Upload <strong>.xlsx or .csv</strong>. Download the template below. <strong>Max 25 cases</strong> per batch.</span></div>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('bfile').click()" ondragover="doDragOver(event)" ondragleave="doDragLeave(event)" ondrop="doDrop(event)">
+              <input type="file" id="bfile" accept=".xlsx,.csv,.xls" onchange="handleFile(event)">
+              <div style="font-size:36px;margin-bottom:10px">&#128202;</div>
+              <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px;color:var(--navy)">Drop file here or click to browse</div>
+              <div style="font-size:12px;color:var(--txt3)">.xlsx or .csv &middot; Max 25 case rows</div>
+              <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.xlsx)</button>
+            </div>
+            <div class="col-guide">
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">A&middot;AWB_Numbers</div><div class="cg-desc">Comma-sep</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">B&middot;Category</div><div class="cg-desc">Shipment/COD/BCP</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">C&middot;Fraud_Type</div><div class="cg-desc">X-Ray/PV/DBNU...</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">D&middot;Hub</div><div class="cg-desc">Hub name</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">E&middot;City &middot; F&middot;State</div><div class="cg-desc">Location</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">G&middot;Value</div><div class="cg-desc">Amount (&#8377;)</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">H&middot;Description</div><div class="cg-desc">Trend note</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">I&middot;Proof_Links</div><div class="cg-desc">Optional URLs</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="bstep2" style="display:none">
+        <div class="bsum" id="bsum-cards"></div>
+        <div class="card">
+          <div class="ch"><div class="ct">Review Parsed Cases</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)" id="bcnt-txt"></span></div>
+          <div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>AWBs</th><th>Category</th><th>Fraud Type</th><th>Value</th><th>Hub</th><th>City</th><th>State</th><th>Description</th><th>OK?</th></tr></thead><tbody id="bprev-body"></tbody></table></div>
+          <div style="padding:11px 16px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end">
+            <button class="btn btn-g" onclick="resetBulk()">&#8592; Re-upload</button>
+            <button class="btn btn-p" id="bproceed" onclick="goStep3()">Proceed &#8594;</button>
+          </div>
+        </div>
+      </div>
+      <div id="bstep3" style="display:none">
+        <div class="card"><div class="ch"><div class="ct">Confirm &amp; Submit</div></div>
+          <div class="cb">
+            <div id="bconfirm-body" style="margin-bottom:13px"></div>
+            <div style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:12px;margin-bottom:12px"><div class="fg2"><div class="fgrp"><label class="fl">CT Name</label><input type="text" class="fc" value="T&S Control Tower" id="b-filer"></div><div class="fgrp"><label class="fl">Date</label><input type="date" class="fc" id="b-date"></div></div></div>
+            <div style="background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:9px;padding:10px;margin-bottom:12px;font-size:11.5px;color:var(--txt2)">All valid cases will be created as <strong>Unassigned</strong>. Redirect to Case Assignment follows.</div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <button class="btn btn-g" onclick="goStep2()">&#8592; Back</button>
+              <button class="btn btn-p" onclick="submitBulk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Submit All Valid Cases</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASSIGNMENT -->
+  <div class="page" id="page-assignment">
+    <div class="tab-bar">
+      <div class="tbb active" onclick="switchAssignTab('assign',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Auto-Assignments<span style="margin-left:5px;background:var(--grn);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono)" id="tab-u-cnt">✓</span></div>
+      <div class="tbb" onclick="switchAssignTab('reassign',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>Reassign Cases</div>
+    </div>
+    <div class="tab-panel active" id="tab-assign"><div class="abanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span>Unassigned cases. Select POC and priority, then click Assign &amp; Alert.</span></div><div id="assign-list"></div></div>
+    <div class="tab-panel" id="tab-reassign"><div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>Reassign active cases. All history logged.</span></div><div id="reassign-list"></div></div>
+  </div>
+
+  <!-- ALL CASES -->
+  <div class="page" id="page-all-cases">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+      <div class="chip-row" id="filter-chips" style="margin-bottom:0">
+        <div class="chip active" onclick="filterCases('all',this)">All</div>
+        <div class="chip" onclick="filterCases('shipment',this)">Shipment Fraud</div>
+        <div class="chip" onclick="filterCases('cod',this)">COD</div>
+        <div class="chip" onclick="filterCases('bcp',this)">BCP</div>
+        <div class="chip" onclick="filterCases('unassigned',this)">Unassigned</div>
+        <div class="chip" onclick="filterCases('closed',this)">Closed</div>
+      </div>
+      <button class="btn btn-dk btn-sm" onclick="downloadCaseSummary()" style="flex-shrink:0;margin-left:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download CSV</button>
+    </div>
+    <div class="srch-wrap"><svg class="srch-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="srch" placeholder="Search by Case ID, type, FPI, hub, city..." oninput="searchCases(this.value)"></div>
+    <div class="card"><div class="tw"><table><thead><tr><th>Case ID</th><th>Category</th><th>Type</th><th>Hub &middot; City</th><th>FPI POC</th><th>Value</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody id="cases-tbody"></tbody></table></div></div>
+  </div>
+
+  <!-- MOBILE ALERTS -->
+  <div class="page" id="page-alerts">
+    <div class="g2">
+      <div class="card"><div class="ch"><div class="ct">FPI Mobile App Preview</div></div>
+        <div class="cb" style="display:flex;justify-content:center;padding:16px 8px">
+          <div style="width:250px;background:#0f172a;border-radius:30px;padding:11px;border:5px solid #1e293b;box-shadow:0 18px 44px rgba(15,23,42,.4)">
+            <div style="height:15px;display:flex;align-items:center;justify-content:center"><div style="width:50px;height:6px;background:#1e293b;border-radius:4px"></div></div>
+            <div style="background:#fff;border-radius:18px;overflow:hidden;min-height:340px">
+              <div style="background:var(--acc);padding:9px 12px;display:flex;align-items:center;gap:6px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span style="font-family:var(--disp);font-weight:700;font-size:11px;color:white">FPI Case Management</span></div>
+              <div style="padding:10px;background:#f0f7ff">
+                <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);margin-bottom:6px">2 NEW ALERTS</div>
+                <div style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px;margin-bottom:7px"><div style="font-family:var(--mono);font-size:8px;color:var(--txt3);margin-bottom:2px">&#128308; FPI-2024-042 &middot; HIGH &middot; Shipment</div><div style="font-size:10.5px;font-weight:600;margin-bottom:2px;color:var(--navy)">DBNU Nexus &mdash; Rider as Cx</div><div style="font-size:9px;color:var(--txt3)">12 AWBs &middot; &#8377;45,000 &middot; Gurgaon</div><button style="background:var(--acc);color:white;border:none;border-radius:5px;padding:5px;font-size:9px;font-weight:600;width:100%;cursor:pointer;margin-top:6px">Open in Field Portal &#8594;</button></div>
+                <div style="background:#fff;border:1px solid var(--bd);border-radius:8px;padding:9px"><div style="font-family:var(--mono);font-size:8px;color:var(--txt3);margin-bottom:2px">&#128308; FPI-2024-043 &middot; HIGH &middot; COD</div><div style="font-size:10.5px;font-weight:600;margin-bottom:2px;color:var(--navy)">COD Non-Remittance</div><div style="font-size:9px;color:var(--txt3)">&#8377;28,000 shortfall &middot; Lucknow</div><button style="background:var(--acc);color:white;border:none;border-radius:5px;padding:5px;font-size:9px;font-weight:600;width:100%;cursor:pointer;margin-top:6px">Open in Field Portal &#8594;</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card"><div class="ch"><div class="ct">CT Daily Status Feed</div></div>
+        <div class="cb" style="display:flex;flex-direction:column;gap:9px">
+          <div style="padding:10px;background:var(--sf2);border-radius:8px;border-left:3px solid var(--blue);border:1px solid var(--bd)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:10px">FPI-2024-042</span><span style="font-size:9px;color:var(--txt3)">Today 10:42</span></div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Rider investigation ongoing</div><div style="font-size:11px;color:var(--txt2)">Rider Deepak S. located. Meeting with TL tomorrow.</div><div style="margin-top:4px;display:flex;gap:4px"><span class="bdg bb" style="font-size:9px">Ashish C.</span><span class="bdg bgr" style="font-size:9px">No UTR yet</span></div></div>
+          <div style="padding:10px;background:var(--sf2);border-radius:8px;border-left:3px solid var(--grn);border:1px solid var(--bd)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:10px">FPI-2024-039</span><span style="font-size:9px;color:var(--txt3)">Yesterday</span></div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Closed &mdash; Recovery Done</div><div style="font-size:11px;color:var(--txt2)">&#8377;22,000 recovered. UTR: 4021387659201.</div><div style="margin-top:4px;display:flex;gap:4px"><span class="bdg bg" style="font-size:9px">Dheeraj K.</span><span class="bdg bg" style="font-size:9px">UTR Verified &#10003;</span></div></div>
+          <div style="padding:10px;background:var(--sf2);border-radius:8px;border-left:3px solid var(--red);border:1px solid var(--bd)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-family:var(--mono);font-size:10px">FPI-2024-040</span><span style="font-size:9px;color:var(--txt3)">Yesterday</span></div><div style="font-size:12px;font-weight:600;margin-bottom:2px">Rider absconded &mdash; FIR pending</div><div style="font-size:11px;color:var(--txt2)">Rider not traceable. Filing FIR at Sector 29 PS.</div><div style="margin-top:4px;display:flex;gap:4px"><span class="bdg br" style="font-size:9px">Ankur R.</span><span class="bdg by" style="font-size:9px">Police Pending</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRACKER -->
+  <div class="page" id="page-tracker">
+    <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>Real-time FPI workload &mdash; <strong>Last updated: just now.</strong></span></div>
+    <div class="fpigrid" id="fpi-tracker-grid"></div>
+  </div>
+
+  <!-- PERFORMANCE -->
+  <div class="page" id="page-performance">
+    <div class="chip-row"><div class="chip active">Q1 2024</div><div class="chip">Q4 2023</div><div class="chip">Q3 2023</div><div class="chip">All Time</div></div>
+    <div class="g3" id="perf-grid"></div>
+  </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="mo" id="case-mo" onclick="if(event.target.id==='case-mo')this.classList.remove('open')">
+  <div class="mdl">
+    <div class="mh">
+      <div><div class="mt" id="mo-id"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:2px" id="mo-sub"></div></div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="btn btn-dk btn-sm" id="mo-dl-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>Download</button>
+        <button class="btn btn-g btn-sm" onclick="toggleUpdatePanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Update</button>
+        <button class="mc-btn" onclick="document.getElementById('case-mo').classList.remove('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="mb" id="mo-body"></div>
+    <div id="mo-update-panel" style="display:none;border-top:1.5px solid var(--bd);padding:14px 16px;background:var(--sf2)">
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Update Case</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fgrp"><label class="fl">Status *</label><select class="fc" id="upd-status"><option value="">Select status...</option><option value="unassigned">Unassigned</option><option value="pending_date">Pending Date</option><option value="rider_inv">Rider Investigation</option><option value="hi_tl_inv">HI/TL Investigation</option><option value="rider_abs_action">Absconded · FIR Filed</option><option value="rider_abs_pending">Absconded · FIR Pending</option><option value="cx_fraud">Cx Fraud · Police</option><option value="other_pending">Other · Pending</option><option value="closed">Closed</option></select></div>
+        <div class="fgrp"><label class="fl">Police Action</label><select class="fc" id="upd-police"><option value="">No Action</option><option value="Police Complaint">Police Complaint</option><option value="FIR Filed">FIR Filed</option><option value="Under Investigation">Under Investigation</option></select></div>
+        <div class="fgrp"><label class="fl">Recovery (₹)</label><input class="fc" type="number" id="upd-recovery" placeholder="0" min="0"></div>
+      </div>
+      <div class="fgrp" style="margin-bottom:10px"><label class="fl">Update Notes *</label><textarea class="fc" id="upd-notes" rows="2" placeholder="Field investigation notes, evidence collected, actions taken..." style="resize:vertical"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-g btn-sm" onclick="toggleUpdatePanel()">Cancel</button>
+        <button class="btn btn-grn btn-sm" onclick="saveUpdate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="toast-msg">Done</span></div>
+
+<script>
+// FPI Agents — loaded from Google Sheet (see "Manage FPI Agents" button)
+// Fallback seed data used until sheet is connected
+let FPI = [
+  {id:'AC',name:'Ashish Chahal',        email:'ashish.chahal@shadowfax.in',   pod:'PB/HP/HR/J&K',  zone:'North Zone',   city:'Chandigarh',    desig:'Asst Manager', color:'#3b8ef8',active:2,closed:6, pending:1,score:82},
+  {id:'MK',name:'Mahesh Kumar',        email:'mahesh.kumar@shadowfax.in',          pod:'NCR',           zone:'North Zone',   city:'Uttamnagar',    desig:'Asst Manager', color:'#27c77a',active:3,closed:8, pending:2,score:79},
+  {id:'AR',name:'Ankur Rathi',        email:'ankur.rathi@shadowfax.in',           pod:'UP/UK',         zone:'North Zone',   city:'Meerut',        desig:'Asst Manager', color:'#9b72f9',active:1,closed:5, pending:0,score:76},
+  {id:'DK',name:'Dheeraj Kumar',        email:'dheeraj.kumar@shadowfax.in',         pod:'UP/UK',         zone:'North Zone',   city:'Gorakhpur',     desig:'Asst Manager', color:'#f5c542',active:2,closed:7, pending:1,score:85},
+  {id:'AD',name:'Aditya Kumar Dubey',        email:'aditya.dubey@shadowfax.in',    pod:'UP/UK',         zone:'North Zone',   city:'Noida',         desig:'Asst Manager', color:'#f04f2b',active:0,closed:9, pending:0,score:88},
+  {id:'RD',name:'Reena Das',        email:'reena.das@shadowfax.in',             pod:'FPI MIS',       zone:'North Zone',   city:'Gurgaon RO',    desig:'Senior Lead',  color:'#ff7eb3',active:1,closed:11,pending:1,score:91},
+  {id:'KG',name:'Komal Gupta',        email:'komal.gupta@shadowfax.in',           pod:'FPI MIS',       zone:'North Zone',   city:'Gurgaon RO',    desig:'Senior Lead',  color:'#22d3ee',active:2,closed:10,pending:0,score:87},
+  {id:'AS',name:'Amresh Sharma',        email:'amresh.sharma@shadowfax.in',         pod:'UP/UK',         zone:'North Zone',   city:'Lucknow',       desig:'Asst Manager', color:'#a78bfa',active:3,closed:6, pending:2,score:74},
+  {id:'AG',name:'Abhishek Ghosh',        email:'abhishek.ghosh@shadowfax.in',        pod:'NCR',           zone:'North Zone',   city:'Gurgaon RO',    desig:'Manager',      color:'#fb923c',active:1,closed:12,pending:1,score:93},
+  {id:'VK',name:'Vipender Kumar',        email:'vipender.kumar@shadowfax.in',        pod:'NCR',           zone:'North Zone',   city:'Faridabad',     desig:'Assoc Lead',   color:'#34d399',active:2,closed:5, pending:0,score:80},
+  {id:'ST',name:'Sunder Thakran',        email:'sunder.thakran@shadowfax.in',        pod:'Bilaspur DC',   zone:'North Zone',   city:'Bilaspur DC',   desig:'Senior Lead',  color:'#60a5fa',active:1,closed:4, pending:1,score:77},
+  {id:'LJ',name:'Lalit Kumar Jindher',        email:'lalit.jindher@shadowfax.in',   pod:'Bilaspur DC',   zone:'North Zone',   city:'Bilaspur DC',   desig:'Assoc Lead',   color:'#f472b6',active:0,closed:6, pending:0,score:83},
+  {id:'IS',name:'Ishwajeet Sangwan',        email:'ishwajeet.sangwan@shadowfax.in',     pod:'NCR',           zone:'North Zone',   city:'Bamdoli',       desig:'Asst Manager', color:'#4ade80',active:2,closed:7, pending:1,score:78},
+  {id:'PR',name:'Pradeep',        email:'pradeep@shadowfax.in',              pod:'NCR',           zone:'North Zone',   city:'Najafgarh',     desig:'Senior Lead',  color:'#facc15',active:1,closed:8, pending:0,score:86},
+  {id:'JK',name:'Jatinder Kumar',        email:'jatinder.kumar@shadowfax.in',        pod:'PB/HP/HR/J&K',  zone:'North Zone',   city:'Ludhiana DC',   desig:'Asst Manager', color:'#c084fc',active:3,closed:5, pending:2,score:72},
+  {id:'SM',name:'Sumit Kumar Maurya',        email:'sumit.maurya@shadowfax.in',    pod:'Prayagraj',     zone:'North Zone',   city:'Allahabad',     desig:'Senior Lead',  color:'#3b8ef8',active:2,closed:9, pending:1,score:89},
+  {id:'JT',name:'Jitender Singh Teotia',        email:'jitender.teotia@shadowfax.in',pod:'North Region',  zone:'North Zone',   city:'Noida DC',      desig:'Manager',      color:'#27c77a',active:0,closed:11,pending:0,score:94},
+  {id:'JS',name:'Jitendra Kumar Singh',        email:'jitendra.singh@shadowfax.in', pod:'UP/UK',         zone:'North Zone',   city:'Lucknow',       desig:'Manager',      color:'#9b72f9',active:1,closed:10,pending:1,score:90},
+  {id:'AY',name:'Ayush Sharma',        email:'ayush.sharma@shadowfax.in',          pod:'UP/UK',         zone:'North Zone',   city:'Noida DC',      desig:'Senior Lead',  color:'#f5c542',active:2,closed:7, pending:0,score:81},
+  {id:'SR',name:'Santosh Kumar Rathore',        email:'santosh.rathore@shadowfax.in',pod:'BH/JH',         zone:'East Zone',    city:'Bihar/JH',      desig:'Asst Manager', color:'#f04f2b',active:3,closed:5, pending:2,score:75},
+  {id:'SS',name:'Sundram Singh',        email:'sundram.singh@shadowfax.in',         pod:'BH/JH',         zone:'East Zone',    city:'Patna',         desig:'Senior Lead',  color:'#ff7eb3',active:1,closed:7, pending:1,score:84},
+  {id:'AK',name:'Ashwin Kumar',        email:'ashwin.kumar@shadowfax.in',          pod:'BH/JH',         zone:'East Zone',    city:'Patna',         desig:'Asst Manager', color:'#22d3ee',active:2,closed:6, pending:0,score:78},
+  {id:'GP',name:'Gautam Prasad',        email:'gautam.prasad@shadowfax.in',         pod:'BH/JH',         zone:'East Zone',    city:'Ranchi',        desig:'Asst Manager', color:'#a78bfa',active:0,closed:8, pending:1,score:82},
+  {id:'FK',name:'Fransis Kurmi',        email:'fransis.kurmi@shadowfax.in',         pod:'North East',    zone:'East Zone',    city:'North East',    desig:'Senior Lead',  color:'#34d399',active:1,closed:4, pending:0,score:71},
+  {id:'RN',name:'Ranjit Deb',        email:'ranjit.deb@shadowfax.in',            pod:'Kolkata DC',    zone:'East Zone',    city:'Kolkata',       desig:'Manager',      color:'#22d3ee',active:3,closed:9, pending:2,score:88},
+  {id:'AI',name:'Arjun Singh',        email:'arjun.singh@shadowfax.in',           pod:'Pune',          zone:'West Zone',    city:'Pune RO',       desig:'Manager',      color:'#fb923c',active:2,closed:11,pending:1,score:92},
+  {id:'AN',name:'Akash Nandi',        email:'akash.nandi@shadowfax.in',           pod:'BOM/PNQ',       zone:'West Zone',    city:'Mumbai',        desig:'Asst Manager', color:'#34d399',active:1,closed:7, pending:0,score:79},
+  {id:'DP',name:'Deepak Pawar',        email:'deepak.pawar@shadowfax.in',          pod:'BOM/PNQ',       zone:'West Zone',    city:'Mumbai',        desig:'Asst Manager', color:'#60a5fa',active:3,closed:8, pending:2,score:76},
+  {id:'JI',name:'Jai Singh',        email:'jai.singh@shadowfax.in',             pod:'RJ',            zone:'West Zone',    city:'Jaipur',        desig:'Asst Manager', color:'#f472b6',active:2,closed:6, pending:1,score:83},
+  {id:'PV',name:'Prakash Virkar',        email:'prakash.virkar@shadowfax.in',        pod:'BOM/PNQ',       zone:'West Zone',    city:'Mumbai',        desig:'Senior Lead',  color:'#4ade80',active:0,closed:10,pending:0,score:90},
+  {id:'SN',name:'Sachin Nikumbh',        email:'sachin.nikumbh@shadowfax.in',        pod:'Surat',         zone:'West Zone',    city:'Surat',         desig:'Senior Lead',  color:'#27c77a',active:1,closed:5, pending:1,score:77},
+  {id:'SH',name:'Shubham Singh',        email:'shubham.singh@shadowfax.in',         pod:'Surat',         zone:'West Zone',    city:'Surat',         desig:'Lead',         color:'#9b72f9',active:2,closed:7, pending:0,score:80},
+  {id:'AB',name:'Abhishek Bhadauriya',        email:'abhishek.bhadauriya@shadowfax.in',   pod:'GJ',            zone:'West Zone',    city:'Ahmedabad',     desig:'Lead',         color:'#f5c542',active:0,closed:9, pending:1,score:86},
+  {id:'SO',name:'Sohan Mhature',        email:'sohan.mhature@shadowfax.in',         pod:'ROMH',          zone:'West Zone',    city:'Mumbai',        desig:'Asst Manager', color:'#f04f2b',active:3,closed:6, pending:2,score:73},
+  {id:'KJ',name:'Kuldeep Jhajhria',        email:'kuldeep.jhajhria@shadowfax.in',      pod:'RJ',            zone:'West Zone',    city:'Jaipur',        desig:'Senior Lead',  color:'#ff7eb3',active:1,closed:8, pending:0,score:85},
+  {id:'RC',name:'Rahul Choudhary',        email:'rahul.choudhary@shadowfax.in',       pod:'MP/RJ',         zone:'Central Zone', city:'Sagar',         desig:'Asst Manager', color:'#facc15',active:2,closed:5, pending:1,score:78},
+  {id:'YR',name:'Yogendra Singh Rathore',        email:'yogendra.rathore@shadowfax.in',pod:'MP/RJ',        zone:'Central Zone', city:'Indore',        desig:'Asst Manager', color:'#c084fc',active:1,closed:7, pending:0,score:81},
+  {id:'SD',name:'Sachin Dharpure',        email:'sachin.dharpure@shadowfax.in',       pod:'ROMH',          zone:'Central Zone', city:'Nagpur',        desig:'Asst Manager', color:'#3b8ef8',active:3,closed:4, pending:2,score:74},
+  {id:'YP',name:'Y Pardeep',        email:'y.pardeep@shadowfax.in',             pod:'AP/TS',         zone:'South Zone',   city:'Hyderabad',     desig:'Manager',      color:'#a78bfa',active:2,closed:10,pending:1,score:95},
+  {id:'RS',name:'Rabbani Shaik',        email:'rabbani.shaik@shadowfax.in',         pod:'AP/TS',         zone:'South Zone',   city:'Vijayawada',    desig:'Asst Manager', color:'#fb923c',active:1,closed:6, pending:0,score:80},
+  {id:'MJ',name:'Manoj Kumar',        email:'manoj.kumar@shadowfax.in',           pod:'ROK/KL',        zone:'South Zone',   city:'Ernakulam',     desig:'Asst Manager', color:'#60a5fa',active:0,closed:8, pending:1,score:76},
+  {id:'SP',name:'Sridhar P',        email:'sridhar.p@shadowfax.in',             pod:'ROK/KL',        zone:'South Zone',   city:'Bangalore RO',  desig:'Asst Manager', color:'#f472b6',active:2,closed:9, pending:0,score:83},
+  {id:'RA',name:'Raja Arumugam',        email:'raja.arumugam@shadowfax.in',         pod:'ROTN',          zone:'South Zone',   city:'Chennai RO',    desig:'Asst Manager', color:'#4ade80',active:1,closed:7, pending:1,score:79},
+  {id:'AJ',name:'Ajeeth B',        email:'ajeeth.b@shadowfax.in',             pod:'ROKA',          zone:'South Zone',   city:'Gulbarga',      desig:'Senior Lead',  color:'#facc15',active:3,closed:5, pending:2,score:87},
+];
+
+const SL={unassigned:{l:"Unassigned",c:"by"},pending_date:{l:"Pending Date",c:"by"},rider_inv:{l:"Rider Investigation",c:"bb"},hi_tl_inv:{l:"HI/TL Investigation",c:"bb"},rider_abs_action:{l:"Absconded·FIR Filed",c:"br"},rider_abs_pending:{l:"Absconded·FIR Pend",c:"br"},hi_tl_abs:{l:"HI/TL Absconded",c:"br"},cx_fraud:{l:"Cx Fraud·Police",c:"bp"},other_pending:{l:"Other·Pending",c:"bgr"},closed:{l:"Closed",c:"bg"}};
+const CC={ship:"ct-ship",cod:"ct-cod",bcp:"ct-bcp",other:"ct-oth","Shipment Fraud":"ct-ship","COD":"ct-cod","BCP":"ct-bcp","Other":"ct-oth"};
+let currentCaseId=null;
+
+let cases=[
+  {id:"FPI-2024-042",cat:"Shipment Fraud",awbs:12,type:"DBNU Nexus",fp:"fp-d",trend:"Rider as Cx — unattempted in Sector 14, Gurgaon. GPS no movement.",poc:"AC",pn:"Ashish C.",poc_email:"ashish.chahal@shadowfax.in",pc:"#3b8ef8",val:45000,pri:"High",st:"rider_inv",hub:"Sector 29 Hub",city:"Gurgaon",state:"Haryana",date:"2024-01-15",rh:[],riders:["Deepak Sharma","Mohit Kumar"],ridersTerminated:1,policeAction:"FIR Filed",recovery:0,utr:"",updates:[{date:"2024-01-16",status:"rider_inv",notes:"Rider Deepak S. located at Sector 22. Meeting with TL Rajesh tomorrow.",police:"FIR Filed",photos:2}]},
+  {id:"FPI-2024-043",cat:"COD",awbs:0,type:"COD Non-Remittance",fp:"fp-q",trend:"Hub collecting COD and not remitting. Shortfall ₹28,000 over 3 days.",poc:"MK",pn:"Mahesh K.",pc:"#27c77a",val:28000,pri:"High",st:"hi_tl_inv",hub:"Hussainganj Hub",city:"Lucknow",state:"Uttar Pradesh",date:"2024-01-16",rh:[],riders:[],ridersTerminated:0,policeAction:"Police Complaint",recovery:14000,utr:"UTR40291847",updates:[{date:"2024-01-17",status:"hi_tl_inv",notes:"Police complaint filed. Partial recovery ₹14,000 received.",police:"Police Complaint",photos:1}]},
+  {id:"FPI-2024-041",cat:"Shipment Fraud",awbs:5,type:"X-Ray",fp:"fp-x",trend:"Weight mismatch — 5 shipments flagged at x-ray gate.",poc:"MK",pn:"Mahesh K.",pc:"#27c77a",val:18000,pri:"Medium",st:"pending_date",hub:"BTM Hub",city:"Bangalore",state:"Karnataka",date:"2024-01-14",rh:[],riders:["Rajan B."],ridersTerminated:0,policeAction:"No Police Action",recovery:0,utr:"",updates:[]},
+  {id:"FPI-2024-040",cat:"Shipment Fraud",awbs:8,type:"LH Theft",fp:"fp-l",trend:"LH diversion — hub insider suspected at night shift.",poc:"AR",pn:"Ankur R.",pc:"#9b72f9",val:62000,pri:"High",st:"rider_abs_action",hub:"Howrah FC",city:"Kolkata",state:"West Bengal",date:"2024-01-13",rh:[],riders:["Suresh T.","Ramesh G."],ridersTerminated:2,policeAction:"FIR Filed",recovery:18000,utr:"UTR30219847",updates:[{date:"2024-01-14",status:"rider_abs_action",notes:"FIR filed at Howrah PS. Riders absconded.",police:"FIR Filed",photos:2}]},
+  {id:"FPI-2024-039",cat:"Shipment Fraud",awbs:3,type:"PV",fp:"fp-p",trend:"Product mismatch reverse pickup — empty box returned.",poc:"DK",pn:"Dheeraj K.",pc:"#f5c542",val:22000,pri:"Medium",st:"closed",hub:"BTM Hub",city:"Bangalore",state:"Karnataka",date:"2024-01-12",rh:[],riders:["Vijay P."],ridersTerminated:1,policeAction:"Police Complaint",recovery:22000,utr:"UTR40218965",updates:[{date:"2024-01-15",status:"closed",notes:"Case closed. Recovery ₹22,000 done.",police:"Police Complaint",photos:1}]},
+  {id:"FPI-2024-038",cat:"BCP",awbs:0,type:"Threat to Franchise",fp:"fp-r",trend:"External threat to franchise owner. Police called.",poc:"AD",pn:"Aditya K.",pc:"#f04f2b",val:0,pri:"High",st:"hi_tl_inv",hub:"Madhapur Hub",city:"Hyderabad",state:"Telangana",date:"2024-01-11",rh:[],riders:[],ridersTerminated:0,policeAction:"Police Complaint",recovery:0,utr:"",updates:[]},
+  {id:"FPI-2024-037",cat:"Shipment Fraud",awbs:4,type:"QC",fp:"fp-q",trend:"QC bypass at hub — missing items post inward scan.",poc:"RD",pn:"Reena D.",pc:"#ff7eb3",val:14500,pri:"Low",st:"closed",hub:"Gurgaon RO",city:"Gurgaon",state:"Haryana",date:"2024-01-10",rh:[],riders:["Arun M."],ridersTerminated:1,policeAction:"No Police Action",recovery:14500,utr:"UTR40218922",updates:[{date:"2024-01-13",status:"closed",notes:"Recovery done. Rider terminated.",police:"No Police Action",photos:1}]},
+  {id:"FPI-2024-046",cat:"Shipment Fraud",awbs:6,type:"DBNU Nexus",fp:"fp-d",trend:"Rider nexus — 3 riders same cluster, Delhi.",poc:"",pn:"",pc:"",val:32000,pri:"",st:"unassigned",hub:"Rohini Hub",city:"Delhi",state:"Delhi",date:"2024-01-16",rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]},
+  {id:"FPI-2024-045",cat:"COD",awbs:0,type:"COD Misappropriation",fp:"fp-q",trend:"COD not deposited for 3 consecutive days.",poc:"",pn:"",pc:"",val:55000,pri:"",st:"unassigned",hub:"Faridabad FC",city:"Faridabad",state:"Haryana",date:"2024-01-16",rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]},
+  {id:"FPI-2024-044",cat:"BCP",awbs:0,type:"Strike / Agitation",fp:"fp-r",trend:"Staff agitation affecting hub operations. Escalated to HR.",poc:"",pn:"",pc:"",val:0,pri:"",st:"unassigned",hub:"Silk Board Hub",city:"Bangalore",state:"Karnataka",date:"2024-01-15",rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]},
+];
+let filteredCases=[...cases];
+const PT={dashboard:"Dashboard",trends:"Fraud Trends","new-case":"File New Case",assignment:"Case Assignment","all-cases":"All Cases",alerts:"Mobile Alerts",tracker:"FPI Tracker — Live",performance:"Performance"};
+
+function showPage(id){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.getElementById("page-title").textContent=PT[id]||id;
+  document.querySelectorAll(".ni").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+id+"'"))n.classList.add("active");});
+  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();}};
+  if(R[id])R[id]();
+}
+function switchCaseTab(id,el){document.querySelectorAll("#page-new-case .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-new-case .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("ct-"+id).classList.add("active");}
+function switchAssignTab(id,el){document.querySelectorAll("#page-assignment .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-assignment .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("tab-"+id).classList.add("active");}
+
+// CASE TYPE SUMMARY
+function renderCaseTypeSummary(){
+  const cats=[
+    {key:"Shipment Fraud",icon:"📦",col:"var(--blue)",bg:"rgba(29,78,216,.07)",label:"Shipment Fraud",sub:"Fraud on shipments"},
+    {key:"COD",icon:"💵",col:"var(--grn)",bg:"rgba(22,163,74,.07)",label:"COD Cases",sub:"Collection fraud"},
+    {key:"BCP",icon:"🚨",col:"var(--org)",bg:"rgba(234,88,12,.07)",label:"BCP Cases",sub:"Business continuity"},
+    {key:"Other",icon:"📋",col:"var(--pur)",bg:"rgba(124,58,237,.07)",label:"Other Cases",sub:"Miscellaneous"},
+  ];
+  document.getElementById("ct-summary-cards").innerHTML=cats.map(cat=>{
+    const total=cases.filter(c=>c.cat===cat.key).length;
+    const active=cases.filter(c=>c.cat===cat.key&&!["closed","unassigned"].includes(c.st)).length;
+    const closed=cases.filter(c=>c.cat===cat.key&&c.st==="closed").length;
+    const val=cases.filter(c=>c.cat===cat.key).reduce((s,c)=>s+c.val,0);
+    return`<div class="ctc" onclick="filterByType('${cat.key}')">
+      <div class="ctc-icon" style="background:${cat.bg}">${cat.icon}</div>
+      <div class="ctc-title">${cat.label}</div>
+      <div class="ctc-sub">${cat.sub}</div>
+      <div class="ctc-val" style="color:${cat.col}">${total}</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:5px">
+        <span class="bdg bb" style="font-size:9px">${active} active</span>
+        <span class="bdg bg" style="font-size:9px">${closed} closed</span>
+        ${val>0?`<span class="bdg bgr" style="font-size:9px">₹${(val/1000).toFixed(0)}K</span>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+function filterByType(cat){showPage("all-cases");filteredCases=cases.filter(c=>c.cat===cat);renderCasesTable(filteredCases);}
+
+// SHIPMENT DRILLDOWN
+function renderShipmentDrill(){
+  const sc=cases.filter(c=>c.cat==="Shipment Fraud");
+  const hubs=[...new Set(sc.map(c=>c.hub))].length;
+  const term=sc.reduce((s,c)=>s+(c.ridersTerminated||0),0);
+  const rec=sc.reduce((s,c)=>s+c.recovery,0);
+  const fir=sc.filter(c=>c.policeAction==="FIR Filed").length;
+  const comp=sc.filter(c=>c.policeAction==="Police Complaint").length;
+  const none=sc.filter(c=>c.policeAction==="No Police Action").length;
+  document.getElementById("ship-drill").innerHTML=`
+    <div class="drill-card"><div class="drill-val" style="color:var(--blue)">${sc.length}</div><div class="drill-lbl">Total Cases</div></div>
+    <div class="drill-card"><div class="drill-val" style="color:var(--org)">${hubs}</div><div class="drill-lbl">Hubs Actioned</div></div>
+    <div class="drill-card"><div class="drill-val" style="color:var(--red)">${term}</div><div class="drill-lbl">Riders Terminated</div></div>
+    <div class="drill-card"><div class="drill-val" style="color:var(--grn)">₹${(rec/1000).toFixed(0)}K</div><div class="drill-lbl">Recovery Done</div></div>
+    <div class="drill-card" style="grid-column:span 4">
+      <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:8px;letter-spacing:.08em">POLICE ACTION STATUS</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="text-align:center;padding:7px 16px;background:var(--red-d);border-radius:8px;border:1px solid rgba(220,38,38,.15)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--red)">${fir}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">FIR Filed</div></div>
+        <div style="text-align:center;padding:7px 16px;background:var(--yel-d);border-radius:8px;border:1px solid rgba(217,119,6,.15)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--yel)">${comp}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Police Complaint</div></div>
+        <div style="text-align:center;padding:7px 16px;background:var(--sf2);border-radius:8px;border:1px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--txt3)">${none}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">No Police Action</div></div>
+      </div>
+    </div>`;
+  const hubMap={};
+  sc.forEach(c=>{if(!hubMap[c.hub])hubMap[c.hub]={hub:c.hub,city:c.city,state:c.state,cases:0,riders:0,term:0,rec:0,police:[]};hubMap[c.hub].cases++;hubMap[c.hub].riders+=c.riders.length;hubMap[c.hub].term+=(c.ridersTerminated||0);hubMap[c.hub].rec+=c.recovery;if(c.policeAction&&!hubMap[c.hub].police.includes(c.policeAction))hubMap[c.hub].police.push(c.policeAction);});
+  document.getElementById("hub-table").innerHTML=`<table><thead><tr><th>Hub</th><th>City·State</th><th>Cases</th><th>Riders Involved</th><th>Terminated</th><th>Recovery</th><th>Police Action</th></tr></thead><tbody>${Object.values(hubMap).map(h=>`<tr><td style="font-weight:600">${h.hub}</td><td style="font-size:10.5px;color:var(--txt3)">${h.city}, ${h.state}</td><td><span class="bdg bb">${h.cases}</span></td><td style="font-family:var(--mono);font-size:11.5px">${h.riders}</td><td style="font-family:var(--mono);font-size:11.5px;color:var(--red)">${h.term}</td><td style="font-family:var(--mono);font-size:11.5px;color:var(--grn)">₹${h.rec.toLocaleString()}</td><td>${h.police.map(p=>`<span class="bdg ${p==="FIR Filed"?"br":p==="Police Complaint"?"by":"bgr"}" style="font-size:9px">${p}</span>`).join(" ")}</td></tr>`).join("")}</tbody></table>`;
+}
+
+// RECENT CASES
+function renderRecentCases(){
+  const tb=document.getElementById("recent-tbody");if(!tb)return;
+  tb.innerHTML=cases.slice(0,5).map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<tr onclick="openModal('${c.id}')" style="cursor:pointer"><td><span style="font-family:var(--mono);font-size:10.5px">${c.id}</span></td><td><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span></td><td><span class="fp ${c.fp}">${c.type}</span></td><td>${c.poc?`<div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div>${c.pn}</div>`:`<span style="color:var(--yel);font-size:10px">⚠ Unassigned</span>`}</td><td><span class="bdg ${s.c}">${s.l}</span></td></tr>`;}).join("");
+}
+
+// POD VIEW
+function renderPodView(){
+  const zf=document.getElementById("pod-zone-filter").value;
+  const pods={};FPI.forEach(p=>{if(zf!=="all"&&p.zone!==zf)return;if(!pods[p.pod])pods[p.pod]={pod:p.pod,fpi:[],active:0,closed:0};pods[p.pod].fpi.push(p);pods[p.pod].active+=p.active;pods[p.pod].closed+=p.closed;});
+  const pList=Object.values(pods).sort((a,b)=>(b.active+b.closed)-(a.active+a.closed));
+  const mx=Math.max(...pList.map(p=>p.active+p.closed),1);
+  document.getElementById("pod-view").innerHTML=`<div style="display:flex;gap:10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--red)"></div>Active</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--grn)"></div>Closed</div></div>`+pList.map(p=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="font-size:11px;font-weight:600">${p.pod}</div><div style="font-size:9.5px;font-family:var(--mono);color:var(--txt3)">${p.fpi.length} FPI · A:${p.active} C:${p.closed}</div></div>${p.fpi.map(f=>`<div class="pod-bar-row"><div class="pod-bar-lbl" title="${f.name}${f.lastCity?' · '+f.lastCity:''}">${f.name.split(" ")[0]} ${f.name.split(" ").slice(-1)[0]}${f.lastCity?' <span style="color:var(--grn);font-size:8px">📍</span>':''}</div><div class="pod-bar-track"><div class="pod-bar-a" style="width:${f.active>0?Math.max(8,Math.round((f.active/mx)*100))+"%":"0%"}">${f.active>0?f.active:""}</div><div class="pod-bar-c" style="width:${f.closed>0?Math.max(8,Math.round((f.closed/mx)*100))+"%":"0%"}">${f.closed>0?f.closed:""}</div></div></div>`).join("")}</div>`).join("");
+}
+function renderFraudDist(){
+  const dist=document.getElementById("fraud-dist");if(!dist)return;
+  const types=[{l:"DBNU Nexus",n:5,c:"var(--red)"},{l:"COD Fraud",n:4,c:"var(--grn)"},{l:"X-Ray",n:4,c:"var(--pur)"},{l:"BCP",n:3,c:"var(--org)"},{l:"LH Theft",n:3,c:"var(--org)"},{l:"RTOD",n:2,c:"var(--yel)"},{l:"PV",n:2,c:"var(--blue)"}];
+  dist.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px">`+types.map(t=>`<div style="display:flex;align-items:center;gap:8px"><div style="width:84px;font-size:11px;color:var(--txt2);text-align:right;flex-shrink:0">${t.l}</div><div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)"><div style="height:100%;width:${(t.n/5)*100}%;background:${t.c};border-radius:3px;display:flex;align-items:center;padding:0 6px"><span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">${t.n}</span></div></div></div>`).join("")+`</div>`;
+}
+
+// ASSIGNMENT
+// AUTO-ASSIGN: match FPI by state/city proximity & lowest active count
+function autoAssignBestFPI(c){
+  const podStates = {
+    'PB/HP/HR/J&K':['Punjab','Haryana','Himachal Pradesh','Jammu & Kashmir'],
+    'NCR':['Delhi','Haryana','Uttar Pradesh'],
+    'UP/UK':['Uttar Pradesh','Uttarakhand'],
+    'MH':['Maharashtra'],
+    'KA':['Karnataka'],
+    'TN':['Tamil Nadu'],
+    'AP/TS':['Andhra Pradesh','Telangana'],
+    'GJ':['Gujarat'],
+    'RJ':['Rajasthan'],
+    'WB':['West Bengal'],
+    'North East':['Assam','Meghalaya','Tripura','Manipur','Nagaland','Arunachal Pradesh','Mizoram','Sikkim'],
+    'ROKA':['Karnataka','Kerala','Goa'],
+    'ROTN':['Tamil Nadu','Puducherry'],
+  };
+  const scored = FPI.map(p=>{
+    let score = 0;
+    const states = podStates[p.pod] || [];
+    // POD/state match — primary signal
+    if(states.includes(c.state)) score += 50;
+    // GPS proximity — use agent's last login location if available
+    if(p.lat && p.lng && c.lat && c.lng){
+      const dist = Math.sqrt(Math.pow(p.lat-c.lat,2)+Math.pow(p.lng-c.lng,2));
+      // dist in degrees: ~0.01 deg ≈ 1km. Score bonus up to 40 for <50km
+      score += Math.max(0, 40 - Math.round(dist * 100));
+    } else if(p.lastCity && c.city && p.lastCity.toLowerCase()===c.city.toLowerCase()){
+      // Fallback: match last known city name from GPS login
+      score += 25;
+    }
+    // Workload penalty
+    score += Math.max(0, 10 - p.active);
+    return {p, score};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  const bestFPI = scored[0]?.p || FPI[0];
+
+  // AUTO-PRIORITY RULES:
+  // High   → FPI has 0 or 1 active cases  OR  value > ₹30,000
+  // Medium → value > ₹15,000 and ≤ ₹30,000  AND  FPI active cases >= 3
+  // Low    → value ≤ ₹15,000  AND  FPI active cases >= 5
+  let autoPriority;
+  if(bestFPI.active <= 1 || c.val > 30000){
+    autoPriority = 'High';
+  } else if(c.val > 15000 && c.val <= 30000 && bestFPI.active >= 3){
+    autoPriority = 'Medium';
+  } else if(c.val <= 15000 && bestFPI.active >= 5){
+    autoPriority = 'Low';
+  } else {
+    return {fpi: null, priority: null};
+  }
+
+  return {fpi: bestFPI, priority: autoPriority};
+}
+
+// Silently auto-assign a case immediately — no UI interaction
+function autoAssignCase(c){
+  const {fpi:p, priority:pri} = autoAssignBestFPI(c);
+  if(!p || !pri){ c.st="unassigned"; return; }  // no rule matched — stay unassigned
+  c.poc = p.id;
+  c.pn  = p.name.split(" ")[0]+" "+p.name.split(" ").slice(-1)[0][0]+".";
+  c.pc  = p.color;
+  c.poc_email = (p.email||"").toLowerCase(); // store email for field portal filtering
+  c.pri = pri;
+  c.st  = "pending_date";
+  p.active++;
+  p.pending++;
+  updateBadges();
+  syncCase(c);
+  syncCasesToStorage();
+}
+
+function syncCasesToStorage(){
+  try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
+  try{localStorage.setItem("fpi_agents",JSON.stringify(FPI));}catch(e){}
+}
+
+function renderAssignTab(){
+  // Auto-assign any still-unassigned cases immediately on load
+  cases.filter(c=>c.st==="unassigned").forEach(c=>autoAssignCase(c));
+  document.getElementById("tab-u-cnt").textContent="0";
+  document.getElementById("nb-u").textContent="0";
+  const el=document.getElementById("assign-list");
+
+  // Show all cases that have been assigned (pending_date or active) with assignment details
+  const assigned=cases.filter(c=>c.poc&&c.st!=="closed"&&c.st!=="unassigned");
+
+  function priColor(p){return p==="High"?"var(--red)":p==="Medium"?"var(--yel)":"var(--grn)";}
+  function priEmoji(p){return p==="High"?"\uD83D\uDD34":p==="Medium"?"\uD83D\uDFE1":"\uD83D\uDFE2";}
+  function priDays(p){return p==="High"?"24 hrs":p==="Medium"?"3 days":"7 days";}
+  function priReason(c,fp){
+    const reasons=[];
+    if((fp.active||0)<=1) reasons.push((fp.name||"").split(" ")[0]+" has "+(fp.active||0)+" active case"+(fp.active===1?"":"s"));
+    if(c.val>30000)       reasons.push("\u20B9"+c.val.toLocaleString()+" > \u20B930K \u2192 High");
+    else if(c.val>15000 && (fp.active||0)>=3)  reasons.push("\u20B9"+c.val.toLocaleString()+" in \u20B915K-30K + "+(fp.active||0)+" active \u2192 Medium");
+    else if(c.val<=15000 && (fp.active||0)>=5) reasons.push("\u20B9"+c.val.toLocaleString()+" \u2264 \u20B915K + "+(fp.active||0)+" active \u2192 Low");
+    else                  reasons.push("\u20B9"+c.val.toLocaleString()+" \u2192 High (FPI \u2264 1 active or value > \u20B930K)");
+    const podStates={"PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh"],"NCR":["Delhi","Haryana","Uttar Pradesh"],"UP/UK":["Uttar Pradesh","Uttarakhand"],"MH":["Maharashtra"],"KA":["Karnataka"],"TN":["Tamil Nadu"],"AP/TS":["Andhra Pradesh","Telangana"],"GJ":["Gujarat"],"RJ":["Rajasthan"],"WB":["West Bengal"],"ROKA":["Karnataka","Kerala","Goa"],"ROTN":["Tamil Nadu","Puducherry"],"North East":["Assam","Meghalaya","Tripura","Manipur","Nagaland","Arunachal Pradesh","Mizoram","Sikkim"]};
+    if(fp.pod&&(podStates[fp.pod]||[]).includes(c.state)) reasons.push("POD covers "+c.state);
+    return "\uD83E\uDD16 "+reasons.join(" \u00B7 ");
+  }
+
+  let html='<div class="abanner green" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span><strong>All cases auto-assigned</strong> by geo-match &amp; workload. To override use the Reassign tab.</span></div>';
+
+  if(!assigned.length){
+    html+='<div style="text-align:center;padding:40px 20px;color:var(--txt3)"><div style="font-size:32px;margin-bottom:10px">\u2705</div><div style="font-family:var(--disp);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px">No assignments yet</div><div style="font-size:12px">File a case — it will auto-assign instantly and appear here.</div></div>';
+  } else {
+    assigned.forEach(function(c){
+      var fp=FPI.find(function(x){return x.id===c.poc;})||{};
+      var pc=priColor(c.pri), pe=priEmoji(c.pri), pd=priDays(c.pri);
+      var reason=priReason(c,fp);
+      var statusObj=SL[c.st]||{l:c.st,c:"bgr"};
+      html+='<div class="acard" style="border-left:3px solid '+pc+';margin-bottom:12px">';
+      html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px">';
+      html+='<div>';
+      html+='<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">';
+      html+='<span style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+c.id+'</span>';
+      html+='<span class="fp '+c.fp+'">'+c.type+'</span>';
+      html+='<span class="ct-tag '+(CC[c.cat]||"ct-oth")+'">'+c.cat+'</span>';
+      html+='<span class="bdg '+(c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr")+'">'+pe+' '+c.pri+'</span>';
+      html+='<span class="bdg '+statusObj.c+'">'+statusObj.l+'</span>';
+      html+='</div>';
+      html+='<div style="font-size:10.5px;color:var(--txt3);font-family:var(--mono)">\uD83C\uDFE2 '+c.hub+' \u00B7 '+c.city+', '+c.state+' \u00B7 \uD83D\uDCC5 '+c.date+'</div>';
+      html+='</div>';
+      html+='<div style="font-family:var(--disp);font-size:17px;font-weight:800;color:var(--red);flex-shrink:0">\u20B9'+(c.val||0).toLocaleString()+'</div>';
+      html+='</div>';
+      // Green assignment box
+      html+='<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--grn-d);border:1.5px solid rgba(22,163,74,.22);border-radius:9px;margin-bottom:8px">';
+      html+='<svg viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2.5" style="width:16px;height:16px;flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      html+='<div style="flex:1">';
+      html+='<div style="font-size:9px;color:var(--txt3);font-family:var(--mono);margin-bottom:4px;letter-spacing:.08em">AUTO-ASSIGNED TO</div>';
+      html+='<div style="display:flex;align-items:center;gap:9px">';
+      html+='<div class="av" style="background:'+(fp.color||"#6366f1")+';width:30px;height:30px;font-size:10px">'+c.poc+'</div>';
+      html+='<div>';
+      html+='<div style="font-weight:700;font-size:13.5px;color:var(--navy)">'+(fp.name||c.pn||c.poc)+'</div>';
+      html+='<div style="font-size:9.5px;color:var(--txt3);font-family:var(--mono)">'+(fp.pod||"")+' \u00B7 '+(fp.city||"")+' \u00B7 '+(fp.active||0)+' active</div>';
+html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp.email||"no email")+'</div>';
+      html+='</div>';
+      html+='</div>';
+      html+='</div>';
+      html+='<div style="text-align:right;flex-shrink:0">';
+      html+='<div style="font-family:var(--disp);font-size:16px;font-weight:800;color:'+pc+'">'+pe+' '+c.pri+'</div>';
+      html+='<div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">'+pd+'</div>';
+      html+='</div>';
+      html+='</div>';
+      // Reason chip
+      html+='<div style="font-size:9.5px;color:var(--txt3);font-family:var(--mono);padding:5px 9px;background:var(--sf2);border-radius:6px;border:1px solid var(--bd)">'+reason+'</div>';
+      html+='</div>';
+    });
+  }
+
+  // Show cases that stayed unassigned (didn't match any priority rule)
+  const stillUnassigned = cases.filter(c=>c.st==="unassigned");
+  if(stillUnassigned.length){
+    html+='<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--yel);margin:16px 0 9px;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Unassigned — No rule matched ('+stillUnassigned.length+')</div>';
+    stillUnassigned.forEach(function(c){
+      var unReason='';
+      if(c.val>30000) unReason='Value > \u20B930K but FPI has \u2265 2 active cases — check workload';
+      else if(c.val>15000) unReason='Value \u20B9'+c.val.toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
+      else unReason='Value \u20B9'+c.val.toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
+      html+='<div class="acard" style="border-left:3px solid var(--yel);opacity:.9;margin-bottom:10px">';
+      html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
+      html+='<div>';
+      html+='<div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap">';
+      html+='<span style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+c.id+'</span>';
+      html+='<span class="fp '+c.fp+'">'+c.type+'</span>';
+      html+='<span class="ct-tag '+(CC[c.cat]||"ct-oth")+'">'+c.cat+'</span>';
+      html+='<span class="bdg by">\u23F3 Unassigned</span>';
+      html+='</div>';
+      html+='<div style="font-size:10.5px;color:var(--txt3);font-family:var(--mono)">\uD83C\uDFE2 '+c.hub+' \u00B7 '+c.city+', '+c.state+'</div>';
+      html+='</div>';
+      html+='<div style="font-family:var(--disp);font-size:17px;font-weight:800;color:var(--red);flex-shrink:0">\u20B9'+(c.val||0).toLocaleString()+'</div>';
+      html+='</div>';
+      html+='<div style="padding:9px 12px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:8px;font-size:11px;color:var(--txt2)">';
+      html+='<span style="font-family:var(--mono);font-size:9px;color:var(--yel);display:block;margin-bottom:3px">\u26A0 WHY UNASSIGNED</span>';
+      html+=unReason;
+      html+='</div>';
+      html+='</div>';
+    });
+  }
+
+  el.innerHTML=html;
+}
+
+function renderReassignTab(){
+  const a=cases.filter(c=>c.poc&&c.st!=="closed");
+  document.getElementById("reassign-list").innerHTML=a.map(c=>{const p=FPI.find(x=>x.id===c.poc)||{};const s=SL[c.st]||{l:c.st,c:"bgr"};const h=c.rh||[];
+    return`<div class="rcrd"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px"><div><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-family:var(--mono);font-size:11.5px;font-weight:600">${c.id}</span><span class="fp ${c.fp}">${c.type}</span><span class="bdg ${s.c}">${s.l}</span></div><div style="font-size:10px;color:var(--txt3)">${c.hub} · ${c.city}, ${c.state}</div></div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)"><span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span><div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><span style="font-weight:600;font-size:12px">${p.name||c.pn}</span></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">
+      <div class="fgrp"><label class="fl">Reassign To</label><select class="fc" id="rp-${c.id}"><option value="">New POC...</option>${FPI.filter(p=>p.id!==c.poc).map(p=>`<option value="${p.id}">${p.name} — ${p.pod} · ${p.email||'no email'} (${p.active} active)</option>`).join("")}</select></div>
+      <div class="fgrp"><label class="fl">Reason</label><select class="fc" id="rr-${c.id}"><option value="">Reason...</option><option>Workload balancing</option><option>Zone transfer</option><option>FPI on leave</option><option>Expertise required</option><option>Escalation</option><option>Other</option></select></div>
+      <button class="btn btn-p btn-sm" onclick="reassignCase('${c.id}')">Reassign</button>
+    </div>
+    ${h.length?`<div style="border-top:1px solid var(--bd);padding-top:8px;margin-top:8px"><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:5px">HISTORY</div>${h.map(x=>`<div class="re-entry"><span style="color:var(--txt3)">${x.date}</span><span>→</span><span>${x.from}</span><span>→</span><span style="font-weight:600">${x.to}</span><span style="color:var(--txt3)">(${x.reason})</span></div>`).join("")}</div>`:""}
+    </div>`;}).join("");
+}
+function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=document.getElementById("rr-"+cid).value;if(!np||!rr){showToast("Select new POC and reason","warn");return;}const c=cases.find(x=>x.id===cid),newP=FPI.find(p=>p.id===np);if(!c.rh)c.rh=[];c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});c.poc=newP.id;c.pn=newP.name.split(" ")[0]+" "+newP.name.split(" ").slice(-1)[0][0]+".";c.pc=newP.color;c.poc_email=(newP.email||'').toLowerCase();renderReassignTab();syncCasesToStorage();showToast(`✓ ${cid} reassigned to ${newP.name}`);}
+
+// ALL CASES TABLE
+function renderCasesTable(data){
+  const tb=document.getElementById("cases-tbody");if(!data||!tb)return;
+  if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div style="text-align:center;padding:24px;color:var(--txt3)">No cases found</div></td></tr>`;return;}
+  tb.innerHTML=data.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<tr onclick="openModal('${c.id}')" style="cursor:pointer"><td><span style="font-family:var(--mono);font-size:10.5px">${c.id}</span></td><td><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span></td><td><span class="fp ${c.fp}">${c.type}</span></td><td><div style="font-size:11px"><div style="font-weight:600">${c.hub||"—"}</div><div style="color:var(--txt3);font-size:9.5px;font-family:var(--mono)">${c.city||"—"}, ${c.state||"—"}</div></div></td><td>${c.poc?`<div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><div style="font-size:11.5px">${c.pn}</div></div>`:`<span style="color:var(--yel);font-size:10px">⚠ Unassigned</span>`}</td><td style="font-family:var(--mono);font-size:11.5px">₹${c.val.toLocaleString()}</td><td>${c.pri?`<span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}">${c.pri}</span>`:`<span style="color:var(--txt3)">—</span>`}</td><td><span class="bdg ${s.c}">${s.l}</span></td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();openModal('${c.id}')">View</button></td></tr>`;}).join("");
+}
+function filterCases(f,el){document.querySelectorAll("#filter-chips .chip").forEach(c=>c.classList.remove("active"));el.classList.add("active");const catMap={"shipment":"Shipment Fraud","cod":"COD","bcp":"BCP","other":"Other"};const catKey=catMap[f]||f;const fullCats=["Shipment Fraud","COD","BCP","Other"];if(fullCats.includes(catKey))filteredCases=cases.filter(c=>c.cat===catKey);else if(f==="unassigned")filteredCases=cases.filter(c=>c.st==="unassigned");else if(f==="active")filteredCases=cases.filter(c=>["rider_inv","hi_tl_inv","cx_fraud","other_pending"].includes(c.st));else if(f==="closed")filteredCases=cases.filter(c=>c.st==="closed");else filteredCases=[...cases];renderCasesTable(filteredCases);}
+function searchCases(q){q=q.toLowerCase();filteredCases=cases.filter(c=>c.id.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)||c.cat.toLowerCase().includes(q)||c.pn.toLowerCase().includes(q)||(c.city&&c.city.toLowerCase().includes(q))||(c.hub&&c.hub.toLowerCase().includes(q)));renderCasesTable(filteredCases);}
+
+// CASE MODAL
+function openModal(cid){
+  const c=cases.find(x=>x.id===cid);if(!c)return;
+  currentCaseId=cid;
+  document.getElementById("mo-id").textContent=c.id;
+  document.getElementById("mo-sub").textContent=c.type+" · "+c.hub+", "+c.city+", "+c.state;
+  document.getElementById("mo-dl-btn").onclick=()=>downloadCaseSummary(cid);
+  const s=SL[c.st]||{l:c.st,c:"bgr"},p=FPI.find(x=>x.id===c.poc)||{};
+  document.getElementById("mo-body").innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px">
+      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">CATEGORY</div></div>
+      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><div style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">VALUE</div></div>
+      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="bdg ${s.c}" style="font-size:9.5px">${s.l}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">STATUS</div></div>
+      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}" style="font-size:9.5px">${c.pri||"—"}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">PRIORITY</div></div>
+    </div>
+    <div style="padding:8px 12px;background:var(--sf2);border-radius:8px;margin-bottom:10px;display:flex;gap:13px;font-size:11.5px;flex-wrap:wrap;border:1px solid var(--bd)"><span>🏢 <strong>${c.hub||"—"}</strong></span><span>📍 ${c.city||"—"}, ${c.state||"—"}</span>${c.awbs?`<span>📦 ${c.awbs} AWBs</span>`:""}<span>📅 ${c.date}</span></div>
+    <div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:4px">TREND / DESCRIPTION</div><div style="padding:9px;background:var(--sf2);border-radius:7px;font-size:12px;color:var(--txt2);border-left:3px solid var(--acc);border:1px solid var(--bd)">${c.trend}</div></div>
+    ${c.cat==="Shipment Fraud"?`<div style="background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;padding:12px;margin-bottom:10px">
+      <div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:8px;letter-spacing:.08em">INVESTIGATION SUMMARY</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px">
+        <div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:2px">RIDERS INVOLVED</div><div style="font-size:12px;font-weight:600">${c.riders.length>0?c.riders.join(", "):"None"}</div></div>
+        <div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:2px">TERMINATED</div><div style="font-family:var(--disp);font-size:17px;font-weight:800;color:${c.ridersTerminated>0?"var(--red)":"var(--txt3)"}">${c.ridersTerminated}</div></div>
+        <div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:2px">POLICE ACTION</div><span class="bdg ${c.policeAction==="FIR Filed"?"br":c.policeAction==="Police Complaint"?"by":"bgr"}" style="font-size:9.5px">${c.policeAction||"None"}</span></div>
+        <div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:2px">RECOVERY</div><div style="font-family:var(--disp);font-size:17px;font-weight:800;color:var(--grn)">₹${c.recovery.toLocaleString()}</div></div>
+        <div style="grid-column:span 2"><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:2px">UTR / REF</div><div style="font-family:var(--mono);font-size:11.5px;color:var(--txt2)">${c.utr||"—"}</div></div>
+      </div>
+    </div>`:""}
+    ${c.updates&&c.updates.length?`<div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:7px;letter-spacing:.08em">FPI FIELD UPDATES (${c.updates.length})</div>${c.updates.map(u=>`<div style="padding:9px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd);margin-bottom:6px;border-left:3px solid var(--acc)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span class="bdg ${SL[u.status]?.c||"bgr"}" style="font-size:9px">${SL[u.status]?.l||u.status}</span><span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${u.date}</span></div><div style="font-size:11.5px;color:var(--txt2);margin-bottom:3px">${u.notes}</div>${u.police?`<span class="bdg ${u.police==="FIR Filed"?"br":u.police==="Police Complaint"?"by":"bgr"}" style="font-size:9px">${u.police}</span>`:""} ${u.photos?`<span class="bdg bgr" style="font-size:9px">📸 ${u.photos} photo${u.photos>1?"s":""}</span>`:""}</div>`).join("")}</div>`:""}
+    ${c.poc?`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--sf2);border-radius:7px;margin-bottom:10px;border:1px solid var(--bd)"><div class="av" style="background:${c.pc};width:34px;height:34px;font-size:12px">${c.poc}</div><div><div style="font-weight:600;font-size:13px">${p.name||c.pn}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod||""} · ${p.city||""} · ${p.desig||""}</div></div><span class="bdg bb" style="margin-left:auto">FPI POC</span></div>`:`<div style="padding:9px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:7px;margin-bottom:9px;font-size:12px;color:var(--yel)">⚠ No FPI POC assigned yet</div>`}
+    <div><div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:6px">TIMELINE</div>
+    <div class="tl"><div class="tl-i"><div class="tl-d on"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${c.date}</div><div style="font-size:11.5px;color:var(--txt2)">Case filed by T&S CT.</div></div>
+    <div class="tl-i"><div class="tl-d ${c.poc?"on":""}"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">+1 day</div><div style="font-size:11.5px;color:var(--txt2)">${c.poc?"FPI POC assigned.":"Awaiting POC."}</div></div>
+    <div class="tl-i"><div class="tl-d ${["rider_inv","hi_tl_inv","cx_fraud","closed"].includes(c.st)?"on":""}"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">+2 days</div><div style="font-size:11.5px;color:var(--txt2)">Ground investigation initiated.</div></div>
+    ${c.st==="closed"?`<div class="tl-i"><div class="tl-d dn"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">Latest</div><div style="font-size:11.5px;color:var(--grn);font-weight:600">✓ Case Closed</div></div>`:""}
+    </div></div>`;
+  document.getElementById("case-mo").classList.add("open");
+}
+
+// DOWNLOAD SINGLE CASE SUMMARY
+function downloadCaseSummary(cid){
+  const c=cases.find(x=>x.id===cid);if(!c)return;
+  const p=FPI.find(x=>x.id===c.poc)||{};
+  const lastUpdate=c.updates&&c.updates.length?c.updates[c.updates.length-1]:null;
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FPI Case ${c.id}</title>
+  <style>body{font-family:Arial,sans-serif;margin:0;padding:0;color:#0f172a;background:#fff;}
+  .header{background:#1d4ed8;color:#fff;padding:24px 30px;}
+  .hdr-badge{display:inline-block;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;margin-bottom:8px;letter-spacing:.1em;}
+  .hdr-title{font-size:22px;font-weight:800;margin-bottom:4px;}
+  .hdr-sub{font-size:12px;opacity:.7;}
+  .body{padding:24px 30px;}
+  .section{margin-bottom:22px;}
+  .sec-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#1d4ed8;border-bottom:2px solid #dbeafe;padding-bottom:5px;margin-bottom:12px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .info-box{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:7px;padding:10px 12px;}
+  .ib-lbl{font-size:9.5px;color:#64748b;text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px;}
+  .ib-val{font-size:13px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;}
+  th{background:#1d4ed8;color:#fff;padding:7px 11px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;}
+  td{padding:8px 11px;border-bottom:1px solid #e2e8f0;font-size:12px;}
+  tr:nth-child(even) td{background:#f8faff;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700;}
+  .badge-red{background:#fee2e2;color:#dc2626;}
+  .badge-grn{background:#dcfce7;color:#16a34a;}
+  .badge-yel{background:#fef3c7;color:#d97706;}
+  .badge-gray{background:#f1f5f9;color:#64748b;}
+  .desc-box{background:#f0f7ff;border-left:4px solid #1d4ed8;padding:11px 14px;border-radius:0 7px 7px 0;font-size:12.5px;line-height:1.6;}
+  .update-box{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:7px;padding:11px;margin-bottom:8px;}
+  .footer{background:#f8faff;border-top:1px solid #dbeafe;padding:14px 30px;font-size:10.5px;color:#64748b;display:flex;justify-content:space-between;}
+  </style></head><body>
+  <div class="header">
+    <div class="hdr-badge">FPI CASE SUMMARY</div>
+    <div class="hdr-title">${c.id} — ${c.type}</div>
+    <div class="hdr-sub">${c.hub} · ${c.city}, ${c.state} · Filed: ${c.date}</div>
+  </div>
+  <div class="body">
+    <div class="section">
+      <div class="sec-title">Case Overview</div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="info-box"><div class="ib-lbl">Category</div><div class="ib-val">${c.cat}</div></div>
+        <div class="info-box"><div class="ib-lbl">Fraud Type</div><div class="ib-val">${c.type}</div></div>
+        <div class="info-box"><div class="ib-lbl">Hub / Facility</div><div class="ib-val">${c.hub}</div></div>
+        <div class="info-box"><div class="ib-lbl">City &amp; State</div><div class="ib-val">${c.city}, ${c.state}</div></div>
+        <div class="info-box"><div class="ib-lbl">Impacted Value</div><div class="ib-val" style="color:#dc2626">₹${c.val.toLocaleString()}</div></div>
+        <div class="info-box"><div class="ib-lbl">Date Filed</div><div class="ib-val">${c.date}</div></div>
+        <div class="info-box"><div class="ib-lbl">FPI POC</div><div class="ib-val">${p.name||c.pn||"Unassigned"} ${p.pod?"("+p.pod+")":""}</div></div>
+        <div class="info-box"><div class="ib-lbl">Current Status</div><div class="ib-val">${(SL[c.st]||{l:c.st}).l}</div></div>
+      </div>
+    </div>
+    ${c.awbs?`<div class="section"><div class="sec-title">AWBs Impacted</div><div style="background:#f0f7ff;padding:10px 12px;border-radius:7px;font-family:monospace;font-size:12px;border:1px solid #bfdbfe">${c.awbs} AWBs involved in this case</div></div>`:""}
+    <div class="section">
+      <div class="sec-title">Trend &amp; Description</div>
+      <div class="desc-box">${c.trend}</div>
+    </div>
+    ${c.cat==="Shipment Fraud"?`<div class="section">
+      <div class="sec-title">Investigation Summary</div>
+      <table><thead><tr><th>Field</th><th>Details</th></tr></thead><tbody>
+        <tr><td>Riders Involved</td><td>${c.riders.length>0?c.riders.join(", "):"None recorded"}</td></tr>
+        <tr><td>Riders Terminated</td><td><span class="badge ${c.ridersTerminated>0?"badge-red":"badge-gray"}">${c.ridersTerminated} terminated</span></td></tr>
+        <tr><td>Police Action Status</td><td><span class="badge ${c.policeAction==="FIR Filed"?"badge-red":c.policeAction==="Police Complaint"?"badge-yel":"badge-gray"}">${c.policeAction||"No Action"}</span></td></tr>
+        <tr><td>Recovery Done</td><td style="font-weight:700;color:#16a34a">₹${c.recovery.toLocaleString()}</td></tr>
+        <tr><td>UTR / Transaction Ref</td><td style="font-family:monospace">${c.utr||"—"}</td></tr>
+      </tbody></table>
+    </div>`:""}
+    ${c.updates&&c.updates.length?`<div class="section">
+      <div class="sec-title">FPI Field Updates (${c.updates.length})</div>
+      ${c.updates.map((u,i)=>`<div class="update-box"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><strong>Update ${i+1}</strong><span style="font-size:11px;color:#64748b">${u.date}</span></div><div style="margin-bottom:4px"><span class="badge badge-gray">${(SL[u.status]||{l:u.status}).l}</span></div><div style="font-size:12px;color:#334155;margin-top:5px">${u.notes}</div>${u.police?`<div style="margin-top:4px"><span class="badge ${u.police==="FIR Filed"?"badge-red":u.police==="Police Complaint"?"badge-yel":"badge-gray"}">${u.police}</span></div>`:""}</div>`).join("")}
+    </div>`:""}
+  </div>
+  <div class="footer"><span>Generated by FPI Case Management System</span><span>${new Date().toLocaleString("en-IN")}</span></div>
+  
+<!-- GOOGLE SHEETS SETUP MODAL -->
+<div class="mo" id="sheet-setup-modal" onclick="if(event.target.id==='sheet-setup-modal')this.classList.remove('open')">
+  <div class="mdl" style="max-width:560px">
+    <div class="mh"><div class="mt">📊 Google Sheets Integration</div><button class="mc-btn" onclick="document.getElementById('sheet-setup-modal').classList.remove('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <div class="abanner blue" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>To sync case data to Google Sheets, deploy the Apps Script below and paste your URL.</span></div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 1 — OPEN APPS SCRIPT</div>
+        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">Go to <a href="https://script.google.com" target="_blank" style="color:var(--acc)">script.google.com</a> → New Project → paste the code below</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 2 — APPS SCRIPT CODE</div>
+        <div style="background:var(--navy);border-radius:8px;padding:13px;font-family:var(--mono);font-size:10.5px;color:#7dd3fc;overflow-x:auto;max-height:180px;overflow-y:auto">
+          <pre style="margin:0;white-space:pre-wrap;color:#c4b5fd">function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Cases sheet
+  let sheet = ss.getSheetByName("FPI_Cases") 
+    || ss.insertSheet("FPI_Cases");
+  
+  if(sheet.getLastRow()===0){
+    sheet.appendRow(["Case ID","Category","Fraud Type","Hub","City",
+      "State","Value","Status","Priority","FPI POC","POD",
+      "Police Action","Recovery","UTR","Trend","Terminated",
+      "Date Filed","Synced At"]);
+  }
+  
+  // Find existing row or append
+  const vals = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+  for(let i=1;i&lt;vals.length;i++){
+    if(vals[i][0]===data.case_id){ rowIdx=i+1; break; }
+  }
+  
+  const row = [data.case_id,data.category,data.fraud_type,
+    data.hub,data.city,data.state,data.value,data.status,
+    data.priority,data.poc_name,data.poc_pod,data.police_action,
+    data.recovery,data.utr,data.trend,data.riders_terminated,
+    data.date_filed,new Date()];
+  
+  if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
+  else sheet.appendRow(row);
+  
+  return ContentService.createTextOutput("OK");
+}
+</pre>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 3 — DEPLOY & PASTE URL</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+          <div class="fgrp" style="margin:0"><label class="fl">Web App URL (Cases + Login log)</label><input type="text" class="fc" id="sheet-url-input" placeholder="https://script.google.com/macros/s/..."></div>
+          <button class="btn btn-grn" onclick="saveSheetURL()">Save</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--txt3);margin-top:6px">Deploy as: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div>
+        <div style="margin-top:8px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.2);border-radius:7px;padding:9px;font-size:11px;color:var(--txt2)">
+          ✅ This same URL links Case Management ↔ Field Portal. Paste it in both.
+        </div>
+      </div>
+      <div style="background:var(--grn-d);border:1.5px solid rgba(22,163,74,.2);border-radius:8px;padding:10px;font-size:11.5px;color:var(--txt2)">
+        ✓ Once saved, every new case, assignment and update will automatically sync to your Google Sheet.
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>`;
+  const blob=new Blob([html],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FPI_Case_${c.id}_Summary.html`;a.click();showToast("Case summary downloaded");
+}
+
+// DOWNLOAD ALL SUMMARY CSV
+function downloadAllSummary(){
+  const data=filteredCases.length?filteredCases:cases;
+  const rows=[["Case ID","Category","Fraud Type","Hub","City","State","AWBs","Impacted Value (Rs)","FPI POC","POD","Designation","Status","Priority","Riders Involved","Riders Terminated","Police Action","Recovery (Rs)","UTR","Date Filed","Description","Updates Count"]];
+  data.forEach(c=>{const p=FPI.find(x=>x.id===c.poc)||{};rows.push([c.id,c.cat,c.type,c.hub,c.city,c.state,c.awbs||0,c.val,p.name||c.pn||"Unassigned",p.pod||"",p.desig||"",(SL[c.st]||{l:c.st}).l,c.pri||"",c.riders.join("|"),c.ridersTerminated||0,c.policeAction||"No Action",c.recovery||0,c.utr||"",c.date,c.trend.replace(/,/g,";").replace(/\n/g," "),c.updates?c.updates.length:0]);});
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,"\"")}"`).join(",")).join("\n");
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FPI_Cases_Summary_${new Date().toISOString().split("T")[0]}.csv`;a.click();showToast("Summary CSV downloaded");
+}
+
+// TRACKER
+function renderTracker(){
+  document.getElementById("fpi-tracker-grid").innerHTML=FPI.map(p=>{const mc=cases.filter(c=>c.poc===p.id).slice(0,3);return`<div class="fpicard"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div class="fpiav" style="background:${p.color}">${p.id}</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px">${p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod}${p.lastCity?' · 📍'+p.lastCity:''}</div></div><span class="bdg ${p.active>2?"br":p.active>0?"by":"bg"}">${p.active}</span></div><div class="fpi-stats"><div style="text-align:center"><div class="fpi-sv" style="color:var(--blue)">${p.active}</div><div class="fpi-sl">ACTIVE</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--yel)">${p.pending}</div><div class="fpi-sl">PENDING</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--grn)">${p.closed}</div><div class="fpi-sl">CLOSED</div></div></div><div class="pbar"><div class="pfill" style="width:${Math.min(100,(p.active/5)*100)}%;background:${p.color}"></div></div><div>${mc.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<div class="fpi-cr"><span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${c.id}</span><span class="fp ${c.fp}" style="font-size:8.5px">${c.type}</span><span class="bdg ${s.c}" style="font-size:8px;padding:1px 5px">${s.l}</span></div>`;}).join("")}${!mc.length?"<div style='font-size:11px;color:var(--txt3);text-align:center;padding:6px'>No active cases</div>":""}</div></div>`;}).join("");
+}
+
+// PERFORMANCE
+function renderPerf(){
+  document.getElementById("perf-grid").innerHTML=FPI.slice(0,12).map(p=>{const s=p.score;const clr=s>=90?"var(--grn)":s>=75?"var(--yel)":"var(--red)";const r=25;const circ=2*Math.PI*r;const off=circ-(s/100)*circ;const dots=Array.from({length:10},(_,i)=>`<div class="rd ${i<Math.floor(s/10)?"f":""}"></div>`).join("");return`<div class="pc"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div class="fpiav" style="background:${p.color};width:36px;height:36px;font-size:11px">${p.id}</div><div style="flex:1"><div style="font-weight:700;font-size:12.5px">${p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod} · ${p.desig}</div></div><div class="sr"><svg width="56" height="56" viewBox="0 0 56 56"><circle fill="none" stroke="var(--sf2)" stroke-width="5" cx="28" cy="28" r="${r}"/><circle fill="none" stroke="${clr}" stroke-width="5" stroke-linecap="round" cx="28" cy="28" r="${r}" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/></svg><div class="rt" style="color:${clr}">${s}</div></div></div><div class="pm"><div class="pmv"><div class="pmn" style="color:var(--grn)">${p.closed}</div><div class="pml">CLOSED</div></div><div class="pmv"><div class="pmn" style="color:var(--blue)">${Math.floor(Math.random()*4+2)}</div><div class="pml">AVG DAYS</div></div><div class="pmv"><div class="pmn" style="color:var(--yel)">${Math.floor(60+Math.random()*35)}%</div><div class="pml">RECOVERY</div></div><div class="pmv"><div class="pmn" style="color:var(--red)">${Math.floor(p.closed*0.3)}</div><div class="pml">FIR FILED</div></div></div><div class="rb">${dots}</div><div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:10px;color:var(--txt3)">Score: <strong style="color:${clr}">${s}/100</strong></span><span class="bdg ${s>=90?"bg":s>=75?"by":"br"}" style="font-size:9px">${s>=90?"Excellent":s>=75?"Good":"Needs Attention"}</span></div></div>`;}).join("");
+}
+
+// SINGLE SUBMIT
+function toggleCatFields(){const cat=document.getElementById("f-cat").value;document.getElementById("awb-grp").style.display=cat==="COD"||cat==="BCP"?"none":"";}
+function submitSingle(){const awbs=document.getElementById("f-awbs").value,type=document.getElementById("f-type").value,cat=document.getElementById("f-cat").value,val=document.getElementById("f-val").value,hub=document.getElementById("f-hub").value,city=document.getElementById("f-city").value,state=document.getElementById("f-state").value,desc=document.getElementById("f-desc").value;if(!cat||!type||!hub||!city||!state||!desc){showToast("Fill all required fields","warn");return;}const id="FPI-2024-0"+(55+cases.length);cases.unshift({id,cat,awbs:awbs?awbs.split(/[,\n]/).filter(a=>a.trim()).length:0,type,fp:fpFromType(type),trend:desc,poc:"",pn:"",pc:"",val:parseInt(val)||0,pri:"",st:"unassigned",hub,city,state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]});autoAssignCase(cases[0]);const ap=cases[0];showToast("✓ "+id+" → assigned to "+ap.pn+" ("+ap.pri+")");syncCasesToStorage();setTimeout(()=>showPage("assignment"),1200);}
+function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
+
+// BULK
+let bulkRows=[];
+function setStep(n){for(let i=1;i<=3;i++){const c=document.getElementById("s"+i+"c"),l=document.getElementById("s"+i+"l");c.className="st-c"+(i<n?" done":i===n?" act":"");c.textContent=i<n?"✓":String(i);l.className="st-l"+(i<n?" done":i===n?" act":"");}for(let i=1;i<=2;i++){const ln=document.getElementById("sl"+i);ln.className="st-line"+(i<n?" done":"");}}
+function showBulkStep(n){[1,2,3].forEach(i=>document.getElementById("bstep"+i).style.display=i===n?"":"none");setStep(n);}
+function doDragOver(e){e.preventDefault();document.getElementById("drop-zone").classList.add("drag");}
+function doDragLeave(){document.getElementById("drop-zone").classList.remove("drag");}
+function doDrop(e){e.preventDefault();doDragLeave();const f=e.dataTransfer.files[0];if(f)processBulkFile(f);}
+function handleFile(e){if(e.target.files[0])processBulkFile(e.target.files[0]);}
+function processBulkFile(file){
+  if(!file.name.toLowerCase().match(/\.(csv|xlsx|xls)$/)){showToast("Only .xlsx or .csv supported","warn");return;}
+  if(file.name.toLowerCase().endsWith(".csv")){
+    const r=new FileReader();r.onload=e=>parseCSV(e.target.result);r.readAsText(file);
+  } else {
+    // XLSX: use SheetJS-compatible read via ArrayBuffer
+    const r=new FileReader();
+    r.onload=function(e){
+      try{
+        // Manual XLSX parse: extract first sheet as CSV via simple binary extraction
+        // Since SheetJS isn't loaded, we'll parse the XML inside the XLSX zip
+        const bytes=new Uint8Array(e.target.result);
+        // Try to extract sharedStrings and sheet1 XML from ZIP
+        const text=new TextDecoder("utf-8",{fatal:false}).decode(bytes);
+        // Find sheet data rows via simple regex on the raw XLSX content
+        const sheetMatch=text.match(/<sheetData>([\s\S]*?)<\/sheetData>/);
+        const ssMatch=text.match(/<sst[^>]*>([\s\S]*?)<\/sst>/);
+        if(sheetMatch&&ssMatch){
+          // Build shared strings array
+          const ssList=[];
+          const siReg=/<si>([\s\S]*?)<\/si>/g;
+          let m;while((m=siReg.exec(ssMatch[1]))!==null){
+            const t=m[1].replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").trim();
+            ssList.push(t);
+          }
+          // Parse rows
+          const rows=[];
+          const rowReg=/<row[^>]*>([\s\S]*?)<\/row>/g;
+          while((m=rowReg.exec(sheetMatch[1]))!==null){
+            const cells=[];
+            const cellReg=/<c[^>]*r="[A-Z]+(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+            let cm;
+            while((cm=cellReg.exec(m[1]))!==null){
+              const type=cm[2].includes('t="s"')?"s":(cm[2].includes('t="str"')?"str":"n");
+              const vMatch=cm[3].match(/<v>([\s\S]*?)<\/v>/);
+              let val="";
+              if(vMatch){
+                if(type==="s"){val=ssList[parseInt(vMatch[1])]||"";}
+                else{val=vMatch[1];}
+              }
+              // Get column letter to determine index
+              const colM=cm[0].match(/r="([A-Z]+)/);
+              const colIdx=colM?colLetterToIdx(colM[1]):cells.length;
+              while(cells.length<colIdx)cells.push("");
+              cells[colIdx]=val;
+            }
+            rows.push(cells);
+          }
+          if(rows.length>1){
+            const csvText=rows.map(r=>r.map(v=>'"'+String(v||"").replace(/"/g,'""')+'"').join(",")).join("\n");
+            parseCSV(csvText);
+          } else {
+            showToast("Could not read XLSX data. Try saving as .csv","warn");
+          }
+        } else {
+          showToast("Could not parse XLSX. Please save as .csv and re-upload","warn");
+        }
+      } catch(ex){
+        console.error("XLSX parse error:",ex);
+        showToast("XLSX parse error. Please save file as .csv","warn");
+      }
+    };
+    r.readAsArrayBuffer(file);
+  }
+}
+function colLetterToIdx(col){
+  let n=0;for(let i=0;i<col.length;i++){n=n*26+(col.charCodeAt(i)-64);}return n-1;
+}
+function getDemoCSV(){return`AWB_Numbers,Category,Fraud_Type,Sub_Type,Impacted_Value,Hub,City,State,Description,Proof_Links
+1234567890,Shipment Fraud,DBNU Nexus,Rider as Customer,45000,Sector 29 Hub,Gurgaon,Haryana,Rider creating fake deliveries at cluster addresses,
+5556667778,COD,COD Non-Remittance,,28000,Hussainganj Hub,Lucknow,Uttar Pradesh,COD not remitted for 3 days,
+3334445556,BCP,Threat to Franchise,,0,Silk Board Hub,Bangalore,Karnataka,External threat to franchise owner,`;}
+function parseCSV(text){const lines=text.trim().split(/\r?\n/).map(l=>l.replace(/\r/g,""));if(lines.length<2){showToast("No data","warn");return;}const dataRows=lines.slice(1).filter(l=>l.trim());if(!dataRows.length){showToast("No data rows","warn");return;}if(dataRows.length>25){showToast("Max 25 rows — first 25 used","warn");dataRows.splice(25);}parseRows(dataRows.map(parseCSVRow));}
+function parseRows(rows){
+  // Skip header row if present
+  let dataRows=rows;
+  if(dataRows.length){
+    const h=String(dataRows[0][0]||"").toLowerCase();
+    if(h.includes("awb")||h.includes("category")||h.includes("case")||h.includes("number")){dataRows=dataRows.slice(1);}
+  }
+  bulkRows=dataRows.filter(cols=>cols.some(c=>c&&String(c).trim())).map((cols,i)=>{
+    // A=AWB_Numbers B=Category C=Fraud_Type D=Sub_Type E=Impacted_Value F=Hub G=City H=State I=Description J=Proof_Links
+    const awbs=String(cols[0]||"").trim();
+    const cat=String(cols[1]||"").trim()||"Shipment Fraud";
+    const type=String(cols[2]||"").trim();
+    const sub=String(cols[3]||"").trim();
+    const val=parseFloat(String(cols[4]||"0").replace(/[₹,\s]/g,""))||0;
+    const hub=String(cols[5]||"").trim();
+    const city=String(cols[6]||"").trim();
+    const state=String(cols[7]||"").trim();
+    const desc=String(cols[8]||"").trim();
+    const links=String(cols[9]||"").trim();
+    const errs=[];
+    if(!type)errs.push("Fraud Type");
+    if(!hub)errs.push("Hub");
+    if(!city)errs.push("City");
+    if(!state)errs.push("State");
+    if(!desc)errs.push("Description");
+    return{rowNum:i+2,awbs,cat,type,sub,val,hub,city,state,desc,links,errs,ok:errs.length===0};
+  });
+  if(!bulkRows.length){showToast("No data rows found","warn");return;}
+  renderBulkPreview();showBulkStep(2);
+}
+function parseCSVRow(row){const res=[];let cur="";let inQ=false;for(const c of row){if(c==="\""){inQ=!inQ;}else if(c===","&&!inQ){res.push(cur);cur="";}else{cur+=c;}}res.push(cur);return res;}
+function renderBulkPreview(){const v=bulkRows.filter(r=>r.ok).length,e=bulkRows.filter(r=>!r.ok).length;document.getElementById("bcnt-txt").textContent=`${bulkRows.length} rows · ${v} valid · ${e} errors`;document.getElementById("bsum-cards").innerHTML=`<div class="bs-card"><div class="bs-val" style="color:var(--blue)">${bulkRows.length}</div><div class="bs-lbl">Total</div></div><div class="bs-card"><div class="bs-val" style="color:var(--grn)">${v}</div><div class="bs-lbl">Valid</div></div><div class="bs-card"><div class="bs-val" style="color:var(--red)">${e}</div><div class="bs-lbl">Errors</div></div><div class="bs-card"><div class="bs-val" style="color:var(--acc)">₹${(bulkRows.filter(r=>r.ok).reduce((s,r)=>s+r.val,0)/1000).toFixed(0)}K</div><div class="bs-lbl">Value</div></div>`;document.getElementById("bprev-body").innerHTML=bulkRows.map(r=>`<tr class="${r.ok?"rv":"re"}"><td style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">${r.rowNum}</td><td style="font-family:var(--mono);font-size:9.5px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.awbs||"—"}</td><td><span class="ct-tag ${CC[r.cat]||"ct-oth"}">${r.cat||"—"}</span></td><td><span class="fp ${fpFromType(r.type)}">${r.type||"—"}</span></td><td style="font-family:var(--mono);font-size:10.5px">₹${r.val.toLocaleString()}</td><td style="font-size:10.5px">${r.hub||"—"}</td><td style="font-size:10.5px">${r.city||"—"}</td><td style="font-size:10.5px">${r.state||"—"}</td><td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2)">${r.desc||"—"}</td><td>${r.ok?`<span style="color:var(--grn);font-family:var(--mono);font-size:9.5px">✓</span>`:`<span style="color:var(--red);font-family:var(--mono);font-size:9px">${r.errs.join(",")}</span>`}</td></tr>`).join("");document.getElementById("bproceed").disabled=v===0;}
+function goStep3(){const v=bulkRows.filter(r=>r.ok);document.getElementById("bconfirm-body").innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--blue)">${v.length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TO CREATE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--red)">₹${(v.reduce((s,r)=>s+r.val,0)/1000).toFixed(0)}K</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TOTAL VALUE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--yel)">${bulkRows.filter(r=>!r.ok).length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">ROWS SKIPPED</div></div></div>`;document.getElementById("b-date").valueAsDate=new Date();showBulkStep(3);}
+function goStep2(){showBulkStep(2);}
+function resetBulk(){bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);}
+function submitBulk(){const v=bulkRows.filter(r=>r.ok);v.forEach(r=>{const id="FPI-2024-0"+(60+cases.length);cases.unshift({id,cat:r.cat||"Shipment Fraud",awbs:r.awbs?r.awbs.split(",").filter(a=>a.trim()).length:0,type:r.type,fp:fpFromType(r.type),trend:r.desc,poc:"",pn:"",pc:"",val:r.val,pri:"",st:"unassigned",hub:r.hub,city:r.city,state:r.state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]});});v.forEach((_,i)=>autoAssignCase(cases[i]));showToast(`✓ ${v.length} cases auto-assigned`);syncCasesToStorage();setTimeout(()=>{bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);showPage("assignment");},1400);}
+// DOWNLOAD FULL CASE SUMMARY (CSV)
+function downloadCaseSummaryCSV(){
+  const rows=[["Case ID","Category","Fraud Type","Hub","City","State","AWBs Impacted","Impacted Value (INR)","Priority","Status","FPI POC","POD","Date Filed","Trend / Description","Riders Involved","Riders Terminated","Police Action","Recovery Done (INR)","UTR Number","FPI Updates Summary"]];
+  cases.forEach(c=>{
+    const fpi=FPI.find(p=>p.id===c.poc)||{};
+    const statusText=(SL[c.st]||{l:c.st}).l;
+    const updSummary=(c.updates&&c.updates.length)?c.updates.map(u=>`[${u.date}] ${u.notes}`).join(' | '):'—';
+    rows.push([
+      c.id, c.cat, c.type, c.hub||'', c.city||'', c.state||'',
+      typeof c.awbs==='number'?c.awbs:(c.awbs||'').split(',').filter(a=>a.trim()).length,
+      c.val||0, c.pri||'', statusText,
+      fpi.name||c.pn||'Unassigned', fpi.pod||'',
+      c.date||'',
+      (c.trend||'').replace(/,/g,';'),
+      (c.riders||[]).join('; ')||'—',
+      c.ridersTerminated||0,
+      c.policeAction||'No Police Action',
+      c.recovery||0,
+      c.utr||'—',
+      updSummary.replace(/,/g,';')
+    ]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='FPI_Case_Summary_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  showToast('Case summary downloaded — '+cases.length+' cases');
+}
+function downloadTemplate(){
+  const b64="UEsDBBQAAAAIACNzflxGx01IlQAAAM0AAAAQAAAAZG9jUHJvcHMvYXBwLnhtbE3PTQvCMAwG4L9SdreZih6kDkQ9ip68zy51hbYpbYT67+0EP255ecgboi6JIia2mEXxLuRtMzLHDUDWI/o+y8qhiqHke64x3YGMsRoPpB8eA8OibdeAhTEMOMzit7Dp1C5GZ3XPlkJ3sjpRJsPiWDQ6sScfq9wcChDneiU+ixNLOZcrBf+LU8sVU57mym/8ZAW/B7oXUEsDBBQAAAAIACNzflx2jvpH7gAAACsCAAARAAAAZG9jUHJvcHMvY29yZS54bWzNksFOwzAMhl8F5d46baGHqMtliBNISEwCcYsSb4to0igxavf2pGXrhOABOMb+8/mz5E4HoYeIz3EIGMliuplc75PQYcOOREEAJH1Ep1KZEz4390N0ivIzHiAo/aEOCDXnLTgkZRQpmIFFWIlMdkYLHVHREM94o1d8+Iz9AjMasEeHnhJUZQVMzhPDaeo7uAJmGGF06buAZiUu1T+xSwfYOTklu6bGcSzHZsnlHSp4e3p8WdYtrE+kvMb8K1lBp4Abdpn82mzvdw9M1rxuC94UDd9Vt6K+E7x9n11/+F2F3WDs3v5j44ug7ODXXcgvUEsDBBQAAAAIACNzflyZXJwjEAYAAJwnAAATAAAAeGwvdGhlbWUvdGhlbWUxLnhtbO1aW3PaOBR+76/QeGf2bQvGNoG2tBNzaXbbtJmE7U4fhRFYjWx5ZJGEf79HNhDLlg3tkk26mzwELOn7zkVH5+g4efPuLmLohoiU8nhg2S/b1ru3L97gVzIkEUEwGaev8MAKpUxetVppAMM4fckTEsPcgosIS3gUy9Zc4FsaLyPW6rTb3VaEaWyhGEdkYH1eLGhA0FRRWm9fILTlHzP4FctUjWWjARNXQSa5iLTy+WzF/NrePmXP6TodMoFuMBtYIH/Ob6fkTlqI4VTCxMBqZz9Wa8fR0kiAgsl9lAW6Sfaj0xUIMg07Op1YznZ89sTtn4zK2nQ0bRrg4/F4OLbL0otwHATgUbuewp30bL+kQQm0o2nQZNj22q6RpqqNU0/T933f65tonAqNW0/Ta3fd046Jxq3QeA2+8U+Hw66JxqvQdOtpJif9rmuk6RZoQkbj63oSFbXlQNMgAFhwdtbM0gOWXin6dZQa2R273UFc8FjuOYkR/sbFBNZp0hmWNEZynZAFDgA3xNFMUHyvQbaK4MKS0lyQ1s8ptVAaCJrIgfVHgiHF3K/99Ze7yaQzep19Os5rlH9pqwGn7bubz5P8c+jkn6eT101CznC8LAnx+yNbYYcnbjsTcjocZ0J8z/b2kaUlMs/v+QrrTjxnH1aWsF3Pz+SejHIju932WH32T0duI9epwLMi15RGJEWfyC265BE4tUkNMhM/CJ2GmGpQHAKkCTGWoYb4tMasEeATfbe+CMjfjYj3q2+aPVehWEnahPgQRhrinHPmc9Fs+welRtH2Vbzco5dYFQGXGN80qjUsxdZ4lcDxrZw8HRMSzZQLBkGGlyQmEqk5fk1IE/4rpdr+nNNA8JQvJPpKkY9psyOndCbN6DMawUavG3WHaNI8ev4F+Zw1ChyRGx0CZxuzRiGEabvwHq8kjpqtwhErQj5iGTYacrUWgbZxqYRgWhLG0XhO0rQR/FmsNZM+YMjszZF1ztaRDhGSXjdCPmLOi5ARvx6GOEqa7aJxWAT9nl7DScHogstm/bh+htUzbCyO90fUF0rkDyanP+kyNAejmlkJvYRWap+qhzQ+qB4yCgXxuR4+5Xp4CjeWxrxQroJ7Af/R2jfCq/iCwDl/Ln3Ppe+59D2h0rc3I31nwdOLW95GblvE+64x2tc0LihjV3LNyMdUr5Mp2DmfwOz9aD6e8e362SSEr5pZLSMWkEuBs0EkuPyLyvAqxAnoZFslCctU02U3ihKeQhtu6VP1SpXX5a+5KLg8W+Tpr6F0PizP+Txf57TNCzNDt3JL6raUvrUmOEr0scxwTh7LDDtnPJIdtnegHTX79l125COlMFOXQ7gaQr4Dbbqd3Do4npiRuQrTUpBvw/npxXga4jnZBLl9mFdt59jR0fvnwVGwo+88lh3HiPKiIe6hhpjPw0OHeXtfmGeVxlA0FG1srCQsRrdguNfxLBTgZGAtoAeDr1EC8lJVYDFbxgMrkKJ8TIxF6HDnl1xf49GS49umZbVuryl3GW0iUjnCaZgTZ6vK3mWxwVUdz1Vb8rC+aj20FU7P/lmtyJ8MEU4WCxJIY5QXpkqi8xlTvucrScRVOL9FM7YSlxi84+bHcU5TuBJ2tg8CMrm7Oal6ZTFnpvLfLQwJLFuIWRLiTV3t1eebnK56Inb6l3fBYPL9cMlHD+U751/0XUOufvbd4/pukztITJx5xREBdEUCI5UcBhYXMuRQ7pKQBhMBzZTJRPACgmSmHICY+gu98gy5KRXOrT45f0Usg4ZOXtIlEhSKsAwFIRdy4+/vk2p3jNf6LIFthFQyZNUXykOJwT0zckPYVCXzrtomC4Xb4lTNuxq+JmBLw3punS0n/9te1D20Fz1G86OZ4B6zh3OberjCRaz/WNYe+TLfOXDbOt4DXuYTLEOkfsF9ioqAEativrqvT/klnDu0e/GBIJv81tuk9t3gDHzUq1qlZCsRP0sHfB+SBmOMW/Q0X48UYq2msa3G2jEMeYBY8wyhZjjfh0WaGjPVi6w5jQpvQdVA5T/b1A1o9g00HJEFXjGZtjaj5E4KPNz+7w2wwsSO4e2LvwFQSwMEFAAAAAgAI3N+XFW8nYOZBwAADy4AABgAAAB4bC93b3Jrc2hlZXRzL3NoZWV0MS54bWydmmtzm7gexr+KxjtzZi+tL2B86UkysxHX2aaTk6TtedfBRrYZA2IFNMl++pVkmg1ZPYTJizSGnx5dHj+IPw1n91wcqwNjNXnIs6I6Hx3quvwwmVTbA8vjasxLVkiy4yKPa3ko9pOqFCxOtCjPJtZ0upjkcVqMLs70uWtxccabOksLdi1I1eR5LB4vWcbvz0ez0Y8TN+n+UKsTk4uzMt6zW1Z/Lq+FPJo89ZKkOSuqlBdEsN356PfZh8i2lUC3+JKy++rZZ6KWsuH8qA6i5Hw0HamuC0Yeb8sslYOtRqTm5Ue2qynLMtnhekTibZ1+Z9ey2flow+ua54rLadZxLU/tBP+LFXpMljHZVk6m/FfjUydtp2qNf7YTHj2tR03q+ecfM/e1sdKoTVwxyrOvaVIf9FQTtoubrL7h9yFrzXJUf1ueVfpfcn9qa01HZNtUcjatWM4gT4vT7/ihNfmZYLYAAqsVWC8FKyCwW4H9UjAHgnkrmL8QwDU4rcAZOsKiFSyGLnrZCpYvBDYaYdUKVi8FFhCsW8Fax+H0/ekv343r+OJM8HsidGv1JVtPXj997TLHW9VCR0s3lGfTQl1ht7WQNJUd1hf+dUSoTBG5igt5Rclrpyb/+Wllzaz/kssmO5LPZcbjhNyxvMxkusnPV/EDsRyylaKKlEyFsN4efjmb1HKeqtPJVv7I+T1N0monOcWTtPQkLTDJqKhq0egLqfpA/DTLiOy6Is5v5Gcur1U1Fz0VefaXMZFXRJMXlfRPHFlCbrz/fY5uPJfkcnBS8JpsGJHLqR/HxJUXqFwUe4jl8tip1w2TGxcjjV54WuzHpF1yIp3XTcY9i7VPi12Y1tppOG9dsbArc+2KDVz5/evlt09NvmGiIr92Z6Tll/1yX8RN8u3usWRGNe1X3zYbrTUo3X5llJdy62PJty9x1pjH9vp7CJuNUeb3y2haPxp1wStLVbu6URj2C11WbUVa6v3fJI/65deC8923j2lxrHry5pxiNDMG7hQjRw8zB8P8uDxMCXqzkp6UDlBybUqcmdLz5jG9Nyv9NyuDNyvDNyujt3jbyczilBm7Z0Ne6DEWYIyZZc+dxXK1nr4j69Vy4cxtazY1Jai/H/fy02fyiT00lSlD/dqbNJE7flwRqpfAhClM/V3MnenUNGuvX3YrazouiLUmcicyxalfHjRiH/PClKZ+YShLYHmXNoVpiFVbWYHX8n5GdvGRyUoxk+WnSOVNPK7JseD3Bdlm0kplapIIVsn7+5gE17ekOqjbYsFJzr/rCmFsSmX/FNQTQiUfERIhRx3vOd9nbLzl+aS99fakdfl6Wpe9YzuOs1gslsvlypTQfu3/39/Ej6Zw9su+6imSq7TKVXVkimZ/B7MViGa/7PLuCoXyFWFc7ONM1j2mWPZL/4hFISujozGYg2xK2DaLhSzV5PW4f0ce3ov4sU2dNXaOe1XSFbUqTfPWULLlxS4VOUuMWUSj/itbq9eztepdgW3b8/lcJewdUQlbrdbrtXEn7O/nY0juDvK50BS1V5Ty+CAf+oirrmf15GtKW38fCwukrV/mxyJN4o18PPCpKXID1abI9Ut7dsJ+4Sf17b6vDumuJtJy+aFUG1qlglXpWl8Vl2lR6R2zaqqSqVpVBpDefSFNoc4K9l0+ixtz1z/4a3ug1bMJrl9/hlrrwZd68GL0PHqQUEhcSDxIfEgCSEJIIhPpeDKbvm6KagNcwYhi5GLkYeRjFGAUYhQZUded2QB3ZtgdiChGLkYeRj5GAUYhRpERdd0Z8J8SMwu7AxHFyMXIw8jHKMAoxCgyoq479gB3bOwORBQjFyMPIx+jAKMQo8iIuu7MB7gzx+5ARDFyMfIw8jEKMAoxioyo644zwB0HuwMRxcjFyMPIxyjAKMQoMqKuO4sB7iywOxBRjFyMPIx8jAKMQowiI+q6sxzgzhK7AxHFyMXIw8jHKMAoxCgyoq47qwHurLA7EFGMXIw8jHyMAoxCjCIj6rozoESe4RoZI4qRi5GHkY9RgFGIUWRE3b/BDKiVLVwrY0QxcjHyMPIxCjAKMYqMqOvOgFrZwrUyRhQjFyMPIx+jAKMQo8iIuu4M+QMerpUxohi5GHkY+RgFGIUYRUbUdWdArWzhWhkjipGLkYeRj1GAUYhRZERddwbUyhaulTGiGLkYeRj5GAUYhRhFRtR1Z0CtbOFaGSOKkYuRh5GPUYBRiFFkRF13BtTKFq6VMaIYuRh5GPkYBRiFGEVG1HVnQK1s4VoZI4qRi5GHkY9RgFGIUWREXXcG1MoWrpUxohi5GHkY+RgFGIUYRUbUdWdArWzhWhkjipGLkYeRj1GAUYhRZETdV3gG1Mo2rpUxohi5GHkY+RgFGIUYRUbUdWdArWzjWhkjipGLkYeRj1GAUYhRZERddwbUyjaulTGiGLkYeRj5GAUYhRhFRtR1Z0CtbONaGSOKkYuRh5GPUYBRiFFkRCd3Js9e7MyZ2Ou3giuy5U2hzBo9O/vPW836Bd2X560PkX4Pd/JPN6dXpa9isU+LimRsJ7ucjpey+hIn608HNS/1W6KnV5RPb5ayOGFCNZB8x3n940AN8PQO+MXfUEsDBBQAAAAIACNzflwVrFc+XAQAAE8OAAAYAAAAeGwvd29ya3NoZWV0cy9zaGVldDIueG1sjVdtb9s2EP4rBw0oNmCpYjuvrW2gsZclQJu4dprs20BLJ4swJXIkVdv79TtSipN2MpUPcUSK99xzD4+n43Aj9drkiBa2hSjNKMqtVR/i2CQ5Fsy8lwpLepNJXTBLQ72KjdLIUm9UiLh/fHwWF4yX0Xjo52Z6PJSVFbzEmQZTFQXTuysUcjOKetHzxJyvcusm4vFQsRUu0H5TM02jeI+S8gJLw2UJGrNR9Kn3YdLzBn7FI8eNefUMLpSllGs3uE1H0XHkoEuE3UIJTs76EVipPmNmJygEAQ4iYInl33FGy0bRUlorC/eeaFpmaSrT8l8svU8USGuJjPrf4hqkAXUx/tMQjvbxOFKvn5+ZX3thSaglMziR4omnNh9FFxGkmLFK2Lnc3GAj1qnDS6Qw/hc29do+xZVUhtg0xsSg4GX9n20bkV8ZDM4OGPQbg/5PBicXBwwGjcHAB1oz82FNmWXjoZYb0H61o98/eUbZB0Q7lLgVXjQfNc3y0uXOwmp6ywnQjq81q1J42CmEd6xQH2FRLY/8cI4ZaiwTevHLRb/X/wiVQbA50i9uaV/gOxMVGuAl7GSloVJCshQyLnAYWyLtPMQJ/RHZPeN+w/j4MOO+ZzwIMf7bU/zV8/jtR28e4yqMQUG+IBRKoGkDmYRBpmgSzZVL3EC8g+54B97N5QE3fx3N2a4txLDZk3cDX7ihQ5DkEMNElhbLl6m2iMOYi5yrwkFsanCpIWlAU0mZUEoLtbftkWY7MAkLSXPSLc2J59M7PkBo9tgmTJcRS9a8XMEjl4L5shPDTMu0SsLavAGWrRywpZSio5M6fTZa0oxq4DnV3BRhKbcBWU67ZTkNbtP06u4b3OG2Mm3qhG3nxE8DMzDxruk5hptqCbeeuT4IOwnDXrM1QlWmKKiaO2mYtVgoa5xGOZUc7dGpzInKhA/UWbc8Z+Gdmj/cT9uU6TD7c7aAhZIyc3scgw/p/mEG0zqotjM66WKCttLlkZVHUnPKHUgdkv8uky7GOSOtnGOrGRcBVc67VTkP7tDXSZskXTZwtVPMGJKDTo5xwtzSvrYmSAdUxaiR2AH1RskazJorhenvwB0aZJJShz6L3kNAhItuES7CG/L5Bh5yajzatOg2ne53L4Y7XyGpYmb2IOSkC5LGOXUqYJ4LLwUl0CeHzxSLaUCOy245LoObsq8B/pvbpknY3h+RiWC8IEGefCV06QF12rcJ8kY+dBgMfW8yJqgZSZwDX0i0xzVN0XW5E1DHqd4lj1sTPr9uwxFmPFlXqk2gLoSfPzwwn5FWf1Bp3MGV3NKwTaa38lKeF/WaNm9EIZXQg+uWPfhRn94b9OkF9+ueukXdqkrYrmk4WyMPW34qd5D5lta69s41JIlsvjhLemiLN37VVlNyrfxtw5BdVTbB7mdf3ZZ8W/6yvL5qfWGaqrgBQeedbknvz+mrqGvR6gFdknzTXl9x6v6dbnyo3QJ6n0lpnwfOwf4OOf4PUEsDBBQAAAAIACNzflz6EgsApAMAAAgXAAANAAAAeGwvc3R5bGVzLnhtbN1YbW/aMBD+K1F+wPIGaTIBUsuINGmbKq0f9tUQByw5L3NMB/3188WBhNZXwZpOY0EI+87Pc4/P5zhhUss9p983lEprl/OintobKauPjlOvNjQn9YeyooXyZKXIiVRdsXbqSlCS1gDKueO7bujkhBX2bFJs8ySXtbUqt4Wc2q7tzCZZWXSW2NYGNZTk1HokfGrPCWdLwZqxJGd8r80+GFYlL4UllRQ6tT2w1E/a7ekeqGx5claUAoyOjvA8zq1ghIN/2TJ0AcR6qdS6SXOdRPHPIWQYYTQOR+6oTxgPLdB9E+HcDWL/7mKBJxze3XjhuxdzoEnzFiP3NrmYb6CMGFLs9Qibn1oRM86PVa1GaMtsUhEpqSgS1WlAjfGFy2rbD/tK1fVakL3nj+2zAXXJWQoh1/MT6e4o0Yvp9KBvJU2SYP5pYFJv4QeBO7jSRbQIBiZdRMl4EQ9Nukh8XWNDTv82uRueNEmi5GZoUjcZvaK0+VFbbFmKlIrjJvPtg2k24TSTCi7YegO/sqxgS5dSlrlqpIysy4I0G/CA6COt5tCb2nLTHFqnN8TmarTB0DbGmYhmbCPnTIAaedB9JkIP7k2sbah8rSjn34HkR9bdmRTVLrP0ufw5hSPZgjvYoaky3TY1je5AoD6b5u7T/hmvVbHHUt5t1RSKpv9zW0p6L2jGdk1/lx0FYOxex+4/YydVxfe3nK2LnOrJnx1wNiEHnLUpBXtS0eDev1IGKmzrkQrJVj0LpGiX4TL9Tmbw/jKhVA0irV+CVA90J9uD7lXFQad41Ffs/d3EXqR51GkeX4vmcac5vBbNYaf55v01D1HNN53i6DoUR9dxY+slNr6OxPYUe+6/Jdlpz9Xe4X1ydB+tFrzCTO1v8BbOOw3Wcsu4ZEXb27A0pcWLE1zRS7JUr/kn/Gp8SjOy5fLh6JzaXfsrTdk2j4+j7iEv7aiu/QUeebzw+BqlYrEipTuaztuueoY5efrTFwCee7pXr5ceDKN9Zg/4sDiYAgyjUVic/2k+ETof7cO0RUZPhGIiFKNRJs+8+WBxzJhYXeaZxnEQhCGWUf3A/ULBHMtbGMLXzIZpAwQWByJdlmt8tfEKeb0OsDV9rUKwmeKViM0UzzV4zHkDRBybVxuLAwhsFbDagfjmOFBTZkwQHF7jTNqwHYx74hjzQC2aazQMkeyE8DGvD7ZLgiCOzR7wmRUEAeaB3Yh7MAWgAfME+s+gZ+eRczinnO6/79lvUEsDBBQAAAAIACNzflyXirscwAAAABMCAAALAAAAX3JlbHMvLnJlbHOdkrluwzAMQH/F0J4wB9AhiDNl8RYE+QFWog/YEgWKRZ2/r9qlcZALGXk9PBLcHmlA7TiktoupGP0QUmla1bgBSLYlj2nOkUKu1CweNYfSQETbY0OwWiw+QC4ZZre9ZBanc6RXiFzXnaU92y9PQW+ArzpMcUJpSEszDvDN0n8y9/MMNUXlSiOVWxp40+X+duBJ0aEiWBaaRcnToh2lfx3H9pDT6a9jIrR6W+j5cWhUCo7cYyWMcWK0/jWCyQ/sfgBQSwMEFAAAAAgAI3N+XKYpzjxaAQAAywIAAA8AAAB4bC93b3JrYm9vay54bWy1Ul1rwkAQ/CvH/YAmhlaoGF8UW6G0otbXckk2ZvE+wt5Fq7++m4RQoVD60qe7nV3mZmZvenZ0zJw7ik+jrU9lFUI9iSKfV2CUv3M1WO6UjowKXNIh8jWBKnwFEIyOkjgeR0ahlbPpwLWm6LZwAfKAzjLYAnuEs//ut6U4occMNYZLKru7BikMWjR4hSKVsRS+cudnR3h1Nii9zclpncpR39gDBcx/wNtW5E5lvkOCyjaKhaRyHDNhieRDN9HxK9Z4Ah7uqya4JeoAtFABnsg1NdpDS8MuohsbXQ7D2Yc4ob/E6MoSc1i4vDFgQ58jgW4FWl9h7aWwykAq58qDeK+1U4XYgal5BFp7/N6q6K0Ghm6Cowlyg1ZFp/b/lC1JNcXH7lKD2EAJBDa/VZb8oizpchzCK6BEC8Urs3rGeZH5mkR7dA6T+4fRIy+s0XrO2Jt94SyGXQz/aPYFUEsDBBQAAAAIACNzflyN9yxatAAAAIkCAAAaAAAAeGwvX3JlbHMvd29ya2Jvb2sueG1sLnJlbHPFkk0KgzAQRq8ScoCO2tJFUVfduC1eIOj4g9GEzJTq7Wt1oYEuupGuwjch73swiR+oFbdmoKa1JMZeD5TIhtneAKhosFd0MhaH+aYyrlc8R1eDVUWnaoQoCK7g9gyZxnumyCeLvxBNVbUF3k3x7HHgL2B4GddRg8hS5MrVyImEUW9jguUITzNZiqxMpMvKUMK/hSJPKDpQiHjSSJvNmr3684H1PL/FrX2J69DfyeXjAN7PS99QSwMEFAAAAAgAI3N+XG6nJLweAQAAVwQAABMAAABbQ29udGVudF9UeXBlc10ueG1sxZTPTsMwDMZfpcp1ajJ24IDWXYAr7MALhNZdo+afYm90b4/bbpNAo2IqEpdGje3v5/iLsn47RsCsc9ZjIRqi+KAUlg04jTJE8BypQ3Ka+DftVNRlq3egVsvlvSqDJ/CUU68hNusnqPXeUvbc8Taa4AuRwKLIHsfEnlUIHaM1pSaOq4OvvlHyE0Fy5ZCDjYm44AShrhL6yM+AU93rAVIyFWRbnehFO85SnVVIRwsopyWu9Bjq2pRQhXLvuERiTKArbADIWTmKLqbJxBOG8Xs3mz/ITAE5c5tCRHYswe24syV9dR5ZCBKZ6SNeiCw9+3zQu11B9Us2j/cjpHbwA9WwzJ/xV48v+jf2sfrHPt5DaP/6qverdNr4M18N78nmE1BLAQIUAxQAAAAIACNzflxGx01IlQAAAM0AAAAQAAAAAAAAAAAAAACAAQAAAABkb2NQcm9wcy9hcHAueG1sUEsBAhQDFAAAAAgAI3N+XHaO+kfuAAAAKwIAABEAAAAAAAAAAAAAAIABwwAAAGRvY1Byb3BzL2NvcmUueG1sUEsBAhQDFAAAAAgAI3N+XJlcnCMQBgAAnCcAABMAAAAAAAAAAAAAAIAB4AEAAHhsL3RoZW1lL3RoZW1lMS54bWxQSwECFAMUAAAACAAjc35cVbydg5kHAAAPLgAAGAAAAAAAAAAAAAAAgIEhCAAAeGwvd29ya3NoZWV0cy9zaGVldDEueG1sUEsBAhQDFAAAAAgAI3N+XBWsVz5cBAAATw4AABgAAAAAAAAAAAAAAICB8A8AAHhsL3dvcmtzaGVldHMvc2hlZXQyLnhtbFBLAQIUAxQAAAAIACNzflz6EgsApAMAAAgXAAANAAAAAAAAAAAAAACAAYIUAAB4bC9zdHlsZXMueG1sUEsBAhQDFAAAAAgAI3N+XJeKuxzAAAAAEwIAAAsAAAAAAAAAAAAAAIABURgAAF9yZWxzLy5yZWxzUEsBAhQDFAAAAAgAI3N+XKYpzjxaAQAAywIAAA8AAAAAAAAAAAAAAIABOhkAAHhsL3dvcmtib29rLnhtbFBLAQIUAxQAAAAIACNzflyN9yxatAAAAIkCAAAaAAAAAAAAAAAAAACAAcEaAAB4bC9fcmVscy93b3JrYm9vay54bWwucmVsc1BLAQIUAxQAAAAIACNzflxupyS8HgEAAFcEAAATAAAAAAAAAAAAAACAAa0bAABbQ29udGVudF9UeXBlc10ueG1sUEsFBgAAAAAKAAoAhAIAAPwcAAAAAA==";
+  const bin=atob(b64),len=bin.length,buf=new Uint8Array(len);for(let i=0;i<len;i++)buf[i]=bin.charCodeAt(i);
+  const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="FPI_Bulk_Case_Template.xlsx";a.click();showToast("Template downloaded");
+}
+function updateBadges(){const u=cases.filter(c=>c.st==="unassigned").length;document.getElementById("nb-u").textContent=u;document.getElementById("nb-all").textContent=cases.length;const tc=document.getElementById("tab-u-cnt");if(tc)tc.textContent=u;}
+// GOOGLE SHEETS SYNC
+// Replace SHEET_URL with your deployed Apps Script Web App URL
+let SHEET_URL = localStorage.getItem("fpi_sheet_url") || "";
+const APPS_SCRIPT_URL_CM = "https://script.google.com/a/macros/shadowfax.in/s/AKfycbxtG-mkDh2bwlFRJaX3UxBI39tszTBNvq9tyKEwWRDJ6IwY_YXrQFWv6TjxKhdagG2vMQ/exec";
+function saveSheetURL(){
+  const url = document.getElementById("sheet-url-input").value.trim();
+  if(url){
+    SHEET_URL=url;
+    localStorage.setItem("fpi_sheet_url",url);
+    showToast("✓ Sheet URL saved — cases will sync");
+    document.getElementById("sheet-setup-modal").classList.remove("open");
+  }
+  else showToast("Enter a valid URL","warn");
+}
+async function syncToSheet(action, payload){
+  try{
+    await fetch(SHEET_URL, {
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({action, ...payload, ts: new Date().toISOString()})
+    });
+    showToast("✓ Synced to Google Sheet");
+  } catch(e){ console.warn("Sheet sync failed:", e); }
+}
+function syncCase(c){
+  const fpiP = FPI.find(p=>p.id===c.poc)||{};
+  const payload = {
+    case_id:c.id, category:c.cat, fraud_type:c.type,
+    hub:c.hub, city:c.city, state:c.state,
+    value:c.val, status:(SL[c.st]||{l:c.st}).l,
+    priority:c.pri, poc_name:fpiP.name||c.pn,
+    poc_email:c.poc_email||fpiP.email||"",
+    poc_pod:fpiP.pod||"", police_action:c.policeAction,
+    recovery:c.recovery, utr:c.utr, trend:c.trend,
+    riders_terminated:c.ridersTerminated,
+    date_filed:c.date
+  };
+  syncToSheet("upsert_case", payload);
+  // Also sync to Apps Script Web App if configured
+  if(APPS_SCRIPT_URL_CM){
+    fetch(APPS_SCRIPT_URL_CM,{
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"upsert_case",...payload})
+    }).catch(()=>{});
+  }
+}
+function showSheetSetup(){
+  const modal = document.getElementById("sheet-setup-modal");
+  if(modal) modal.classList.add("open");
+}
+
+function showToast(msg,type){const t=document.getElementById("toast");document.getElementById("toast-msg").textContent=msg;t.style.borderColor=type==="warn"?"var(--yel)":"var(--grn)";t.querySelector("svg").style.color=type==="warn"?"var(--yel)":"var(--grn)";t.classList.add("show");setTimeout(()=>t.classList.remove("show"),3000);}
+
+function toggleUpdatePanel(){
+  const p=document.getElementById('mo-update-panel');
+  const c=cases.find(x=>x.id===currentCaseId);
+  if(p.style.display==='none'){
+    p.style.display='block';
+    if(c){
+      document.getElementById('upd-status').value=c.st||'';
+      document.getElementById('upd-police').value=c.policeAction||'';
+      document.getElementById('upd-recovery').value=c.recovery||'';
+      document.getElementById('upd-notes').value='';
+    }
+  } else {
+    p.style.display='none';
+  }
+}
+function saveUpdate(){
+  const st=document.getElementById('upd-status').value;
+  const notes=document.getElementById('upd-notes').value.trim();
+  if(!st||!notes){showToast('Select status and add notes','warn');return;}
+  const c=cases.find(x=>x.id===currentCaseId);
+  if(!c)return;
+  const police=document.getElementById('upd-police').value;
+  const rec=parseInt(document.getElementById('upd-recovery').value)||0;
+  c.st=st;
+  if(police)c.policeAction=police;
+  if(rec>0)c.recovery=rec;
+  if(!c.updates)c.updates=[];
+  c.updates.push({date:new Date().toLocaleDateString('en-IN'),status:st,notes,police,photos:0});
+  document.getElementById('mo-update-panel').style.display='none';
+  openModal(currentCaseId);
+  showToast('✓ Case '+currentCaseId+' updated');
+  updateBadges();
+}
+document.addEventListener("DOMContentLoaded",()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();renderCasesTable(filteredCases);renderAssignTab();renderReassignTab();document.getElementById("b-date").valueAsDate=new Date();syncCasesToStorage();});
+</script>
+
+<!-- GOOGLE SHEETS SETUP MODAL -->
+<div class="mo" id="sheet-setup-modal" onclick="if(event.target.id==='sheet-setup-modal')this.classList.remove('open')">
+  <div class="mdl" style="max-width:560px">
+    <div class="mh"><div class="mt">📊 Google Sheets Integration</div><button class="mc-btn" onclick="document.getElementById('sheet-setup-modal').classList.remove('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mb">
+      <div class="abanner blue" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>To sync case data to Google Sheets, deploy the Apps Script below and paste your URL.</span></div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 1 — OPEN APPS SCRIPT</div>
+        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">Go to <a href="https://script.google.com" target="_blank" style="color:var(--acc)">script.google.com</a> → New Project → paste the code below</div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 2 — APPS SCRIPT CODE</div>
+        <div style="background:var(--navy);border-radius:8px;padding:13px;font-family:var(--mono);font-size:10.5px;color:#7dd3fc;overflow-x:auto;max-height:180px;overflow-y:auto">
+          <pre style="margin:0;white-space:pre-wrap;color:#c4b5fd">function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Cases sheet
+  let sheet = ss.getSheetByName("FPI_Cases") 
+    || ss.insertSheet("FPI_Cases");
+  
+  if(sheet.getLastRow()===0){
+    sheet.appendRow(["Case ID","Category","Fraud Type","Hub","City",
+      "State","Value","Status","Priority","FPI POC","POD",
+      "Police Action","Recovery","UTR","Trend","Terminated",
+      "Date Filed","Synced At"]);
+  }
+  
+  // Find existing row or append
+  const vals = sheet.getDataRange().getValues();
+  let rowIdx = -1;
+  for(let i=1;i&lt;vals.length;i++){
+    if(vals[i][0]===data.case_id){ rowIdx=i+1; break; }
+  }
+  
+  const row = [data.case_id,data.category,data.fraud_type,
+    data.hub,data.city,data.state,data.value,data.status,
+    data.priority,data.poc_name,data.poc_pod,data.police_action,
+    data.recovery,data.utr,data.trend,data.riders_terminated,
+    data.date_filed,new Date()];
+  
+  if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
+  else sheet.appendRow(row);
+  
+  return ContentService.createTextOutput("OK");
+}
+</pre>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 3 — DEPLOY & PASTE URL</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+          <div class="fgrp" style="margin:0"><label class="fl">Web App URL (Cases + Login log)</label><input type="text" class="fc" id="sheet-url-input" placeholder="https://script.google.com/macros/s/..."></div>
+          <button class="btn btn-grn" onclick="saveSheetURL()">Save</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--txt3);margin-top:6px">Deploy as: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div>
+        <div style="margin-top:8px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.2);border-radius:7px;padding:9px;font-size:11px;color:var(--txt2)">
+          ✅ This same URL links Case Management ↔ Field Portal. Paste it in both.
+        </div>
+      </div>
+      <div style="background:var(--grn-d);border:1.5px solid rgba(22,163,74,.2);border-radius:8px;padding:10px;font-size:11.5px;color:var(--txt2)">
+        ✓ Once saved, every new case, assignment and update will automatically sync to your Google Sheet.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FPI AGENTS SETUP MODAL -->
+<div class="mo" id="agents-modal" onclick="if(event.target.id==='agents-modal')this.classList.remove('open')">
+  <div class="mdl" style="max-width:620px">
+    <div class="mh">
+      <div class="mt">👥 FPI Agents — Google Sheet Source</div>
+      <button class="mc-btn" onclick="document.getElementById('agents-modal').classList.remove('open')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="mb">
+      <div class="abanner blue" style="margin-bottom:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+        <span>FPI Agent data is sourced from your Google Sheet. The sheet must be publicly readable (anyone with link can view).</span>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 1 — CREATE THE SHEET</div>
+        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">
+          Go to <a href="https://sheets.google.com" target="_blank" style="color:var(--acc)">sheets.google.com</a> → New Sheet → Name it <strong>FPI_Agents</strong> → Add these columns in Row 1:
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px">
+          <div class="cg-card"><div class="cg-name" style="color:var(--blue)">A · ID</div><div class="cg-desc">Initials e.g. AC</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--blue)">B · Name</div><div class="cg-desc">Full name</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--red)">C · Email</div><div class="cg-desc">@shadowfax.in email</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--blue)">D · POD</div><div class="cg-desc">e.g. NCR</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--blue)">E · Zone</div><div class="cg-desc">North/South/East...</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--blue)">F · Designation</div><div class="cg-desc">Manager/Lead...</div></div>
+          <div class="cg-card"><div class="cg-name" style="color:var(--grn)">G · Color</div><div class="cg-desc">Hex e.g. #3b8ef8 (optional)</div></div>
+          <div class="cg-card" style="border-color:var(--grn-d)"><div class="cg-name" style="color:var(--grn)">📍 Location</div><div class="cg-desc">Auto from GPS login — not in sheet</div></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 2 — MAKE IT PUBLIC</div>
+        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">
+          Share → Change to <strong>"Anyone with the link can view"</strong> → Copy the Sheet ID from the URL<br>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">https://docs.google.com/spreadsheets/d/<strong style="color:var(--acc)">[SHEET_ID]</strong>/edit</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 3 — PASTE SHEET ID</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+          <div class="fgrp" style="margin:0">
+            <label class="fl">Google Sheet ID</label>
+            <input type="text" class="fc" id="agents-sheet-id" placeholder="1mnfus9aD-7mv4OE8cbwlDN5k9e1TR2kuK9jJrbBnEuU">
+          </div>
+          <button class="btn btn-p" onclick="loadAgentsFromSheet()">Load Agents</button>
+        </div>
+      </div>
+
+      <div id="agents-status" style="display:none;background:var(--grn-d);border:1.5px solid rgba(22,163,74,.2);border-radius:8px;padding:10px;font-size:12px;color:var(--txt2);margin-bottom:10px"></div>
+
+      <div style="border-top:1px solid var(--bd);padding-top:12px;margin-top:4px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:8px;letter-spacing:.08em">CURRENT AGENTS (<span id="agents-count">0</span>)</div>
+        <div id="agents-preview" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── AGENTS FROM GOOGLE SHEET ─────────────────────────────────────
+const COLORS=['#3b8ef8','#27c77a','#9b72f9','#f5c542','#f04f2b','#ff7eb3','#22d3ee','#a78bfa','#fb923c','#34d399','#60a5fa','#f472b6','#4ade80','#facc15','#c084fc'];
+function showAgentsSetup(){
+  const modal=document.getElementById("agents-modal");
+  const saved=localStorage.getItem("fpi_agents_sheet_id")||"1mnfus9aD-7mv4OE8cbwlDN5k9e1TR2kuK9jJrbBnEuU";
+  localStorage.setItem("fpi_agents_sheet_id",saved);
+  document.getElementById("agents-sheet-id").value=saved;
+  refreshAgentsPreview();
+  modal.classList.add("open");
+}
+function refreshAgentsPreview(){
+  const el=document.getElementById("agents-preview");
+  document.getElementById("agents-count").textContent=FPI.length;
+  if(!FPI.length){el.innerHTML='<div style="color:var(--txt3);font-size:12px;text-align:center;padding:10px">No agents loaded yet.</div>';return;}
+  el.innerHTML=FPI.map(p=>`
+    <div style="display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)">
+      <div style="width:26px;height:26px;border-radius:50%;background:${p.color||'#3b8ef8'};display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:9px;color:#fff;flex-shrink:0">${p.id}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12px">${p.name}</div>
+        <div style="font-size:9.5px;color:var(--acc);font-family:var(--mono)">${p.email||'no email'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:9.5px;color:var(--txt3);font-family:var(--mono)">${p.pod||'—'} · ${p.zone||''}</div>
+        <div style="font-size:9px;color:var(--txt3)">${p.desig||''}</div>
+        <div style="font-size:9px;font-family:var(--mono);color:${p.lastCity?'var(--grn)':'var(--txt4)'}">
+          📍 ${p.lastCity||'GPS pending first login'}
+          ${p.lastLogin?'<span style="color:var(--txt4)"> · '+timeSinceAgent(p.lastLogin)+'</span>':''}
+        </div>
+      </div>
+    </div>`).join("");
+}
+async function loadAgentsFromSheet(){
+  const sheetId=document.getElementById("agents-sheet-id").value.trim();
+  if(!sheetId){showToast("Paste your Google Sheet ID","warn");return;}
+  localStorage.setItem("fpi_agents_sheet_id",sheetId);
+  const url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=FPI_Agents`;
+  const statusEl=document.getElementById("agents-status");
+  statusEl.style.display="block";
+  statusEl.textContent="⏳ Loading agents from sheet...";
+  try{
+    const resp=await fetch(url);
+    if(!resp.ok)throw new Error("Sheet not accessible. Make sure it is shared publicly.");
+    const csv=await resp.text();
+    const rows=csv.trim().split(/
+?
+/).map(r=>parseCSVRowSimple(r));
+    // Skip header row
+    const dataRows=rows.slice(1).filter(r=>r[0]&&r[0].trim());
+    if(!dataRows.length)throw new Error("No agent rows found. Check sheet name is 'FPI_Agents' and has data from row 2.");
+    const loaded=dataRows.map((r,i)=>{
+      // Columns: A=ID  B=Name  C=Email  D=POD  E=Zone  F=Designation  G=Color
+      // (No city — location comes from GPS at login time)
+      const id=(r[0]||"").trim();
+      const name=(r[1]||"").trim();
+      const email=(r[2]||"").trim().toLowerCase();
+      const pod=(r[3]||"").trim();
+      const zone=(r[4]||"").trim();
+      const desig=(r[5]||"").trim();
+      const color=(r[6]||"").trim()||COLORS[i%COLORS.length];
+      // Restore workload from existing cases in memory
+      const existingActive=cases.filter(c=>c.poc===id&&!["closed","unassigned"].includes(c.st)).length;
+      const existingClosed=cases.filter(c=>c.poc===id&&c.st==="closed").length;
+      // Restore last known location from localStorage
+      let lastLat=null,lastLng=null,lastCity="";
+      try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+id)||"{}");lastLat=loc.lat||null;lastLng=loc.lng||null;lastCity=loc.city||"";}catch(e){}
+      return{id,name,email,pod,zone,desig,color,
+        lat:lastLat,lng:lastLng,lastCity,
+        active:existingActive,closed:existingClosed,pending:0,score:75};
+    }).filter(p=>p.id&&p.name);
+    FPI=loaded;
+    statusEl.innerHTML=`✓ Loaded <strong>${FPI.length} agents</strong> from Google Sheet.`;
+    statusEl.style.background="var(--grn-d)";
+    statusEl.style.borderColor="rgba(22,163,74,.2)";
+    refreshAgentsPreview();
+    showToast(`✓ ${FPI.length} FPI agents loaded`);
+    // Recalculate workload from cases
+    cases.forEach(c=>{if(c.poc){const p=FPI.find(x=>x.id===c.poc);if(p){if(c.st!=="closed"&&c.st!=="unassigned")p.active++;else if(c.st==="closed")p.closed++;}}});
+    renderAssignTab();renderReassignTab();renderTracker();
+  }catch(e){
+    statusEl.style.background="var(--red-d)";
+    statusEl.style.borderColor="rgba(220,38,38,.2)";
+    statusEl.textContent="✗ Error: "+e.message;
+  }
+}
+function timeSinceAgent(isoStr){
+  try{const diff=Date.now()-new Date(isoStr).getTime();const h=Math.floor(diff/3600000);const d=Math.floor(h/24);if(d>0)return d+"d ago";if(h>0)return h+"h ago";return "today";}catch(e){return "";}
+}
+function parseCSVRowSimple(row){
+  const res=[];let cur="";let inQ=false;
+  for(const c of row){if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){res.push(cur.trim());cur="";}else{cur+=c;}}
+  res.push(cur.trim());return res;
+}
+// Initialise agents count badge on load
+document.addEventListener("DOMContentLoaded",()=>{
+  document.getElementById("agents-count").textContent=FPI.length;
+  // Always auto-load from the configured sheet ID
+  const saved=localStorage.getItem("fpi_agents_sheet_id")||"1mnfus9aD-7mv4OE8cbwlDN5k9e1TR2kuK9jJrbBnEuU";
+  document.getElementById("agents-sheet-id").value=saved;
+  localStorage.setItem("fpi_agents_sheet_id",saved);
+  loadAgentsFromSheet();
+});
+</script>
+
+</body>
+</html>
