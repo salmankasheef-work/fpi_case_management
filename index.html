@@ -319,10 +319,7 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="ni" onclick="window.open('field-portal.html','_blank')" style="color:rgba(255,255,255,.6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>FPI Field Portal ↗</div>
   </div>
   <div class="sbft">
-  <button onclick="showSheetSetup()" style="display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;background:rgba(34,197,94,.12);border:1.5px solid rgba(34,197,94,.25);border-radius:7px;color:#4ade80;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px;font-family:var(--sans)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-    Google Sheets Sync
-  </button>
+
   <button onclick="window.open('https://docs.google.com/spreadsheets/d/1mnfus9aD-7mv4OE8cbwlDN5k9e1TR2kuK9jJrbBnEuU/edit#gid=0','_blank')" style="display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;background:rgba(99,102,241,.12);border:1.5px solid rgba(99,102,241,.25);border-radius:7px;color:#a5b4fc;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px;font-family:var(--sans)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Manage FPI Agents
@@ -727,60 +724,7 @@ function renderFraudDist(){
 
 // ASSIGNMENT
 // AUTO-ASSIGN: match FPI by state/city proximity & lowest active count
-function autoAssignBestFPI(c){
-  const podStates = {
-    'PB/HP/HR/J&K':['Punjab','Haryana','Himachal Pradesh','Jammu & Kashmir'],
-    'NCR':['Delhi','Haryana','Uttar Pradesh'],
-    'UP/UK':['Uttar Pradesh','Uttarakhand'],
-    'MH':['Maharashtra'],
-    'KA':['Karnataka'],
-    'TN':['Tamil Nadu'],
-    'AP/TS':['Andhra Pradesh','Telangana'],
-    'GJ':['Gujarat'],
-    'RJ':['Rajasthan'],
-    'WB':['West Bengal'],
-    'North East':['Assam','Meghalaya','Tripura','Manipur','Nagaland','Arunachal Pradesh','Mizoram','Sikkim'],
-    'ROKA':['Karnataka','Kerala','Goa'],
-    'ROTN':['Tamil Nadu','Puducherry'],
-  };
-  const scored = FPI.map(p=>{
-    let score = 0;
-    const states = podStates[p.pod] || [];
-    // POD/state match — primary signal
-    if(states.includes(c.state)) score += 50;
-    // GPS proximity — use agent's last login location if available
-    if(p.lat && p.lng && c.lat && c.lng){
-      const dist = Math.sqrt(Math.pow(p.lat-c.lat,2)+Math.pow(p.lng-c.lng,2));
-      // dist in degrees: ~0.01 deg ≈ 1km. Score bonus up to 40 for <50km
-      score += Math.max(0, 40 - Math.round(dist * 100));
-    } else if(p.lastCity && c.city && p.lastCity.toLowerCase()===c.city.toLowerCase()){
-      // Fallback: match last known city name from GPS login
-      score += 25;
-    }
-    // Workload penalty
-    score += Math.max(0, 10 - p.active);
-    return {p, score};
-  });
-  scored.sort((a,b)=>b.score-a.score);
-  const bestFPI = scored[0]?.p || FPI[0];
-
-  // AUTO-PRIORITY RULES:
-  // High   → FPI has 0 or 1 active cases  OR  value > ₹30,000
-  // Medium → value > ₹15,000 and ≤ ₹30,000  AND  FPI active cases >= 3
-  // Low    → value ≤ ₹15,000  AND  FPI active cases >= 5
-  let autoPriority;
-  if(bestFPI.active <= 1 || c.val > 30000){
-    autoPriority = 'High';
-  } else if(c.val > 15000 && c.val <= 30000 && bestFPI.active >= 3){
-    autoPriority = 'Medium';
-  } else if(c.val <= 15000 && bestFPI.active >= 5){
-    autoPriority = 'Low';
-  } else {
-    return {fpi: null, priority: null};
-  }
-
-  return {fpi: bestFPI, priority: autoPriority};
-}
+// autoAssignBestFPI defined below
 
 // Silently auto-assign a case immediately — no UI interaction
 function autoAssignCase(c){
@@ -819,14 +763,25 @@ function renderAssignTab(){
   function priDays(p){return p==="High"?"24 hrs":p==="Medium"?"3 days":"7 days";}
   function priReason(c,fp){
     const reasons=[];
-    if((fp.active||0)<=1) reasons.push((fp.name||"").split(" ")[0]+" has "+(fp.active||0)+" active case"+(fp.active===1?"":"s"));
-    if(c.val>30000)       reasons.push("\u20B9"+c.val.toLocaleString()+" > \u20B930K \u2192 High");
-    else if(c.val>15000 && (fp.active||0)>=3)  reasons.push("\u20B9"+c.val.toLocaleString()+" in \u20B915K-30K + "+(fp.active||0)+" active \u2192 Medium");
-    else if(c.val<=15000 && (fp.active||0)>=5) reasons.push("\u20B9"+c.val.toLocaleString()+" \u2264 \u20B915K + "+(fp.active||0)+" active \u2192 Low");
-    else                  reasons.push("\u20B9"+c.val.toLocaleString()+" \u2192 High (FPI \u2264 1 active or value > \u20B930K)");
-    const podStates={"PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh"],"NCR":["Delhi","Haryana","Uttar Pradesh"],"UP/UK":["Uttar Pradesh","Uttarakhand"],"MH":["Maharashtra"],"KA":["Karnataka"],"TN":["Tamil Nadu"],"AP/TS":["Andhra Pradesh","Telangana"],"GJ":["Gujarat"],"RJ":["Rajasthan"],"WB":["West Bengal"],"ROKA":["Karnataka","Kerala","Goa"],"ROTN":["Tamil Nadu","Puducherry"],"North East":["Assam","Meghalaya","Tripura","Manipur","Nagaland","Arunachal Pradesh","Mizoram","Sikkim"]};
-    if(fp.pod&&(podStates[fp.pod]||[]).includes(c.state)) reasons.push("POD covers "+c.state);
-    return "\uD83E\uDD16 "+reasons.join(" \u00B7 ");
+    // Check if GPS was used or POD fallback
+    if(fp.lat&&fp.lng){
+      const hubC=getHubCoords(c.hub);
+      if(hubC){
+        const d=haversine(hubC.lat,hubC.lng,fp.lat,fp.lng);
+        reasons.push("📍 "+d.toFixed(0)+"km from hub");
+      } else {
+        reasons.push("📍 GPS matched");
+      }
+    } else {
+      reasons.push("⚠️ No GPS — matched by POD ("+fp.pod+")");
+    }
+    const t=(c.type||"").toLowerCase();
+    if((t.includes("x-ray")||t.includes("pv"))&&c.val>50000) reasons.push("X-Ray/PV >₹50K → High");
+    else if(t.includes("dbnu")&&c.val>=30000&&c.val<=50000)  reasons.push("DBNU ₹30K-50K → Medium");
+    else if(c.val>50000) reasons.push("Value >₹50K → High");
+    else if(c.val>15000) reasons.push("Value >₹15K → Medium");
+    else reasons.push("Value <₹15K → Low");
+    return "🤖 "+reasons.join(" · ");
   }
 
   let html='<div class="abanner green" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span><strong>All cases auto-assigned</strong> by geo-match &amp; workload. To override use the Reassign tab.</span></div>';
@@ -1046,71 +1001,6 @@ function downloadCaseSummary(cid){
   </div>
   <div class="footer"><span>Generated by FPI Case Management System</span><span>${new Date().toLocaleString("en-IN")}</span></div>
   
-<!-- GOOGLE SHEETS SETUP MODAL -->
-<div class="mo" id="sheet-setup-modal" onclick="if(event.target.id==='sheet-setup-modal')this.classList.remove('open')">
-  <div class="mdl" style="max-width:560px">
-    <div class="mh"><div class="mt">📊 Google Sheets Integration</div><button class="mc-btn" onclick="document.getElementById('sheet-setup-modal').classList.remove('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="mb">
-      <div class="abanner blue" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>To sync case data to Google Sheets, deploy the Apps Script below and paste your URL.</span></div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 1 — OPEN APPS SCRIPT</div>
-        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">Go to <a href="https://script.google.com" target="_blank" style="color:var(--acc)">script.google.com</a> → New Project → paste the code below</div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 2 — APPS SCRIPT CODE</div>
-        <div style="background:var(--navy);border-radius:8px;padding:13px;font-family:var(--mono);font-size:10.5px;color:#7dd3fc;overflow-x:auto;max-height:180px;overflow-y:auto">
-          <pre style="margin:0;white-space:pre-wrap;color:#c4b5fd">function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // Cases sheet
-  let sheet = ss.getSheetByName("FPI_Cases") 
-    || ss.insertSheet("FPI_Cases");
-  
-  if(sheet.getLastRow()===0){
-    sheet.appendRow(["Case ID","Category","Fraud Type","Hub","City",
-      "State","Value","Status","Priority","FPI POC","POD",
-      "Police Action","Recovery","UTR","Trend","Terminated",
-      "Date Filed","Synced At"]);
-  }
-  
-  // Find existing row or append
-  const vals = sheet.getDataRange().getValues();
-  let rowIdx = -1;
-  for(let i=1;i&lt;vals.length;i++){
-    if(vals[i][0]===data.case_id){ rowIdx=i+1; break; }
-  }
-  
-  const row = [data.case_id,data.category,data.fraud_type,
-    data.hub,data.city,data.state,data.value,data.status,
-    data.priority,data.poc_name,data.poc_pod,data.police_action,
-    data.recovery,data.utr,data.trend,data.riders_terminated,
-    data.date_filed,new Date()];
-  
-  if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
-  else sheet.appendRow(row);
-  
-  return ContentService.createTextOutput("OK");
-}
-</pre>
-        </div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 3 — DEPLOY & PASTE URL</div>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
-          <div class="fgrp" style="margin:0"><label class="fl">Web App URL (Cases + Login log)</label><input type="text" class="fc" id="sheet-url-input" placeholder="https://script.google.com/macros/s/..."></div>
-          <button class="btn btn-grn" onclick="saveSheetURL()">Save</button>
-        </div>
-        <div style="font-size:10.5px;color:var(--txt3);margin-top:6px">Deploy as: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div>
-        <div style="margin-top:8px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.2);border-radius:7px;padding:9px;font-size:11px;color:var(--txt2)">
-          ✅ This same URL links Case Management ↔ Field Portal. Paste it in both.
-        </div>
-      </div>
-      <div style="background:var(--grn-d);border:1.5px solid rgba(22,163,74,.2);border-radius:8px;padding:10px;font-size:11.5px;color:var(--txt2)">
-        ✓ Once saved, every new case, assignment and update will automatically sync to your Google Sheet.
-      </div>
-    </div>
-  </div>
 </div>
 </body></html>`;
   const blob=new Blob([html],{type:"text/html"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FPI_Case_${c.id}_Summary.html`;a.click();showToast("Case summary downloaded");
@@ -1448,30 +1338,64 @@ function autoAssignBestFPI(c){
   if(!FPI.length) return {fpi:null,priority:null};
   const hubCoords = getHubCoords(c.hub);
   const priority  = calcPriority(c.type, c.val);
+  const candidates = FPI.filter(p=>p.email&&p.email.includes("@"));
 
-  let candidates = FPI.filter(p=>p.email&&p.email.includes("@"));
+  // Enrich agents with last-known GPS from Field Portal logins (stored in localStorage)
+  candidates.forEach(p=>{
+    if(!p.lat||!p.lng){
+      try{
+        const loc=JSON.parse(localStorage.getItem("fpi_loc_"+p.email)||"{}");
+        if(loc.lat){p.lat=loc.lat;p.lng=loc.lng;}
+      }catch(e){}
+    }
+  });
 
   if(hubCoords){
-    // Score each agent by distance to hub
-    const scored = candidates.map(p=>{
-      let dist = 9999;
-      if(p.lat&&p.lng) dist = haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng);
-      return {p, dist};
-    }).filter(x=>x.dist<=150) // 150km range
-      .sort((a,b)=>a.dist-b.dist||a.p.active-b.p.active);
-    if(scored.length) return {fpi:scored[0].p, priority};
+    // Primary: distance-based (agents who have logged into Field Portal with GPS)
+    const withGPS = candidates.filter(p=>p.lat&&p.lng);
+    if(withGPS.length){
+      const scored = withGPS
+        .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
+        .filter(x=>x.dist<=150)
+        .sort((a,b)=>a.dist-b.dist||a.p.active-b.p.active);
+      if(scored.length) return {fpi:scored[0].p, priority};
+    }
+    // No GPS data yet — fall through to POD/state matching
   }
 
-  // Fallback: POD/state match
-  const podStates={"PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh","Jammu & Kashmir"],"NCR":["Delhi","Haryana","Uttar Pradesh"],"UP/UK":["Uttar Pradesh","Uttarakhand"],"MH":["Maharashtra"],"KA":["Karnataka"],"TN":["Tamil Nadu"],"AP/TS":["Andhra Pradesh","Telangana"],"GJ":["Gujarat"],"RJ":["Rajasthan"],"WB":["West Bengal"]};
+  // POD/state match — used when no GPS data available
+  const podStates={
+    "PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh","Jammu & Kashmir"],
+    "NCR":["Delhi","Haryana","Uttar Pradesh"],
+    "UP/UK":["Uttar Pradesh","Uttarakhand"],
+    "MH":["Maharashtra"],
+    "KA":["Karnataka"],
+    "TN":["Tamil Nadu"],
+    "AP/TS":["Andhra Pradesh","Telangana"],
+    "GJ":["Gujarat"],
+    "RJ":["Rajasthan"],
+    "WB":["West Bengal"],
+    "ROKA":["Karnataka","Kerala","Goa"],
+    "ROTN":["Tamil Nadu","Puducherry"],
+    "BH/JH":["Bihar","Jharkhand"],
+    "North East":["Assam","Meghalaya","Tripura","Manipur","Nagaland","Arunachal Pradesh","Mizoram","Sikkim"],
+    "MP/RJ":["Madhya Pradesh","Rajasthan"],
+    "ROMH":["Maharashtra","Goa"],
+    "BOM/PNQ":["Maharashtra"],
+    "Pune":["Maharashtra"],
+    "ROK/KL":["Karnataka","Kerala"]
+  };
   const byPod = candidates
-    .map(p=>{const states=podStates[p.pod]||[];const score=(states.includes(c.state)?50:0)+Math.max(0,10-p.active);return{p,score};})
+    .map(p=>{
+      const states=podStates[p.pod]||[];
+      const score=(states.includes(c.state)?50:0)+Math.max(0,10-(p.active||0));
+      return{p,score};
+    })
     .sort((a,b)=>b.score-a.score);
   if(byPod.length&&byPod[0].score>0) return {fpi:byPod[0].p, priority};
-  
-  // Last resort: least active
-  const leastActive=[...candidates].sort((a,b)=>a.active-b.active);
-  return {fpi:leastActive[0]||null, priority};
+
+  // Last resort: least active agent
+  return {fpi:[...candidates].sort((a,b)=>(a.active||0)-(b.active||0))[0]||null, priority};
 }
 
 // ── CM Login via Sheet3 JSONP ──────────────────────────────
@@ -1538,72 +1462,6 @@ document.addEventListener("DOMContentLoaded",()=>{
 });
 </script>
 
-<!-- GOOGLE SHEETS SETUP MODAL -->
-<div class="mo" id="sheet-setup-modal" onclick="if(event.target.id==='sheet-setup-modal')this.classList.remove('open')">
-  <div class="mdl" style="max-width:560px">
-    <div class="mh"><div class="mt">📊 Google Sheets Integration</div><button class="mc-btn" onclick="document.getElementById('sheet-setup-modal').classList.remove('open')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="mb">
-      <div class="abanner blue" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>To sync case data to Google Sheets, deploy the Apps Script below and paste your URL.</span></div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 1 — OPEN APPS SCRIPT</div>
-        <div style="background:var(--sf2);border-radius:8px;padding:11px;border:1.5px solid var(--bd);font-size:12px;color:var(--txt2)">Go to <a href="https://script.google.com" target="_blank" style="color:var(--acc)">script.google.com</a> → New Project → paste the code below</div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 2 — APPS SCRIPT CODE</div>
-        <div style="background:var(--navy);border-radius:8px;padding:13px;font-family:var(--mono);font-size:10.5px;color:#7dd3fc;overflow-x:auto;max-height:180px;overflow-y:auto">
-          <pre style="margin:0;white-space:pre-wrap;color:#c4b5fd">function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // Cases sheet
-  let sheet = ss.getSheetByName("FPI_Cases") 
-    || ss.insertSheet("FPI_Cases");
-  
-  if(sheet.getLastRow()===0){
-    sheet.appendRow(["Case ID","Category","Fraud Type","Hub","City",
-      "State","Value","Status","Priority","FPI POC","POD",
-      "Police Action","Recovery","UTR","Trend","Terminated",
-      "Date Filed","Synced At"]);
-  }
-  
-  // Find existing row or append
-  const vals = sheet.getDataRange().getValues();
-  let rowIdx = -1;
-  for(let i=1;i&lt;vals.length;i++){
-    if(vals[i][0]===data.case_id){ rowIdx=i+1; break; }
-  }
-  
-  const row = [data.case_id,data.category,data.fraud_type,
-    data.hub,data.city,data.state,data.value,data.status,
-    data.priority,data.poc_name,data.poc_pod,data.police_action,
-    data.recovery,data.utr,data.trend,data.riders_terminated,
-    data.date_filed,new Date()];
-  
-  if(rowIdx>0) sheet.getRange(rowIdx,1,1,row.length).setValues([row]);
-  else sheet.appendRow(row);
-  
-  return ContentService.createTextOutput("OK");
-}
-</pre>
-        </div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:6px;letter-spacing:.08em">STEP 3 — DEPLOY & PASTE URL</div>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
-          <div class="fgrp" style="margin:0"><label class="fl">Web App URL (Cases + Login log)</label><input type="text" class="fc" id="sheet-url-input" placeholder="https://script.google.com/macros/s/..."></div>
-          <button class="btn btn-grn" onclick="saveSheetURL()">Save</button>
-        </div>
-        <div style="font-size:10.5px;color:var(--txt3);margin-top:6px">Deploy as: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Who has access: <strong>Anyone</strong></div>
-        <div style="margin-top:8px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.2);border-radius:7px;padding:9px;font-size:11px;color:var(--txt2)">
-          ✅ This same URL links Case Management ↔ Field Portal. Paste it in both.
-        </div>
-      </div>
-      <div style="background:var(--grn-d);border:1.5px solid rgba(22,163,74,.2);border-radius:8px;padding:10px;font-size:11.5px;color:var(--txt2)">
-        ✓ Once saved, every new case, assignment and update will automatically sync to your Google Sheet.
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- FPI AGENTS SETUP MODAL -->
 <div class="mo" id="agents-modal" onclick="if(event.target.id==='agents-modal')this.classList.remove('open')">
