@@ -324,7 +324,11 @@ textarea.fc{resize:vertical;min-height:66px;}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     Manage FPI Agents
   </button>
-    <div class="uc"><div class="ua">TS</div><div><div class="un">T&S Control Tower</div><div class="ur">ADMIN &middot; CT-01</div></div></div>
+    <button onclick="cmSignOut()" style="display:flex;align-items:center;gap:7px;width:100%;padding:7px 10px;background:rgba(220,38,38,.12);border:1.5px solid rgba(220,38,38,.25);border-radius:7px;color:#fca5a5;font-size:11.5px;font-weight:600;cursor:pointer;margin-bottom:8px;font-family:var(--sans)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+    <div class="uc"><div class="ua" id="cm-user-av">CT</div><div><div class="un" id="cm-user-name">Control Tower</div><div class="ur">FPI ADMIN</div></div></div>
   </div>
 </nav>
 <div class="main">
@@ -1465,6 +1469,7 @@ function cmLogin(){
       sessionStorage.setItem("cm_session",JSON.stringify({email,name:data.name||email}));
       document.getElementById("cm-login-overlay").style.display="none";
       document.getElementById("cm-app").style.display="flex";
+      cmSetUserDisplay(data.name||email);
       loadFPIFromSheet().then(()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();renderCasesTable(filteredCases);renderAssignTab();renderReassignTab();updateBadges();});
     }else{
       showCMLoginErr(data&&data.error?data.error:"Invalid email or password.");
@@ -1479,6 +1484,28 @@ function showCMLoginErr(msg){
   document.getElementById("cm-login-err").style.display="block";
   document.getElementById("cm-login-btn").disabled=false;
   document.getElementById("cm-login-loading").style.display="none";
+}
+
+function cmSignOut(){
+  if(!confirm("Sign out of FPI Case Management?")) return;
+  sessionStorage.removeItem("cm_session");
+  document.getElementById("cm-login-overlay").style.display="flex";
+  document.getElementById("cm-app").style.display="none";
+  const e=document.getElementById("cm-email");
+  const p=document.getElementById("cm-pass");
+  if(e) e.value=""; if(p) p.value="";
+  document.getElementById("cm-login-err").style.display="none";
+}
+
+function cmSetUserDisplay(name){
+  const nm=document.getElementById("cm-user-name");
+  const av=document.getElementById("cm-user-av");
+  if(!name) return;
+  if(nm) nm.textContent=name;
+  if(av){
+    const w=name.trim().split(/\s+/);
+    av.textContent=(w[0][0]+(w[1]?w[1][0]:"")).toUpperCase();
+  }
 }
 
 // ── Sync case to Apps Script ───────────────────────────────
