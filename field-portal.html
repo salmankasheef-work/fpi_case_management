@@ -10396,36 +10396,49 @@ function setUserHeader(){
 // ── Load agents via JSONP ─────────────────────────────────
 function loadAgentsFromSheet(){
   return new Promise(resolve=>{
-    const ts  = Date.now(); // cache-busting timestamp — ensures new agents appear immediately
-    const cb  = "fpiAgCb_"+ts;
-    const url = APPS_SCRIPT_URL+"?action=get_agents&_t="+ts+"&callback="+cb;
-    const timer=setTimeout(()=>{
+    const ts     = Date.now();
+    const cb     = "fpiAgCb_"+ts;
+    const url    = APPS_SCRIPT_URL+"?action=get_agents&_t="+ts+"&callback="+cb;
+    const cached = getCachedAgents(); // keep stale cache as safety net
+
+    const timer = setTimeout(()=>{
       cleanup();
-      const cached=getCachedAgents();
-      resolve(cached); // fallback to cache on slow networks
-    },12000); // 12s for mobile networks
-    function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("fpi-ag-s");if(s)s.remove();clearTimeout(timer);}
+      console.warn("[Login] Apps Script timed out — using cache:", cached.length);
+      resolve(cached.length ? cached : agentsList);
+    }, 15000);
+
+    function cleanup(){
+      try{delete window[cb];}catch(e){}
+      const s=document.getElementById("fpi-ag-s");if(s)s.remove();
+      clearTimeout(timer);
+    }
+
     window[cb]=function(data){
       cleanup();
       try{
-        if(data&&data.agents&&data.agents.length){
-          agentsList=data.agents;
-          try{localStorage.setItem("fpi_agents",JSON.stringify(agentsList));}catch(e){}
+        if(data && data.agents && data.agents.length){
+          agentsList = data.agents;
+          try{localStorage.setItem("fpi_agents", JSON.stringify(agentsList));}catch(e){}
+          resolve(agentsList);
+          return;
         }
       }catch(e){}
-      resolve(agentsList.length?agentsList:getCachedAgents());
+      resolve(cached.length ? cached : agentsList);
     };
-    const s=document.createElement("script");s.id="fpi-ag-s";
-    s.src=url;
-    s.onerror=()=>{
+
+    const s = document.createElement("script");
+    s.id    = "fpi-ag-s";
+    s.src   = url;
+    s.onerror = ()=>{
       cleanup();
-      const cached=getCachedAgents();
-      // Network error: resolve with whatever we have
-      resolve(cached);
+      console.warn("[Login] Apps Script fetch failed (401/network) — using cache:", cached.length);
+      resolve(cached.length ? cached : agentsList);
     };
     document.head.appendChild(s);
   });
 }
+
+
 function getCachedAgents(){
   try{const c=JSON.parse(localStorage.getItem("fpi_agents")||"[]");if(c.length){agentsList=c;return c;}}catch(e){}
   return[];
@@ -10439,25 +10452,21 @@ async function handleEmailSignIn(){
   if(!emailRaw.endsWith("@shadowfax.in")){showLoginError("Only @shadowfax.in accounts are allowed.");return;}
   const ld=document.getElementById("login-loading");
   if(ld) ld.style.display="block";
-  // Always clear cached agent list so new additions from the sheet are reflected immediately
-  try{localStorage.removeItem("fpi_agents");}catch(e){}
-  agentsList=[];
+  // Try fresh fetch first; if it fails fall back to cache so login still works offline
   const agents=await loadAgentsFromSheet();
   const match=agents.find(a=>a.email===emailRaw);
   if(!agents.length){
-    // Network failed or sheet returned nothing — show helpful message
+    // No agents at all — Apps Script unreachable AND no local cache
     showLoginError(
-      "⚠ Unable to reach the FPI server.<br>"+
-      "<small>Check your internet connection, then "+
-      "<button onclick=\"document.getElementById('fp-login-btn')&&document.getElementById('fp-login-btn').click()\" "+
-      "style=\"background:none;border:none;color:var(--acc);cursor:pointer;padding:0;font-size:inherit;font-weight:600;text-decoration:underline\">try again</button>."+
-      "<br>If on phone, make sure you are connected to internet.</small>"
+      "⚠ Cannot connect to FPI server.<br>"+
+      "<small>Make sure your Apps Script is deployed as <strong>Anyone</strong> (not restricted to Shadowfax org).<br>"+
+      "Or try again in a moment.</small>"
     );
     const ld=document.getElementById("login-loading");if(ld)ld.style.display="none";
     return;
   }
   if(!match){
-    showLoginError("⚠ <strong>"+emailRaw+"</strong> is not registered as an FPI agent.<br><small>Contact your admin to add you to the FPI Agents sheet. New entries are reflected immediately.</small>");
+    showLoginError("⚠ <strong>"+emailRaw+"</strong> is not registered.<br><small>Ask your admin to add you to Sheet1 in the FPI Google Sheet. Changes reflect on next login.</small>");
     return;
   }
   const parts=emailRaw.split("@")[0].split(".");
