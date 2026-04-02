@@ -1502,7 +1502,7 @@ function loadFPIFromSheet(){
     if(FPI.length > 0){ resolve(FPI); return; }
     const cb = "fpiAgCb_"+Date.now();
     const url = APPS_SCRIPT_URL_CM+"?action=get_agents&callback="+cb;
-    const timer = setTimeout(()=>{cleanup();resolve([]);}, 8000);
+    const timer = setTimeout(()=>{cleanup();resolve([]);}, 25000);
     function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("cm-ag-s");if(s)s.remove();clearTimeout(timer);}
     window[cb] = function(data){
       cleanup();
@@ -1617,35 +1617,71 @@ function autoAssignBestFPI(c){
 }
 
 // ── CM Login via Sheet3 JSONP ──────────────────────────────
+// Local CT admin credentials — these work instantly without Apps Script
+// To add more users, also update ADMIN_ACCOUNTS in FPI_Apps_Script.js
+const CM_LOCAL_ADMINS = [
+  { email:"salman.kasheef@shadowfax.in", password:"fpi@2024", name:"Salman Kasheef" }
+];
+
 function cmLogin(){
   const email = (document.getElementById("cm-email").value||"").trim().toLowerCase();
   const pass  = (document.getElementById("cm-pass").value||"").trim();
   if(!email||!pass){ showCMLoginErr("Enter email and password."); return; }
+
   document.getElementById("cm-login-btn").disabled=true;
   document.getElementById("cm-login-loading").style.display="block";
   document.getElementById("cm-login-err").style.display="none";
 
-  const cb="cmAuthCb_"+Date.now();
-  const url=APPS_SCRIPT_URL_CM+"?action=auth_login&email="+encodeURIComponent(email)+"&password="+encodeURIComponent(pass)+"&callback="+cb;
-  const timer=setTimeout(()=>{
-    cleanup();showCMLoginErr("Login timed out. Check connection.");
-  },10000);
-  function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("cm-auth-s");if(s)s.remove();clearTimeout(timer);document.getElementById("cm-login-btn").disabled=false;document.getElementById("cm-login-loading").style.display="none";}
+  // ── Step 1: Check local admin list instantly (no network needed) ──
+  const localMatch = CM_LOCAL_ADMINS.find(a=>a.email===email && a.password===pass);
+  if(localMatch){
+    cmLoginSuccess(email, localMatch.name);
+    return;
+  }
+
+  // ── Step 2: Try Apps Script for other CT users ──
+  const cb  = "cmAuthCb_"+Date.now();
+  const url = APPS_SCRIPT_URL_CM+"?action=auth_login&email="+encodeURIComponent(email)+"&password="+encodeURIComponent(pass)+"&callback="+cb;
+  const timer = setTimeout(()=>{
+    cleanup();
+    showCMLoginErr("Login timed out. Check if Apps Script is deployed as <strong>Anyone</strong>.");
+  },30000);
+  function cleanup(){
+    try{delete window[cb];}catch(e){}
+    const s=document.getElementById("cm-auth-s");if(s)s.remove();
+    clearTimeout(timer);
+    document.getElementById("cm-login-btn").disabled=false;
+    document.getElementById("cm-login-loading").style.display="none";
+  }
   window[cb]=function(data){
     cleanup();
+    console.log("[CM Login] Apps Script response:", JSON.stringify(data));
     if(data&&data.ok){
-      sessionStorage.setItem("cm_session",JSON.stringify({email,name:data.name||email}));
-      document.getElementById("cm-login-overlay").style.display="none";
-      document.getElementById("cm-app").style.display="flex";
-      cmSetUserDisplay(data.name||email);
-      loadFPIFromSheet().then(()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();renderCasesTable(filteredCases);renderAssignTab();renderReassignTab();updateBadges();});
+      cmLoginSuccess(email, data.name||email);
     }else{
-      showCMLoginErr(data&&data.error?data.error:"Invalid email or password.");
+      showCMLoginErr((data&&data.error)||"Invalid email or password.");
     }
   };
   const s=document.createElement("script");s.id="cm-auth-s";s.src=url;
-  s.onerror=()=>{cleanup();showCMLoginErr("Network error. Try again.");};
+  s.onerror=()=>{
+    cleanup();
+    showCMLoginErr("Cannot reach server. Check Apps Script deployment.");
+  };
   document.head.appendChild(s);
+}
+
+function cmLoginSuccess(email, name){
+  document.getElementById("cm-login-btn").disabled=false;
+  document.getElementById("cm-login-loading").style.display="none";
+  sessionStorage.setItem("cm_session", JSON.stringify({email, name:name||email}));
+  document.getElementById("cm-login-overlay").style.display="none";
+  document.getElementById("cm-app").style.display="flex";
+  cmSetUserDisplay(name||email);
+  loadFPIFromSheet().then(()=>{
+    renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
+    renderPodView();renderFraudDist();renderCasesTable(filteredCases);
+    renderAssignTab();renderReassignTab();updateBadges();
+  });
 }
 function showCMLoginErr(msg){
   document.getElementById("cm-login-err").textContent=msg;
