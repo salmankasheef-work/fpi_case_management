@@ -791,12 +791,88 @@ function handleSlipUpload(event){
     const doneBox = document.getElementById("slip-done");
     if(img){ img.src = e.target.result; img.style.display = "block"; }
     if(ph)  ph.style.display = "none";
-    if(doneBox){ doneBox.style.display = "flex"; }
-    // Store for submission
+    if(doneBox){ doneBox.style.display = "flex"; doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--acc)">📷 Slip uploaded — reading UTR…</span>'; }
     window._slipBase64 = e.target.result;
-    showToast("✓ Slip uploaded");
+    showToast("✓ Slip uploaded — scanning for UTR…");
+    extractUTRFromImage(e.target.result);
   };
   reader.readAsDataURL(file);
+}
+
+/* ── UTR Extraction via Tesseract.js ─────────────────────
+   Loads Tesseract once, then reads text from the slip image.
+   Looks for UTR / Ref No / Reference / RRN / TXN patterns.
+*/
+let _tesseractLoaded = false;
+
+function extractUTRFromImage(base64){
+  const doneBox = document.getElementById("slip-done");
+  const utrEl   = document.getElementById("cl-utr");
+  if(!utrEl) return;
+
+  function onLoaded(){
+    if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--acc)">🔍 Reading transaction details…</span>';
+    Tesseract.recognize(base64, "eng", {
+      workerPath : "https://unpkg.com/tesseract.js@v2.1.5/dist/worker.min.js",
+      langPath   : "https://tessdata.projectnaptha.com/4.0.0",
+      corePath   : "https://unpkg.com/tesseract.js-core@v2.2.0/tesseract-core.wasm.js",
+      logger     : ()=>{}
+    }).then(function(res){
+      const text = (res.data && res.data.text) ? res.data.text : "";
+      console.log("[UTR OCR] Extracted text:", text);
+      const utr = parseUTRFromText(text);
+      if(utr){
+        utrEl.value = utr;
+        if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ UTR auto-filled: '+utr+'</span>';
+        showToast("✅ UTR detected: " + utr);
+      } else {
+        if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded — enter UTR manually</span>';
+        showToast("Slip uploaded — UTR not found, enter manually");
+      }
+    }).catch(function(err){
+      console.warn("[UTR OCR] Error:", err);
+      if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded ✓</span>';
+    });
+  }
+
+  if(_tesseractLoaded && typeof Tesseract !== "undefined"){
+    onLoaded(); return;
+  }
+  const s = document.createElement("script");
+  s.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js";
+  s.onload = function(){ _tesseractLoaded = true; onLoaded(); };
+  s.onerror = function(){
+    if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded — enter UTR manually</span>';
+    showToast("OCR not available — enter UTR manually");
+  };
+  document.head.appendChild(s);
+}
+
+function parseUTRFromText(text){
+  const lines = text.split(/\r?\n/);
+  const pats = [
+    /\bUTR\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bRef(?:erence)?\.?\s*(?:No\.?|Num\.?|#)?\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bRRN\s*[:#\-]?\s*([0-9]{10,15})\b/i,
+    /\bTransaction\s*(?:ID|No\.?|#)\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bTxn\s*(?:ID|No\.?|#|Ref)?\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bIMPS\s*[:#\-]?\s*([0-9]{10,15})\b/i,
+    /\bNEFT\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bRTGS\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+    /\bPayment\s*Ref\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+  ];
+  // Try each line for patterns
+  for(const line of lines){
+    for(const pat of pats){
+      const m = line.match(pat);
+      if(m && m[1] && m[1].length >= 10){
+        return m[1].trim().replace(/\s+/g,"").toUpperCase();
+      }
+    }
+  }
+  // Fallback: long standalone number
+  const fallback = text.match(/\b([0-9]{12,22})\b/);
+  return fallback ? fallback[1] : null;
 }
 
 
@@ -10146,27 +10222,35 @@ function getSelfieForSheet(){
 
 // ── Case closure email trigger ────────────────────────────
 function triggerClosureEmail(caseData){
+  // JSONP GET — no-cors POST body is silently dropped by Apps Script
   try{
-    fetch(APPS_SCRIPT_URL,{
-      method:"POST", mode:"no-cors",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        action        :"close_case_email",
-        case_id       :caseData.id||"",
-        category      :caseData.cat||"",
-        fraud_type    :caseData.type||"",
-        hub           :caseData.hub||"",
-        city          :caseData.city||"",
-        state         :caseData.state||"",
-        value         :caseData.val||0,
-        recovery      :caseData.recovery||0,
-        utr           :caseData.utr||"",
-        poc_name      :caseData.pn||"",
-        poc_email     :caseData.poc_email||"",
-        police_action :caseData.policeAction||"",
-        closure_notes :caseData.closureNotes||""
-      })
-    }).catch(()=>{});
+    var ts = Date.now();
+    var cb = "fpEmailCb_" + ts;
+    var params = "action=close_case_email" +
+      "&case_id="       + encodeURIComponent(caseData.id||"") +
+      "&category="      + encodeURIComponent(caseData.cat||"") +
+      "&fraud_type="    + encodeURIComponent(caseData.type||"") +
+      "&hub="           + encodeURIComponent(caseData.hub||"") +
+      "&city="          + encodeURIComponent(caseData.city||"") +
+      "&state="         + encodeURIComponent(caseData.state||"") +
+      "&value="         + encodeURIComponent(caseData.val||0) +
+      "&recovery="      + encodeURIComponent(caseData.recovery||0) +
+      "&utr="           + encodeURIComponent(caseData.utr||"") +
+      "&poc_name="      + encodeURIComponent(caseData.pn||"") +
+      "&poc_email="     + encodeURIComponent(caseData.poc_email||"") +
+      "&police_action=" + encodeURIComponent(caseData.policeAction||"") +
+      "&closure_notes=" + encodeURIComponent(caseData.closureNotes||"") +
+      "&callback="      + cb;
+    window[cb] = function(r){
+      try{delete window[cb];}catch(ex){}
+      if(r && r.ok) showToast("📧 Closure email sent to manager");
+      else showToast("Case closed ✓");
+    };
+    var s = document.createElement("script");
+    s.src = APPS_SCRIPT_URL + "?" + params;
+    s.onerror = function(){ try{delete window[cb];}catch(ex){} };
+    document.head.appendChild(s);
+    setTimeout(function(){ try{s.remove(); delete window[cb];}catch(ex){} }, 12000);
   }catch(e){}
 }
 
@@ -10278,9 +10362,14 @@ function setUserHeader(){
 // ── Load agents via JSONP ─────────────────────────────────
 function loadAgentsFromSheet(){
   return new Promise(resolve=>{
-    const cb="fpiAgCb_"+Date.now();
-    const url=APPS_SCRIPT_URL+"?action=get_agents&callback="+cb;
-    const timer=setTimeout(()=>{cleanup();resolve(getCachedAgents());},8000);
+    const ts  = Date.now(); // cache-busting timestamp — ensures new agents appear immediately
+    const cb  = "fpiAgCb_"+ts;
+    const url = APPS_SCRIPT_URL+"?action=get_agents&_t="+ts+"&callback="+cb;
+    const timer=setTimeout(()=>{
+      cleanup();
+      const cached=getCachedAgents();
+      resolve(cached); // fallback to cache on slow networks
+    },12000); // 12s for mobile networks
     function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("fpi-ag-s");if(s)s.remove();clearTimeout(timer);}
     window[cb]=function(data){
       cleanup();
@@ -10292,8 +10381,14 @@ function loadAgentsFromSheet(){
       }catch(e){}
       resolve(agentsList.length?agentsList:getCachedAgents());
     };
-    const s=document.createElement("script");s.id="fpi-ag-s";s.src=url;
-    s.onerror=()=>{cleanup();resolve(getCachedAgents());};
+    const s=document.createElement("script");s.id="fpi-ag-s";
+    s.src=url;
+    s.onerror=()=>{
+      cleanup();
+      const cached=getCachedAgents();
+      // Network error: resolve with whatever we have
+      resolve(cached);
+    };
     document.head.appendChild(s);
   });
 }
@@ -10310,10 +10405,25 @@ async function handleEmailSignIn(){
   if(!emailRaw.endsWith("@shadowfax.in")){showLoginError("Only @shadowfax.in accounts are allowed.");return;}
   const ld=document.getElementById("login-loading");
   if(ld) ld.style.display="block";
+  // Always clear cached agent list so new additions from the sheet are reflected immediately
+  try{localStorage.removeItem("fpi_agents");}catch(e){}
+  agentsList=[];
   const agents=await loadAgentsFromSheet();
   const match=agents.find(a=>a.email===emailRaw);
-  if(!match&&agents.length>0){
-    showLoginError("⚠ <strong>"+emailRaw+"</strong> is not registered as an FPI agent.<br><small>Contact your admin to be added to the Google Sheet.</small>");
+  if(!agents.length){
+    // Network failed or sheet returned nothing — show helpful message
+    showLoginError(
+      "⚠ Unable to reach the FPI server.<br>"+
+      "<small>Check your internet connection, then "+
+      "<button onclick=\"document.getElementById('fp-login-btn')&&document.getElementById('fp-login-btn').click()\" "+
+      "style=\"background:none;border:none;color:var(--acc);cursor:pointer;padding:0;font-size:inherit;font-weight:600;text-decoration:underline\">try again</button>."+
+      "<br>If on phone, make sure you are connected to internet.</small>"
+    );
+    const ld=document.getElementById("login-loading");if(ld)ld.style.display="none";
+    return;
+  }
+  if(!match){
+    showLoginError("⚠ <strong>"+emailRaw+"</strong> is not registered as an FPI agent.<br><small>Contact your admin to add you to the FPI Agents sheet. New entries are reflected immediately.</small>");
     return;
   }
   const parts=emailRaw.split("@")[0].split(".");
@@ -10491,7 +10601,18 @@ async function loadMyCases(){
 }
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 function statusKeyFromLabel(label){
-  const map={"rider investigation":"rider_inv","hi/tl investigation":"hi_tl_inv","absconded·fir filed":"rider_abs_action","absconded·fir pend":"rider_abs_pending","closed":"closed","unassigned":"unassigned","pending date":"pending_date"};
+  const map={
+    "rider investigation" :"rider_inv",
+    "hi/tl investigation" :"hi_tl_inv",
+    "absconded·fir filed"  :"rider_abs_action",
+    "absconded·fir pend"   :"rider_abs_pending",
+    "hi/tl absconded"      :"hi_tl_abs",
+    "cx fraud"             :"cx_fraud",
+    "other pending"        :"other_pending",
+    "closed"               :"closed",
+    "unassigned"           :"unassigned",
+    "pending date"         :"pending_date"
+  };
   return map[(label||"").toLowerCase().trim()]||"pending_date";
 }
 
