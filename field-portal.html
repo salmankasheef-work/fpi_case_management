@@ -771,17 +771,7 @@ function submitUpdate(){
   if(window._slipBase64) window._slipBase64 = null; // clear after use
   // If case closed, trigger email notification
   if(status==="closed"){
-    // Ensure agent email is always the logged-in user's email (not just what's on the case)
-    var closureCase = Object.assign({}, c||{}, {
-      id          : c ? c.id   : caseId,
-      poc_email   : currentUser.email,          // always use logged-in agent email
-      pn          : currentUser.name || (c&&c.pn) || "",
-      recovery    : amt,
-      utr         : utr,
-      policeAction: police,
-      closureNotes: document.getElementById("cl-notes") ? document.getElementById("cl-notes").value : ""
-    });
-    triggerClosureEmail(closureCase);
+    triggerClosureEmail(c||{id:caseId,type:"",cat:"",hub:"",city:"",state:"",val:0,recovery:amt,utr,pn:"",poc_email:"",policeAction:police});
     showToast("✓ Case closed — notification sent");
   } else {
     showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
@@ -10253,8 +10243,18 @@ function triggerClosureEmail(caseData){
       "&callback="      + cb;
     window[cb] = function(r){
       try{delete window[cb];}catch(ex){}
-      if(r && r.ok) showToast("📧 Closure email sent to manager");
-      else showToast("Case closed ✓");
+      if(r && r.ok){
+        showToast("📧 Closure email sent to manager");
+        console.log("[Email] Success:", r.msg, r.debug);
+      } else if(r){
+        // Show the actual error so we can debug
+        var errMsg = r.msg || "Unknown error";
+        showToast("⚠ Email error: " + errMsg.substring(0,60));
+        console.error("[Email] Failed:", r.msg, r.debug);
+      } else {
+        showToast("Case closed ✓ (email status unknown)");
+        console.warn("[Email] No response from Apps Script");
+      }
     };
     var s = document.createElement("script");
     s.src = APPS_SCRIPT_URL + "?" + params;
