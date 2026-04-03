@@ -10110,12 +10110,110 @@ function showHubList(){
 function hideHubList(){
   document.getElementById("hub-dropdown").style.display="none";
 }
+// Maps city names to hub code prefixes used in Shadowfax hub naming
+const CITY_HUB_MAP = {
+  "bangalore":"BLR","bengaluru":"BLR",
+  "delhi":"DEL","new delhi":"DEL",
+  "mumbai":"BOM","mumbai":"MUM",
+  "pune":"PNQ",
+  "hyderabad":"HYD",
+  "chennai":"CHN",
+  "kolkata":"CCU",
+  "ahmedabad":"AMD",
+  "surat":"ST",
+  "jaipur":"JAI",
+  "lucknow":"LKO",
+  "kanpur":"CNB",
+  "nagpur":"NGP",
+  "noida":"NOI",
+  "gurgaon":"GGN","gurugram":"GGN",
+  "faridabad":"FDB",
+  "ghaziabad":"GZB",
+  "coimbatore":"CBE",
+  "kochi":"COK","cochin":"COK",
+  "patna":"PTA",
+  "bhopal":"BPL",
+  "indore":"IDR",
+  "vadodara":"BRC",
+  "surat":"ST",
+  "rajkot":"RJT",
+  "visakhapatnam":"VSKP",
+  "vijayawada":"BZA",
+  "mysore":"MYS","mysuru":"MYS",
+  "chandigarh":"CDG",
+  "ludhiana":"LDH",
+  "amritsar":"ASR",
+  "agra":"AGR",
+  "varanasi":"VNS",
+  "ranchi":"IXR",
+  "bhubaneswar":"BBS",
+  "guwahati":"GHY",
+  "dehradun":"DDN",
+  "jodhpur":"JDP",
+  "raipur":"RPR",
+  "goa":"GOI",
+  "thiruvananthapuram":"TVC","trivandrum":"TVC",
+  "madurai":"MDU",
+  "tiruchirappalli":"TRZ","trichy":"TRZ",
+  "mangalore":"MAQ",
+  "hubli":"HBX",
+  "belgaum":"BGM",
+  "davangere":"DVG",
+  "shimoga":"SME",
+  "tumkur":"TK",
+  "hassan":"HAS"
+};
+
+// Pre-filters hub dropdown to show city-relevant hubs first based on GPS location
+function filterHubsByLocation(city, state){
+  if(!city) return;
+  const cityLow = (city||"").toLowerCase();
+  const stateLow= (state||"").toLowerCase();
+
+  // Find matching hub prefix(es) for this city
+  const prefixes = [];
+  for(const [key,code] of Object.entries(CITY_HUB_MAP)){
+    if(cityLow.includes(key)||key.includes(cityLow)) prefixes.push(code.toLowerCase());
+  }
+
+  // Also try matching state keywords
+  const stateKeywords = stateLow.split(" ").filter(w=>w.length>3);
+
+  if(prefixes.length){
+    // Local hubs: start with city prefix
+    const local = HUB_LIST.filter(h=>prefixes.some(pfx=>h.toLowerCase().startsWith(pfx)));
+    // Nearby hubs: hub name contains city name
+    const cityMatches = HUB_LIST.filter(h=>
+      !local.includes(h) && (h.toLowerCase().includes(cityLow)||cityLow.includes(h.toLowerCase().split("_")[0].toLowerCase()))
+    );
+    // Rest (show but at bottom)
+    hubFiltered = [...local, ...cityMatches].slice(0,80);
+    if(!hubFiltered.length) hubFiltered = HUB_LIST.slice(0,80);
+
+    // Update search placeholder to indicate filter is active
+    const searchBox = document.getElementById("hub-search");
+    if(searchBox) searchBox.placeholder = "Showing "+city+" hubs — type to search all";
+  } else {
+    hubFiltered = HUB_LIST.slice(0,80);
+  }
+  renderHubList();
+}
+
 function filterHubs(q){
   q=(q||"").trim().toLowerCase();
-  hubFiltered=q.length<1
-    ?HUB_LIST.slice(0,80)
-    :HUB_LIST.filter(h=>h.toLowerCase().includes(q)).slice(0,100);
-  renderHubList();
+  if(q.length<1){
+    // No query — show location-filtered list if we have GPS
+    if(userLocation.city){
+      filterHubsByLocation(userLocation.city, userLocation.state);
+    } else {
+      hubFiltered=HUB_LIST.slice(0,80);
+      renderHubList();
+    }
+  } else {
+    // User typed — search ALL hubs
+    hubFiltered=HUB_LIST.filter(h=>h.toLowerCase().includes(q)).slice(0,100);
+    renderHubList();
+  }
   document.getElementById("hub-dropdown").style.display="block";
 }
 function renderHubList(){
@@ -10204,8 +10302,12 @@ function startGPSDetection(){
           const a=d.address||{};
           const city=a.city||a.town||a.suburb||a.village||"";
           const state=a.state||"";
+          userLocation.city  = city;
+          userLocation.state = state;
           userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
+          // Pre-filter hub list to show local hubs first
+          filterHubsByLocation(city, state);
         }).catch(()=>{
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
         });
@@ -10695,8 +10797,12 @@ function startGPSDetection(){
           const a=d.address||{};
           const city=a.city||a.town||a.suburb||a.village||"";
           const state=a.state||"";
+          userLocation.city  = city;
+          userLocation.state = state;
           userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
+          // Pre-filter hub list to show local hubs first
+          filterHubsByLocation(city, state);
         }).catch(()=>{
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
         });
