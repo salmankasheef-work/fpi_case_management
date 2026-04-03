@@ -1460,12 +1460,23 @@ function syncCase(c){
   window[cb] = function(r){
     try{delete window[cb];}catch(e){}
     const s=document.getElementById("fpi-sync-s-"+c.id);if(s)s.remove();
-    if(r&&r.ok) showToast("✓ "+c.id+" synced to sheet");
+    if(r&&r.ok){
+      showToast("✓ "+c.id+" saved to Google Sheet");
+      console.log("[Sync] Case saved:", c.id, r);
+    } else {
+      showToast("⚠ Sheet sync failed for "+c.id+" — "+((r&&r.error)||"no response"),"warn");
+      console.error("[Sync] Failed:", c.id, r);
+    }
   };
   const s=document.createElement("script");
   s.id="fpi-sync-s-"+c.id;
   s.src=APPS_SCRIPT_URL_CM+"?"+params.toString();
-  s.onerror=()=>{try{delete window[cb];}catch(e){}s.remove();};
+  s.onerror=()=>{
+    try{delete window[cb];}catch(e){}
+    if(s&&s.remove)s.remove();
+    showToast("⚠ Cannot reach Apps Script — case saved locally only","warn");
+    console.error("[Sync] JSONP onerror for", c.id, "— Apps Script unreachable");
+  };
   document.head.appendChild(s);
   setTimeout(()=>{try{delete window[cb];const s2=document.getElementById("fpi-sync-s-"+c.id);if(s2)s2.remove();}catch(e){}},10000);
 }
@@ -1549,7 +1560,8 @@ function calcPriority(fraudType, value){
 // ── Load FPI agents from sheet via JSONP ──────────────────
 function loadFPIFromSheet(){
   return new Promise(resolve=>{
-    if(FPI.length > 0){ resolve(FPI); return; }
+    // NOTE: do NOT short-circuit on FPI.length — always fetch fresh from sheet
+    // so that new agents AND new cases are always visible
     const cb = "fpiAgCb_"+Date.now();
     const url = APPS_SCRIPT_URL_CM+"?action=get_agents&_t="+Date.now()+"&callback="+cb;
     const timer = setTimeout(()=>{cleanup();resolve([]);}, 25000);
@@ -1605,7 +1617,7 @@ function loadCasesFromSheet(){
             city : row["City"]||"",
             state: row["State"]||"",
             val  : parseFloat(row["Value"]||0)||0,
-            st   : stKey[0]||"pending_date",
+            st   : Array.isArray(stKey) ? stKey[0] : "pending_date",
             pri  : row["Priority"]||"Low",
             pn   : row["FPI POC"]||"",
             poc_email: pocEmail,
@@ -1616,6 +1628,12 @@ function loadCasesFromSheet(){
             policeAction: row["Police Action"]||"",
             date : row["Date Filed"]||"",
             fp   : fpFromType(row["Fraud Type"]||""),
+            trend: row["Trend"]||"",
+            ridersTerminated: parseInt(row["Terminated"]||0)||0,
+            // Preserve existing arrays — don't wipe them from sheet data
+            rh      : (existing&&existing.rh)     ||[],
+            riders  : (existing&&existing.riders)  ||[],
+            updates : (existing&&existing.updates) ||[],
           };
           if(existing){
             // Update existing case with sheet data (sheet is source of truth)
@@ -1630,12 +1648,27 @@ function loadCasesFromSheet(){
           p.active  = cases.filter(c=>c.poc===p.id&&c.st!=="closed").length;
           p.closed  = cases.filter(c=>c.poc===p.id&&c.st==="closed").length;
         });
+        // CRITICAL: keep filteredCases in sync so table shows the data
+        filteredCases = [...cases];
         try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
       }
       resolve();
     };
     const s=document.createElement("script");s.id="cm-cases-s";s.src=url;
-    s.onerror=()=>{cleanup();resolve();};
+    s.onerror=()=>{
+      // Sheet unreachable — try loading from localStorage cache
+      try{
+        const cached = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+        cached.forEach(c=>{
+          if(c.id && !cases.find(x=>x.id===c.id)){
+            cases.push(c);
+          }
+        });
+        filteredCases = [...cases];
+      }catch(e){}
+      cleanup();
+      resolve();
+    };
     document.head.appendChild(s);
   });
 }
@@ -1874,10 +1907,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(sess){
     document.getElementById("cm-login-overlay").style.display="none";
     document.getElementById("cm-app").style.display="flex";
+    const s = JSON.parse(sess);
+    cmSetUserDisplay(s.name||s.email||"");
+    // loadFPIFromSheet now internally calls loadCasesFromSheet too
     loadFPIFromSheet().then(()=>{
       renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
       renderPodView();renderFraudDist();renderCasesTable(filteredCases);
-      renderAssignTab();renderReassignTab();updateBadges();
+      renderAssignTab();renderReassignTab();updateBadges();updateClosedBadge();
     });
   }
   // Focus email on login screen
