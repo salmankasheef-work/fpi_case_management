@@ -10412,6 +10412,12 @@ var _otpPhone="", _resendInterval=null;
 function requestOTP(isResend){
   clearLoginError();
   var phone=(document.getElementById("login-phone").value||"").replace(/[^0-9]/g,"").trim();
+  if(!isResend && _otpPhone && _otpPhone===phone){
+    // Already sent to this number — just show OTP step again
+    document.getElementById("step-phone").style.display="none";
+    document.getElementById("step-otp").style.display="block";
+    return;
+  }
   if(phone.length!==10){showLoginError("Enter a valid 10-digit mobile number.");return;}
   var btn=document.getElementById("btn-send-otp"), ld=document.getElementById("login-loading");
   if(btn)btn.disabled=true; if(ld)ld.style.display="block";
@@ -10446,7 +10452,11 @@ function backToPhone(){
 function otpInput(el,idx){
   el.value=el.value.replace(/[^0-9]/g,"").slice(-1);
   el.style.borderColor=el.value?"var(--acc)":"var(--bd)";
-  if(el.value){var nx=document.querySelector(".otp-digit[data-idx='"+(idx+1)+"']");if(nx)nx.focus();else verifyOTP();}
+  if(el.value){
+    var nx=document.querySelector(".otp-digit[data-idx='"+(idx+1)+"']");
+    if(nx) nx.focus();
+    // No auto-submit — user clicks Verify & Sign In button
+  }
 }
 function otpKey(ev,idx){
   if(ev.key==="Backspace"){
@@ -10469,7 +10479,18 @@ function verifyOTP(){
     if(ld)ld.style.display="none"; if(btn)btn.disabled=false;
     if(!data||!data.ok){
       showOtpError("⚠ "+(data&&data.error||"Incorrect OTP. Try again."));
-      document.querySelectorAll(".otp-digit").forEach(function(d){d.style.borderColor="var(--red)";setTimeout(function(){d.style.borderColor="var(--bd)";},800);});
+      // Clear digits and shake red so user knows to re-enter
+      document.querySelectorAll(".otp-digit").forEach(function(d){
+        d.style.borderColor="var(--red)";
+        d.style.background="rgba(220,38,38,.06)";
+        setTimeout(function(){d.style.borderColor="var(--bd)";d.style.background="";},800);
+      });
+      // Clear values after shake so user can enter fresh
+      setTimeout(function(){
+        document.querySelectorAll(".otp-digit").forEach(function(d){d.value="";});
+        var first=document.querySelector(".otp-digit[data-idx='0']");
+        if(first)first.focus();
+      },900);
       return;
     }
     var name=data.name||_otpPhone;
