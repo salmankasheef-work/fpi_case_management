@@ -1606,89 +1606,77 @@ function loadCasesFromSheet(){
     function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("cm-cases-s");if(s)s.remove();clearTimeout(timer);}
     window[cb] = function(data){
       cleanup();
-      if(data&&data.cases&&data.cases.length){
-        // Merge sheet cases into local cases array
+      if(data&&data.cases){
+        // SHEET IS SOURCE OF TRUTH — rebuild cases array from sheet
+        // Cases deleted from sheet are removed from CM automatically
+        const sheetIds = new Set();
+        const newCases = [];
+
         data.cases.forEach(row=>{
-          const id    = row["Case ID"]||"";
+          const id = (row["Case ID"]||"").trim();
           if(!id) return;
-          const stRaw = (row["Status"]||"").toLowerCase().trim();
-          // Map sheet status label back to internal key
-          const stKey = Object.entries(SL).find(([k,v])=>v.l.toLowerCase()===stRaw)||["pending_date"];
+          sheetIds.add(id);
+
+          const stRaw    = (row["Status"]||"").toLowerCase().trim();
+          const stKey    = Object.entries(SL).find(([k,v])=>v.l.toLowerCase()===stRaw)||["pending_date"];
+          const pocEmail = (row["POC Email"]||"").toLowerCase().trim();
+          const fpiAgent = pocEmail ? (FPI.find(p=>(p.email||"").toLowerCase().trim()===pocEmail)||{}) : {};
           const existing = cases.find(c=>c.id===id);
-          const pocEmail  = (row["POC Email"]||"").toLowerCase().trim();
-          // Find agent by email (exact match)
-          const fpiAgent  = pocEmail ? 
-            (FPI.find(p=>(p.email||"").toLowerCase().trim()===pocEmail) || {}) : {};
-          const caseData  = {
-            id   : id,
-            cat  : row["Category"]||"",
-            type : row["Fraud Type"]||"",
-            hub  : row["Hub"]||"",
-            city : row["City"]||"",
-            state: row["State"]||"",
-            val  : parseFloat(row["Value"]||0)||0,
-            st   : Array.isArray(stKey) ? stKey[0] : "pending_date",
-            pri  : row["Priority"]||"Low",
-            pn   : row["FPI POC"]||"",
-            poc_email: pocEmail,
-            poc  : fpiAgent.id||(existing&&existing.poc)||"",
-            pc   : fpiAgent.color||(existing&&existing.pc)||"#6366f1",
-            recovery: parseFloat(row["Recovery"]||0)||0,
-            utr  : row["UTR"]||"",
+
+          newCases.push({
+            id          : id,
+            cat         : row["Category"]||"",
+            type        : row["Fraud Type"]||"",
+            hub         : row["Hub"]||"",
+            city        : row["City"]||"",
+            state       : row["State"]||"",
+            val         : parseFloat(row["Value"]||0)||0,
+            st          : Array.isArray(stKey) ? stKey[0] : "pending_date",
+            pri         : calcPriority(row["Fraud Type"]||"", parseFloat(row["Value"]||0)||0),
+            pn          : row["FPI POC"]||"",
+            poc_email   : pocEmail,
+            poc         : fpiAgent.id||(existing&&existing.poc)||"",
+            pc          : fpiAgent.color||(existing&&existing.pc)||"#6366f1",
+            recovery    : parseFloat(row["Recovery"]||0)||0,
+            utr         : row["UTR"]||"",
             policeAction: row["Police Action"]||"",
-            date : row["Date Filed"]||"",
-            fp   : fpFromType(row["Fraud Type"]||""),
-            trend: row["Trend"]||"",
+            date        : row["Date Filed"]||"",
+            fp          : fpFromType(row["Fraud Type"]||""),
+            trend       : row["Trend"]||"",
             ridersTerminated: parseInt(row["Terminated"]||0)||0,
-            // Preserve existing arrays — don't wipe them from sheet data
-            rh      : (existing&&existing.rh)     ||[],
-            riders  : (existing&&existing.riders)  ||[],
-            updates : (existing&&existing.updates) ||[],
-          };
-          if(existing){
-            // Update existing case with sheet data (sheet is source of truth)
-            Object.assign(existing, caseData);
-          } else {
-            cases.push(caseData);
-            filteredCases.push(caseData);
-          }
+            rh          : (existing&&existing.rh)     ||[],
+            riders      : (existing&&existing.riders)  ||[],
+            updates     : (existing&&existing.updates) ||[],
+          });
         });
+
+        // Replace cases array — deleted cases are gone
+        cases         = newCases;
+        filteredCases = [...cases];
+
         // Recalc active counts per agent
         FPI.forEach(p=>{
-          p.active  = cases.filter(c=>c.poc===p.id&&c.st!=="closed").length;
-          p.closed  = cases.filter(c=>c.poc===p.id&&c.st==="closed").length;
+          p.active = cases.filter(c=>c.poc===p.id && c.st!=="closed").length;
+          p.closed = cases.filter(c=>c.poc===p.id && c.st==="closed").length;
         });
-        // CRITICAL: keep filteredCases in sync so table shows the data
-        // Recalculate priority for X-Ray/PV cases (always High)
-        cases.forEach(c=>{
-          if(!c.pri || c.pri==="Low") {
-            const recalc = calcPriority(c.type, c.val);
-            if(recalc !== c.pri) c.pri = recalc;
-          }
-        });
-        filteredCases = [...cases];
+
         try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
       }
       resolve();
     };
     const s=document.createElement("script");s.id="cm-cases-s";s.src=url;
     s.onerror=()=>{
-      // Sheet unreachable — try loading from localStorage cache
+      // Sheet unreachable — use cached data but don't add stale cases
       try{
-        const cached = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
-        cached.forEach(c=>{
-          if(c.id && !cases.find(x=>x.id===c.id)){
-            cases.push(c);
-          }
-        });
-        filteredCases = [...cases];
+        const cached=JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+        if(cached.length){ cases=cached; filteredCases=[...cases]; }
       }catch(e){}
-      cleanup();
-      resolve();
+      cleanup(); resolve();
     };
     document.head.appendChild(s);
   });
 }
+
 
 const COLORS=["#3b8ef8","#27c77a","#9b72f9","#f5c542","#f04f2b","#ff7eb3","#22d3ee","#a78bfa","#fb923c","#34d399","#60a5fa","#f472b6","#4ade80","#facc15","#c084fc"];
 
@@ -1697,118 +1685,101 @@ function autoAssignBestFPI(c){
   if(!FPI.length) return {fpi:null,priority:null};
   const hubCoords = getHubCoords(c.hub);
   const priority  = calcPriority(c.type, c.val);
-  const candidates = FPI.filter(p=>p.email&&p.email.includes("@"));
 
-  // Enrich agents with last login GPS + timestamp from Field Portal localStorage
-  candidates.forEach(p=>{
+  // All valid agents
+  const allAgents = FPI.filter(p=>p.email&&p.email.includes("@"));
+
+  // Enrich with GPS from Field Portal localStorage
+  allAgents.forEach(p=>{
     try{
       const loc=JSON.parse(localStorage.getItem("fpi_loc_"+p.email)||"{}");
-      if(loc.lat){
-        p.lat=loc.lat; p.lng=loc.lng;
-        p.lastHub=loc.hub||""; p.lastCity=loc.city||"";
-        p.lastLoginTs=loc.ts||0;  // timestamp of last Field Portal login
-      }
+      if(loc.lat){ p.lat=loc.lat; p.lng=loc.lng; p.lastHub=loc.hub||""; p.lastCity=loc.city||""; p.lastLoginTs=loc.ts||0; }
     }catch(e){}
-    // Also check fpi_agents store (synced from Apps Script get_agents)
     if(!p.lat){
       try{
-        const agents=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
-        const match=agents.find(a=>(a.email||"").toLowerCase()===(p.email||"").toLowerCase());
-        if(match&&match.lat){
-          p.lat=match.lat; p.lng=match.lng;
-          p.lastHub=match.lastHub||""; p.lastCity=match.lastCity||"";
-          p.lastLoginTs=match.lastLoginTs||0;
-        }
+        const stored=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
+        const m=stored.find(a=>(a.email||"").toLowerCase()===(p.email||"").toLowerCase());
+        if(m&&m.lat){ p.lat=m.lat; p.lng=m.lng; p.lastHub=m.lastHub||""; p.lastCity=m.lastCity||""; p.lastLoginTs=m.lastLoginTs||0; }
       }catch(e){}
     }
   });
 
-  // PRIORITY ORDER:
-  // 1. Most recent Field Portal login + within 150km of hub (best: recent + close)
-  // 2. Exact hub match (agent's last login hub = case hub)
-  // 3. GPS distance (within 150km), sorted by distance then recency
-  // 4. City match
-  // 5. POD/state match
+  // MAX 5 active cases per agent — exclude overloaded agents
+  // If ALL agents are at 5, include everyone (avoid no-assignment)
+  const MAX_CASES = 5;
+  const available = allAgents.filter(p=>(p.active||0) < MAX_CASES);
+  const candidates = available.length > 0 ? available : allAgents;
 
-  // Candidates sorted by last login time (most recent first)
+  // Sort by least active first (load balancing), tiebreak by most recent login
+  const byLoad = [...candidates].sort((a,b)=>
+    (a.active||0)-(b.active||0) ||
+    (b.lastLoginTs||0)-(a.lastLoginTs||0)
+  );
   const byRecency = [...candidates].sort((a,b)=>(b.lastLoginTs||0)-(a.lastLoginTs||0));
 
-  // 1. Most recently logged-in agent within 150km of hub
-  if(hubCoords){
-    const recentAndClose = byRecency
-      .filter(p=>p.lat&&p.lng)
-      .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
-      .filter(x=>x.dist<=150);
-    if(recentAndClose.length){
-      // Sort: primary=distance, tiebreak=most recent login, tiebreak=least active
-      recentAndClose.sort((a,b)=>
-        a.dist-b.dist ||
-        (b.p.lastLoginTs||0)-(a.p.lastLoginTs||0) ||
-        (a.p.active||0)-(b.p.active||0)
-      );
-      return {fpi:recentAndClose[0].p, priority};
-    }
+  // SCORING: pick best agent considering location + workload
+  // Score = location_match(0-100) + availability_bonus(0-50)
+  function agentScore(p, distKm){
+    let score = 0;
+    // Location score (0-60)
+    if(distKm !== null && distKm <= 50)       score += 60;
+    else if(distKm !== null && distKm <= 100) score += 45;
+    else if(distKm !== null && distKm <= 150) score += 30;
+    else if(distKm !== null && distKm <= 300) score += 15;
+    // Workload score — fewer active = higher score (0-40)
+    score += Math.max(0, 40 - ((p.active||0) * 8));
+    // Recent login bonus (0-20)
+    if(p.lastLoginTs && (Date.now()-p.lastLoginTs) < 24*3600*1000) score += 20;
+    else if(p.lastLoginTs && (Date.now()-p.lastLoginTs) < 72*3600*1000) score += 10;
+    return score;
+  }
+
+  // Calculate distances for all candidates
+  const withScores = candidates.map(p=>{
+    let dist = null;
+    if(hubCoords && p.lat && p.lng) dist = haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng);
+    return { p, dist, score: agentScore(p, dist) };
+  });
+
+  // Sort by score descending
+  withScores.sort((a,b)=>b.score-a.score||(a.p.active||0)-(b.p.active||0));
+
+  // 1. Best score overall (combines location + workload + recency)
+  if(withScores.length && withScores[0].score > 0){
+    return {fpi:withScores[0].p, priority};
   }
 
   // 2. Exact hub match (agent's last login hub = case hub)
   if(c.hub){
-    const hubMatch = byRecency.filter(p=>
-      p.lastHub && p.lastHub.toLowerCase()===c.hub.toLowerCase()
-    );
+    const hubMatch = byLoad.filter(p=>p.lastHub&&p.lastHub.toLowerCase()===c.hub.toLowerCase());
     if(hubMatch.length) return {fpi:hubMatch[0], priority};
   }
 
-  // 3. GPS distance only (no recency filter — any distance)
-  if(hubCoords){
-    const withGPS = candidates.filter(p=>p.lat&&p.lng)
-      .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
-      .sort((a,b)=>a.dist-b.dist||(b.p.lastLoginTs||0)-(a.p.lastLoginTs||0));
-    if(withGPS.length) return {fpi:withGPS[0].p, priority};
-  }
-
-  // 4. City match
+  // 3. City match
   if(c.city){
-    const cityMatch = byRecency.filter(p=>
-      p.lastCity && p.lastCity.toLowerCase().includes(c.city.toLowerCase())
-    );
+    const cityMatch = byLoad.filter(p=>p.lastCity&&p.lastCity.toLowerCase().includes(c.city.toLowerCase()));
     if(cityMatch.length) return {fpi:cityMatch[0], priority};
   }
 
-  // 5. POD/state match
+  // 4. POD/state match — pick least active matching agent
   const podStates={
     "PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh","Jammu & Kashmir"],
-    "NCR":["Delhi","Haryana","Uttar Pradesh"],
-    "UP/UK":["Uttar Pradesh","Uttarakhand"],
-    "MH":["Maharashtra"],
-    "KA":["Karnataka"],
-    "TN":["Tamil Nadu"],
-    "AP/TS":["Andhra Pradesh","Telangana"],
-    "GJ":["Gujarat"],
-    "RJ":["Rajasthan"],
-    "WB":["West Bengal"],
-    "ROKA":["Karnataka","Kerala","Goa"],
-    "ROTN":["Tamil Nadu","Puducherry"],
-    "BH/JH":["Bihar","Jharkhand"],
+    "NCR":["Delhi","Haryana","Uttar Pradesh"], "UP/UK":["Uttar Pradesh","Uttarakhand"],
+    "MH":["Maharashtra"], "KA":["Karnataka"], "TN":["Tamil Nadu"],
+    "AP/TS":["Andhra Pradesh","Telangana"], "GJ":["Gujarat"], "RJ":["Rajasthan"],
+    "WB":["West Bengal"], "ROKA":["Karnataka","Kerala","Goa"],
+    "ROTN":["Tamil Nadu","Puducherry"], "BH/JH":["Bihar","Jharkhand"],
     "North East":["Assam","Meghalaya","Tripura","Manipur","Nagaland","Arunachal Pradesh","Mizoram","Sikkim"],
-    "MP/RJ":["Madhya Pradesh","Rajasthan"],
-    "ROMH":["Maharashtra","Goa"],
-    "BOM/PNQ":["Maharashtra"],
-    "Pune":["Maharashtra"],
-    "ROK/KL":["Karnataka","Kerala"]
+    "MP/RJ":["Madhya Pradesh","Rajasthan"], "ROMH":["Maharashtra","Goa"],
+    "BOM/PNQ":["Maharashtra"], "Pune":["Maharashtra"], "ROK/KL":["Karnataka","Kerala"]
   };
-  const byPod = byRecency
-    .map(p=>({
-      p,
-      score:(podStates[p.pod]||[]).includes(c.state)?100:0,
-      loginScore:(p.lastLoginTs||0)
-    }))
-    .filter(x=>x.score>0)
-    .sort((a,b)=>b.score-a.score||b.loginScore-a.loginScore||(a.p.active||0)-(b.p.active||0));
-  if(byPod.length) return {fpi:byPod[0].p, priority};
+  const podMatch = byLoad.filter(p=>(podStates[p.pod]||[]).includes(c.state));
+  if(podMatch.length) return {fpi:podMatch[0], priority};
 
-  // Last resort: most recently logged-in agent
-  return {fpi:byRecency[0]||null, priority};
+  // 5. Last resort: least active agent
+  return {fpi:byLoad[0]||null, priority};
 }
+
 
 // ── CM Login via Sheet3 JSONP ──────────────────────────────
 // Local CT admin credentials — these work instantly without Apps Script
