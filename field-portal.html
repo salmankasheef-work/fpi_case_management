@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <title>FPI Field Portal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;600&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&family=DM+Sans:wght@400;600&family=Syne:wght@600;700;800&family=Syne:wght@700;800&family=DM+Sans:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#dbeafe;--sf:#ffffff;--sf2:#f0f7ff;--sf3:#e0eeff;
@@ -185,13 +185,10 @@ textarea.fc{resize:none;min-height:76px;}
 .utr-detected-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--navy);}
 
 /* LOGIN SCREEN */
-.login-screen{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,#0f0f1a 0%,#1a1025 40%,#0d1f3c 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.login-screen{position:fixed;inset:0;z-index:1000;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .login-card{background:#fff;border-radius:18px;padding:20px 18px;width:100%;max-width:380px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto;}
 .login-logo{display:flex;align-items:center;gap:8px;margin-bottom:18px;justify-content:center;}
 .login-logo-badge{background:var(--acc);color:#fff;font-family:var(--disp);font-weight:800;font-size:14px;padding:6px 12px;border-radius:7px;}
-.otp-digit:focus{border-color:rgba(255,107,53,.7)!important;background:rgba(255,107,53,.08)!important;}
-@keyframes loginFadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes spin{to{transform:rotate(360deg)}}
 .login-title{font-family:var(--disp);font-size:18px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:4px;}
 .login-sub{font-size:11.5px;color:var(--txt3);text-align:center;margin-bottom:20px;font-family:var(--mono);}
 .g-btn{width:100%;padding:12px;border:1.5px solid var(--bd);border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--txt);transition:all .15s;margin-bottom:12px;}
@@ -199,8 +196,8 @@ textarea.fc{resize:none;min-height:76px;}
 .g-btn svg{width:18px;height:18px;flex-shrink:0;}
 .login-note{font-size:10px;color:var(--txt3);text-align:center;font-family:var(--mono);}
 /* ONBOARDING */
-.onboard-screen{position:fixed;inset:0;z-index:999;background:#f1f5f9;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.onboard-card{background:#fff;border-radius:16px;padding:20px 18px;width:100%;max-width:400px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 24px rgba(0,0,0,.12);}
+.onboard-screen{position:fixed;inset:0;z-index:999;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.onboard-card{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:380px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .step-dot-row{display:flex;justify-content:center;gap:6px;margin-bottom:18px;}
 .step-dot{width:8px;height:8px;border-radius:50%;background:var(--bd);}
 .step-dot.active{background:var(--acc);}
@@ -219,136 +216,41 @@ textarea.fc{resize:none;min-height:76px;}
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-badge">FPI</div>
+      <div style="font-family:var(--disp);font-size:13px;font-weight:700;color:var(--navy)">Field Portal</div>
+    </div>
+    <div class="login-title">Sign In</div>
+    <div class="login-sub">Enter your @shadowfax.in email</div>
 
-  <!-- Animated background particles -->
-  <canvas id="login-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.35"></canvas>
-
-  <div style="position:relative;z-index:1;width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px">
-
-    <!-- Welcome section -->
-    <div id="login-welcome" style="text-align:center;margin-bottom:28px;animation:loginFadeUp .6s ease both">
-      <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:linear-gradient(135deg,#FF6B35,#FF8C00);border-radius:20px;margin-bottom:14px;box-shadow:0 12px 32px rgba(255,107,53,.4)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" style="width:34px;height:34px">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-      </div>
-      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.5px;margin-bottom:6px">
-        FPI Field Portal
-      </div>
-      <div style="font-size:13px;color:rgba(255,255,255,.55);font-family:'DM Sans',sans-serif;letter-spacing:.02em">
-        Shadowfax · Fraud Prevention Intelligence
+    <div style="margin-bottom:12px">
+      <label style="font-family:var(--mono);font-size:10px;font-weight:600;color:var(--txt2);display:block;margin-bottom:5px;letter-spacing:.04em">EMAIL ADDRESS</label>
+      <div style="position:relative">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--txt3);pointer-events:none"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        <input type="email" id="login-email"
+          placeholder="yourname@shadowfax.in"
+          autocomplete="email"
+          style="width:100%;padding:11px 12px 11px 34px;border:1.5px solid var(--bd);border-radius:9px;font-size:13px;font-family:var(--sans);outline:none;color:var(--txt);background:#fff;-webkit-appearance:none;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--acc)';this.style.boxShadow='0 0 0 3px rgba(29,78,216,.1)'"
+          onblur="this.style.borderColor='var(--bd)';this.style.boxShadow='none'"
+          onkeydown="if(event.key==='Enter')handleEmailSignIn()">
       </div>
     </div>
 
-    <!-- Login card -->
-    <div style="width:100%;max-width:360px;animation:loginFadeUp .7s .1s ease both">
+    <button onclick="handleEmailSignIn()"
+      style="width:100%;padding:12px;background:var(--acc);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;transition:opacity .15s"
+      ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Sign In
+    </button>
 
-      <!-- Step 1: Phone number input -->
-      <div id="step-phone" style="background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px">
-
-        <div style="margin-bottom:20px">
-          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Welcome back 👋</div>
-          <div style="font-size:12.5px;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif">Enter your registered mobile number to receive OTP on email</div>
-        </div>
-
-        <!-- Phone input -->
-        <div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:12px;overflow:hidden;transition:border-color .2s"
-               id="phone-input-wrap">
-            <div style="padding:0 12px;color:rgba(255,255,255,.5);font-size:14px;font-family:'DM Sans',sans-serif;border-right:1px solid rgba(255,255,255,.12);height:48px;display:flex;align-items:center;flex-shrink:0">
-              🇮🇳 +91
-            </div>
-            <input type="tel" id="login-phone" maxlength="10"
-              placeholder="10-digit mobile number"
-              autocomplete="tel"
-              style="flex:1;padding:0 14px;height:48px;background:transparent;border:none;outline:none;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;-webkit-appearance:none"
-              onfocus="document.getElementById('phone-input-wrap').style.borderColor='rgba(255,107,53,.7)'"
-              onblur="document.getElementById('phone-input-wrap').style.borderColor='rgba(255,255,255,.15)'"
-              oninput="this.value=this.value.replace(/[^0-9]/g,'')"
-              onkeydown="if(event.key==='Enter')requestOTP()">
-          </div>
-        </div>
-
-        <!-- Send OTP button -->
-        <button id="btn-send-otp" onclick="requestOTP()"
-          style="width:100%;height:48px;background:linear-gradient(135deg,#FF6B35,#FF8C00);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.02em;transition:opacity .15s;box-shadow:0 8px 24px rgba(255,107,53,.35)"
-          ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:17px;height:17px"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-          Send OTP via Email
-        </button>
-
-        <div id="login-error" style="display:none;margin-top:12px;color:#FF6B35;font-size:12px;text-align:center;padding:10px 14px;background:rgba(255,107,53,.1);border-radius:9px;border:1px solid rgba(255,107,53,.25);font-family:'DM Sans',sans-serif"></div>
-        <div id="login-loading" style="display:none;margin-top:12px;text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-family:'DM Sans',sans-serif">
-          <span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Sending OTP to your email…
-        </div>
-      </div>
-
-      <!-- Step 2: OTP input (hidden initially) -->
-      <div id="step-otp" style="display:none;background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;animation:loginFadeUp .4s ease both">
-
-        <div style="margin-bottom:20px">
-          <button onclick="backToPhone()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;padding:0;font-size:12px;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px;margin-bottom:10px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="15 18 9 12 15 6"/></svg>
-            Change number
-          </button>
-          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:4px">Enter OTP</div>
-          <div style="font-size:12.5px;color:rgba(255,255,255,.45);font-family:'DM Sans',sans-serif">
-            OTP sent to <span id="otp-email-display" style="color:#FF8C00;font-weight:600"></span>
-          </div>
-        </div>
-
-        <!-- 6 OTP digit boxes -->
-        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px" id="otp-boxes">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="0"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,0)" onkeydown="otpKeyDown(event,0)">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="1"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,1)" onkeydown="otpKeyDown(event,1)">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="2"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,2)" onkeydown="otpKeyDown(event,2)">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="3"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,3)" onkeydown="otpKeyDown(event,3)">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="4"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,4)" onkeydown="otpKeyDown(event,4)">
-          <input type="tel" maxlength="1" class="otp-digit" data-idx="5"
-            style="width:44px;height:52px;text-align:center;font-size:22px;font-weight:700;font-family:'Syne',sans-serif;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;outline:none;-webkit-appearance:none"
-            oninput="otpDigitInput(this,5)" onkeydown="otpKeyDown(event,5)">
-        </div>
-
-        <button id="btn-verify-otp" onclick="verifyOTPCode()"
-          style="width:100%;height:48px;background:linear-gradient(135deg,#FF6B35,#FF8C00);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;letter-spacing:.02em;transition:opacity .15s;box-shadow:0 8px 24px rgba(255,107,53,.35)"
-          ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">
-          Verify & Sign In
-        </button>
-
-        <div style="margin-top:14px;text-align:center">
-          <span style="font-size:12px;color:rgba(255,255,255,.35);font-family:'DM Sans',sans-serif">Didn't receive the email?</span>
-          <button id="btn-resend" onclick="requestOTP(true)" style="background:none;border:none;color:#FF8C00;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;padding:0 4px" disabled>
-            Resend <span id="resend-timer"></span>
-          </button>
-        </div>
-
-        <div id="otp-error" style="display:none;margin-top:12px;color:#FF6B35;font-size:12px;text-align:center;padding:10px 14px;background:rgba(255,107,53,.1);border-radius:9px;border:1px solid rgba(255,107,53,.25);font-family:'DM Sans',sans-serif"></div>
-        <div id="otp-loading" style="display:none;margin-top:12px;text-align:center;color:rgba(255,255,255,.5);font-size:12px;font-family:'DM Sans',sans-serif">
-          <span style="display:inline-block;animation:spin 1s linear infinite">⏳</span> Verifying…
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Footer -->
-    <div style="margin-top:24px;text-align:center;color:rgba(255,255,255,.2);font-size:11px;font-family:'DM Sans',sans-serif;animation:loginFadeUp .8s .2s ease both">
-      Shadowfax Technologies · FPI Team
-    </div>
+    <div id="login-error" style="display:none;color:var(--red);font-size:11.5px;text-align:center;margin-bottom:10px;padding:9px 12px;background:var(--red-d);border-radius:8px;border:1px solid rgba(220,38,38,.2)"></div>
+    <div id="login-loading" style="display:none;color:var(--acc);font-size:11.5px;text-align:center;margin-bottom:10px;font-family:var(--mono)">⏳ Verifying with agent list…</div>
+    <div class="login-note">Only @shadowfax.in accounts are permitted</div>
   </div>
+</div>
 
-<!-- ONBOARDING: Location + Selfie -->
-<div class="onboard-screen" 
 <!-- ONBOARDING: Location + Selfie -->
 <div class="onboard-screen" id="onboard-screen">
   <div class="onboard-card">
@@ -398,7 +300,7 @@ textarea.fc{resize:none;min-height:76px;}
       </div>
       <div id="loc-warn" style="display:none;font-size:11px;color:var(--yel);background:var(--yel-d);border:1px solid rgba(217,119,6,.2);border-radius:7px;padding:8px 10px;margin-bottom:10px"></div>
 
-      <button class="btn btn-p" style="width:100%" id="loc-next-btn" onclick="goOnboardStep2()">
+      <button class="btn btn-p" style="width:100%;opacity:.35;transition:opacity .2s" id="loc-next-btn" onclick="goOnboardStep2()" disabled>
         Continue →
       </button>
     </div>
@@ -424,9 +326,9 @@ textarea.fc{resize:none;min-height:76px;}
         <span>Tap to take selfie</span>
         <input type="file" id="selfie-input" accept="image/*" capture="user" onchange="handleSelfie(event)">
       </div>
-      <div id="selfie-hint" style="font-size:10.5px;color:var(--txt3);text-align:center;margin-top:4px;margin-bottom:10px">Selfie optional — tap to take</div>
+      <div id="selfie-hint" style="font-size:10.5px;color:var(--txt3);text-align:center;margin-top:4px;margin-bottom:10px">Selfie required for check-in</div>
       <button class="btn btn-g" style="width:100%;margin-bottom:8px" onclick="goOnboardStep1()">← Back</button>
-      <button class="btn btn-p" style="width:100%" id="selfie-next-btn" onclick="completeOnboarding()">
+      <button class="btn btn-p" style="width:100%" id="selfie-next-btn" onclick="completeOnboarding()" disabled>
         Enter Portal →
       </button>
     </div>
@@ -10208,140 +10110,27 @@ function showHubList(){
 function hideHubList(){
   document.getElementById("hub-dropdown").style.display="none";
 }
-// Maps city names to hub code prefixes used in Shadowfax hub naming
-const CITY_HUB_MAP = {
-  "bangalore":"BLR","bengaluru":"BLR",
-  "delhi":"DEL","new delhi":"DEL",
-  "mumbai":"BOM","mumbai":"MUM",
-  "pune":"PNQ",
-  "hyderabad":"HYD",
-  "chennai":"CHN",
-  "kolkata":"CCU",
-  "ahmedabad":"AMD",
-  "surat":"ST",
-  "jaipur":"JAI",
-  "lucknow":"LKO",
-  "kanpur":"CNB",
-  "nagpur":"NGP",
-  "noida":"NOI",
-  "gurgaon":"GGN","gurugram":"GGN",
-  "faridabad":"FDB",
-  "ghaziabad":"GZB",
-  "coimbatore":"CBE",
-  "kochi":"COK","cochin":"COK",
-  "patna":"PTA",
-  "bhopal":"BPL",
-  "indore":"IDR",
-  "vadodara":"BRC",
-  "surat":"ST",
-  "rajkot":"RJT",
-  "visakhapatnam":"VSKP",
-  "vijayawada":"BZA",
-  "mysore":"MYS","mysuru":"MYS",
-  "chandigarh":"CDG",
-  "ludhiana":"LDH",
-  "amritsar":"ASR",
-  "agra":"AGR",
-  "varanasi":"VNS",
-  "ranchi":"IXR",
-  "bhubaneswar":"BBS",
-  "guwahati":"GHY",
-  "dehradun":"DDN",
-  "jodhpur":"JDP",
-  "raipur":"RPR",
-  "goa":"GOI",
-  "thiruvananthapuram":"TVC","trivandrum":"TVC",
-  "madurai":"MDU",
-  "tiruchirappalli":"TRZ","trichy":"TRZ",
-  "mangalore":"MAQ",
-  "hubli":"HBX",
-  "belgaum":"BGM",
-  "davangere":"DVG",
-  "shimoga":"SME",
-  "tumkur":"TK",
-  "hassan":"HAS"
-};
-
-// Pre-filters hub dropdown to show city-relevant hubs first based on GPS location
-function filterHubsByLocation(city, state){
-  if(!city) return;
-  const cityLow = (city||"").toLowerCase();
-  const stateLow= (state||"").toLowerCase();
-
-  // Find matching hub prefix(es) for this city
-  const prefixes = [];
-  for(const [key,code] of Object.entries(CITY_HUB_MAP)){
-    if(cityLow.includes(key)||key.includes(cityLow)) prefixes.push(code.toLowerCase());
-  }
-
-  // Also try matching state keywords
-  const stateKeywords = stateLow.split(" ").filter(w=>w.length>3);
-
-  if(prefixes.length){
-    // Local hubs: start with city prefix
-    const local = HUB_LIST.filter(h=>prefixes.some(pfx=>h.toLowerCase().startsWith(pfx)));
-    // Nearby hubs: hub name contains city name
-    const cityMatches = HUB_LIST.filter(h=>
-      !local.includes(h) && (h.toLowerCase().includes(cityLow)||cityLow.includes(h.toLowerCase().split("_")[0].toLowerCase()))
-    );
-    // Rest (show but at bottom)
-    hubFiltered = [...local, ...cityMatches].slice(0,80);
-    if(!hubFiltered.length) hubFiltered = HUB_LIST.slice(0,80);
-
-    // Update search placeholder to indicate filter is active
-    const searchBox = document.getElementById("hub-search");
-    if(searchBox) searchBox.placeholder = "Showing "+city+" hubs — type to search all";
-  } else {
-    hubFiltered = HUB_LIST.slice(0,80);
-  }
-  renderHubList();
-}
-
 function filterHubs(q){
   q=(q||"").trim().toLowerCase();
-  if(q.length<1){
-    if(userLocation.city){
-      filterHubsByLocation(userLocation.city,userLocation.state);
-    } else {
-      hubFiltered=HUB_LIST.slice(0,50);
-      renderHubList();
-      document.getElementById("hub-dropdown").style.display="block";
-    }
-    return;
-  }
-  // Fast search: prefix first, then contains — cap at 50 for mobile
-  var prefix=[], contains=[];
-  for(var i=0;i<HUB_LIST.length;i++){
-    var h=HUB_LIST[i].toLowerCase();
-    if(h.startsWith(q)) prefix.push(HUB_LIST[i]);
-    else if(h.indexOf(q)>=0) contains.push(HUB_LIST[i]);
-    if(prefix.length+contains.length>=50) break;
-  }
-  hubFiltered=prefix.concat(contains).slice(0,50);
+  hubFiltered=q.length<1
+    ?HUB_LIST.slice(0,80)
+    :HUB_LIST.filter(h=>h.toLowerCase().includes(q)).slice(0,100);
   renderHubList();
   document.getElementById("hub-dropdown").style.display="block";
 }
 function renderHubList(){
-  var inner=document.getElementById("hub-list-inner");
-  if(!inner) return;
-  var frag=document.createDocumentFragment();
+  const inner=document.getElementById("hub-list-inner");
+  if(!inner)return;
   if(!hubFiltered.length){
-    var el=document.createElement("div");
-    el.style.cssText="padding:12px 14px;font-size:12px;color:var(--txt3)";
-    el.textContent="No hubs found";
-    frag.appendChild(el);
-  } else {
-    hubFiltered.forEach(function(h){
-      var d=document.createElement("div");
-      d.style.cssText="padding:10px 14px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--sf2);color:var(--txt)";
-      d.textContent=h;
-      d.onmousedown=function(e){e.preventDefault();};
-      d.onclick=function(){selectHub(h,d);};
-      frag.appendChild(d);
-    });
+    inner.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--txt3)">No hubs found</div>';
+    return;
   }
-  inner.innerHTML="";
-  inner.appendChild(frag);
+  inner.innerHTML=hubFiltered.map(h=>
+    `<div onmousedown="event.preventDefault()" onclick="selectHub('${h.replace(/'/g,"\\'")}',this)"
+      style="padding:11px 14px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--bd);-webkit-tap-highlight-color:rgba(29,78,216,.08)"
+      ontouchstart="this.style.background='var(--sf2)'" ontouchend="this.style.background=''">
+      ${h}</div>`
+  ).join("");
 }
 function selectHub(name){
   selectedHub=name;
@@ -10372,13 +10161,8 @@ function getSavedLocation(){
   try{const d=JSON.parse(localStorage.getItem("fpi_loc_"+(currentUser.email||""))||"{}");return(d.hub)?d:null;}catch(e){return null;}
 }
 function goOnboardStep2(){
-  if(!selectedHub){
-    var hs=document.getElementById("hub-search");
-    if(hs){hs.focus();hs.style.borderColor="var(--red)";setTimeout(function(){hs.style.borderColor="var(--bd)";},1200);}
-    showWarn("Please select your hub first.");
-    return;
-  }
-  var warn=document.getElementById("loc-warn");if(warn)warn.style.display="none";
+  if(!selectedHub){showWarn("Please select your hub first.");return;}
+  const warn=document.getElementById("loc-warn");if(warn) warn.style.display="none";
   document.getElementById("onboard-step-1").style.display="none";
   document.getElementById("onboard-step-2").style.display="block";
   document.getElementById("dot-1").className="step-dot done";
@@ -10388,63 +10172,59 @@ function goOnboardStep2(){
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
 function startGPSDetection(){
-  var statusTxt=document.getElementById("gps-status-text");
-  var spinner  =document.getElementById("gps-spinner");
-  var retryBtn =document.getElementById("gps-retry-btn");
-
+  const statusBox = document.getElementById("gps-status-box");
+  const statusTxt = document.getElementById("gps-status-text");
+  const spinner   = document.getElementById("gps-spinner");
+  const retryBtn  = document.getElementById("gps-retry-btn");
   if(!navigator.geolocation){
-    if(spinner)   spinner.style.display="none";
-    if(statusTxt) statusTxt.textContent="GPS unavailable — continue without location";
+    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(spinner) spinner.style.display="none";
     return;
   }
+  let done = false;
+  const safe = setTimeout(()=>{
+    if(done) return; done=true;
+    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="inline";
+  }, 10000);
 
-  // 5-second hard timeout — never block the user
-  var t = setTimeout(function(){
-    if(spinner)   spinner.style.display="none";
-    if(retryBtn)  retryBtn.style.display="inline";
-    if(statusTxt) statusTxt.textContent="Location timeout — you can still continue";
-  }, 5000);
-
-  navigator.geolocation.getCurrentPosition(
-    function(pos){
-      clearTimeout(t);
-      if(spinner)  spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="none";
-      userLocation.lat     = pos.coords.latitude;
-      userLocation.lng     = pos.coords.longitude;
+  navigator.geolocation.watchPosition(
+    pos=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      userLocation.lat = pos.coords.latitude;
+      userLocation.lng = pos.coords.longitude;
       userLocation.isFresh = true;
-      // Reverse geocode silently — doesn't block anything
-      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+
-            "&lon="+pos.coords.longitude+"&format=json&accept-language=en")
-        .then(function(r){return r.json();})
-        .then(function(d){
-          var a=d.address||{};
-          var city=a.city||a.town||a.suburb||a.village||"";
-          var state=a.state||"";
-          userLocation.city    =city;
-          userLocation.state   =state;
-          userLocation.address =(city&&state)?city+", "+state:
-            pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3);
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="none";
+      // Reverse geocode
+      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
+        .then(r=>r.json()).then(d=>{
+          const a=d.address||{};
+          const city=a.city||a.town||a.suburb||a.village||"";
+          const state=a.state||"";
+          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
-          if(city) filterHubsByLocation(city,state);
-        }).catch(function(){
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 Location detected</span>';
+        }).catch(()=>{
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
         });
     },
-    function(err){
-      clearTimeout(t);
-      if(spinner)  spinner.style.display="none";
+    err=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      if(spinner) spinner.style.display="none";
       if(retryBtn) retryBtn.style.display="inline";
-      var prev=getSavedLocation();
+      const prev=getSavedLocation();
       if(prev&&prev.city){
         userLocation.lat=prev.lat; userLocation.lng=prev.lng;
         userLocation.address=prev.city;
-        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">📍 Last: '+prev.city+'</span>';
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
       } else {
-        if(statusTxt) statusTxt.textContent="Location unavailable — continue without GPS";
+        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
       }
     },
-    {enableHighAccuracy:false, timeout:5000, maximumAge:60000}
+    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
   );
 }
 function retryGPS(){ startGPSDetection(); }
@@ -10533,22 +10313,14 @@ function extractUTRFromImage(base64){
   if(sess){
     try{
       currentUser=JSON.parse(sess);
-      // Restore last hub + location
-      try{
-        const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");
-        if(loc.hub){selectedHub=loc.hub;}
-        if(loc.lat){userLocation.lat=loc.lat;userLocation.lng=loc.lng;}
-        if(loc.city){userLocation.address=loc.city;}
-      }catch(e){}
+      try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");if(loc.lat){userLocation.lat=loc.lat;userLocation.lng=loc.lng;userLocation.address=loc.city||"";}}catch(e){}
       setUserHeader();
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-shell").style.display="flex";
-      loadAgentsFromSheet().then(function(){loadMyCases();});
+      // Always re-fetch agents to pick up new additions
+      loadAgentsFromSheet().then(()=>loadMyCases());
       return;
-    }catch(e){
-      // Bad session — clear and show login
-      sessionStorage.removeItem("fpi_session");
-    }
+    }catch(e){}
   }
 })();
 
@@ -10590,8 +10362,16 @@ let attendance   = "Present";
 let selectedHub  = "";
 
 // ── Helpers ───────────────────────────────────────────────
-// showLoginError: see OTP login section above
-
+function showLoginError(msg){
+  const el=document.getElementById("login-error");
+  if(el){el.innerHTML=msg;el.style.display="block";}
+  const ld=document.getElementById("login-loading");
+  if(ld) ld.style.display="none";
+}
+function clearLoginError(){
+  const el=document.getElementById("login-error"); if(el) el.style.display="none";
+  const ld=document.getElementById("login-loading"); if(ld) ld.style.display="none";
+}
 function makeInitials(name){
   const p=name.trim().split(" ");
   return((p[0]||"")[0]||"").toUpperCase()+((p[p.length-1]||"")[0]||"").toUpperCase();
@@ -10665,244 +10445,55 @@ function getCachedAgents(){
 }
 
 // ── Email sign-in ─────────────────────────────────────────
-// ── OTP Login Flow ────────────────────────────────────────────
-var _otpPhone     = "";     // phone being verified
-var _resendTimer  = null;   // countdown interval
-var _pendingAgent = null;   // agent data returned with OTP verify
-
-function clearLoginError(){
-  const e=document.getElementById("login-error");if(e){e.innerHTML="";e.style.display="none";}
-  const o=document.getElementById("otp-error");if(o){o.innerHTML="";o.style.display="none";}
-}
-function showLoginError(msg){
-  const e=document.getElementById("login-error");if(e){e.innerHTML=msg;e.style.display="block";}
-  const ld=document.getElementById("login-loading");if(ld)ld.style.display="none";
-}
-function showOtpError(msg){
-  const e=document.getElementById("otp-error");if(e){e.innerHTML=msg;e.style.display="block";}
-  const ld=document.getElementById("otp-loading");if(ld)ld.style.display="none";
-}
-
-function requestOTP(isResend){
+async function handleEmailSignIn(){
   clearLoginError();
-  const raw = (document.getElementById("login-phone").value||"").replace(/[^0-9]/g,"").trim();
-  if(!raw||raw.length!==10){showLoginError("Enter a valid 10-digit mobile number.");return;}
-
-  const ld = document.getElementById("login-loading");
-  const btn= document.getElementById("btn-send-otp");
-  if(ld)  ld.style.display="block";
-  if(btn) btn.disabled=true;
-
-  const ts = Date.now();
-  const cb = "otpSendCb_"+ts;
-  const url= APPS_SCRIPT_URL+"?action=send_otp&phone="+encodeURIComponent(raw)+"&_t="+ts+"&callback="+cb;
-
-  const timer = setTimeout(()=>{
-    try{delete window[cb];}catch(e){}
-    showLoginError("Request timed out. Check connection.");
-    if(btn)btn.disabled=false;
-  },20000);
-
-  window[cb]=function(data){
-    clearTimeout(timer);
-    try{delete window[cb];}catch(e){}
-    if(ld) ld.style.display="none";
-    if(btn)btn.disabled=false;
-
-    if(!data||!data.ok){
-      showLoginError("⚠ "+(data&&data.error||"Unable to send OTP. Please try again.")+
-        "<br><small>If this persists, contact your admin.</small>");
-      return;
-    }
-
-    // OTP sent to registered email — move to OTP entry step
-    _otpPhone = raw;
-    document.getElementById("step-phone").style.display="none";
-    document.getElementById("step-otp").style.display="block";
-    var emailEl = document.getElementById("otp-email-display");
-    if(emailEl) emailEl.textContent = data.maskedEmail || "your registered email";
-
-    // Focus first OTP digit
-    setTimeout(()=>{ const d=document.querySelector(".otp-digit");if(d)d.focus(); },100);
-
-    // Start 30s resend countdown
-    startResendCountdown();
+  const emailRaw=(document.getElementById("login-email").value||"").trim().toLowerCase();
+  if(!emailRaw){showLoginError("Please enter your email address.");return;}
+  if(!emailRaw.endsWith("@shadowfax.in")){showLoginError("Only @shadowfax.in accounts are allowed.");return;}
+  const ld=document.getElementById("login-loading");
+  if(ld) ld.style.display="block";
+  // Try fresh fetch first; if it fails fall back to cache so login still works offline
+  const agents=await loadAgentsFromSheet();
+  const match=agents.find(a=>a.email===emailRaw);
+  if(!agents.length){
+    // No agents at all — Apps Script unreachable AND no local cache
+    showLoginError(
+      "⚠ Cannot connect to FPI server.<br>"+
+      "<small>Make sure your Apps Script is deployed as <strong>Anyone</strong> (not restricted to Shadowfax org).<br>"+
+      "Or try again in a moment.</small>"
+    );
+    const ld=document.getElementById("login-loading");if(ld)ld.style.display="none";
+    return;
+  }
+  if(!match){
+    showLoginError("⚠ <strong>"+emailRaw+"</strong> is not registered.<br><small>Ask your admin to add you to Sheet1 in the FPI Google Sheet. Changes reflect on next login.</small>");
+    return;
+  }
+  const parts=emailRaw.split("@")[0].split(".");
+  const derivedName=parts.map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(" ");
+  currentUser={
+    name    :match?.name  ||derivedName,
+    email   :emailRaw,
+    initials:makeInitials(match?.name||derivedName),
+    pod     :match?.pod   ||"",
+    zone    :match?.zone  ||"",
+    desig   :match?.desig ||"",
+    color   :match?.color ||"#3b8ef8",
   };
-
-  const s=document.createElement("script");
-  s.src=url;
-  s.onerror=()=>{ clearTimeout(timer);showLoginError("Cannot reach server. Check connection.");if(btn)btn.disabled=false; };
-  document.head.appendChild(s);
-}
-
-function backToPhone(){
-  document.getElementById("step-otp").style.display="none";
-  document.getElementById("step-phone").style.display="block";
   clearLoginError();
-  document.querySelectorAll(".otp-digit").forEach(d=>{d.value="";d.style.borderColor="rgba(255,255,255,.15)";});
-  if(_resendTimer){clearInterval(_resendTimer);_resendTimer=null;}
+  try{sessionStorage.setItem("fpi_session",JSON.stringify(currentUser));}catch(e){}
+  setUserHeader();
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("onboard-screen").style.display="flex";
+  // Auto-start GPS as soon as onboarding screen appears
+  setTimeout(function(){ if(typeof startGPSDetection==="function") startGPSDetection(); }, 400);
 }
-
-function otpDigitInput(el, idx){
-  el.value = el.value.replace(/[^0-9]/g,"").slice(-1);
-  // Highlight filled
-  el.style.borderColor = el.value ? "rgba(255,107,53,.7)" : "rgba(255,255,255,.15)";
-  // Auto-advance
-  if(el.value){
-    const next = document.querySelector(".otp-digit[data-idx='"+(idx+1)+"']");
-    if(next) next.focus();
-    else verifyOTPCode(); // auto-submit on last digit
-  }
-}
-
-function otpKeyDown(event,idx){
-  if(event.key==="Backspace"){
-    const el=document.querySelector(".otp-digit[data-idx='"+idx+"']");
-    if(el&&!el.value){
-      const prev=document.querySelector(".otp-digit[data-idx='"+(idx-1)+"']");
-      if(prev){prev.focus();prev.value="";}
-    }
-  }
-}
-
-function verifyOTPCode(){
-  clearLoginError();
-  const digits = Array.from(document.querySelectorAll(".otp-digit")).map(d=>d.value).join("");
-  if(digits.length<6){showOtpError("Enter all 6 digits.");return;}
-
-  const ld  = document.getElementById("otp-loading");
-  const btn = document.getElementById("btn-verify-otp");
-  if(ld)  ld.style.display="block";
-  if(btn) btn.disabled=true;
-
-  const ts  = Date.now();
-  const cb  = "otpVerifyCb_"+ts;
-  const url = APPS_SCRIPT_URL+"?action=verify_otp&phone="+encodeURIComponent(_otpPhone)+"&otp="+encodeURIComponent(digits)+"&_t="+ts+"&callback="+cb;
-
-  const timer=setTimeout(()=>{
-    try{delete window[cb];}catch(e){}
-    showOtpError("Verification timed out. Try again.");
-    if(btn)btn.disabled=false;
-  },20000);
-
-  window[cb]=function(data){
-    clearTimeout(timer);
-    try{delete window[cb];}catch(e){}
-    if(ld)  ld.style.display="none";
-    if(btn) btn.disabled=false;
-
-    if(!data||!data.ok){
-      showOtpError("⚠ "+(data&&data.error||"Verification failed"));
-      // Shake OTP boxes
-      document.querySelectorAll(".otp-digit").forEach(d=>{
-        d.style.borderColor="rgba(220,38,38,.7)";
-        d.style.background="rgba(220,38,38,.1)";
-        setTimeout(()=>{d.style.borderColor="rgba(255,255,255,.15)";d.style.background="rgba(255,255,255,.08)";},600);
-      });
-      return;
-    }
-
-    // SUCCESS — set currentUser from OTP verify response
-    currentUser={
-      name    : data.name  ||_otpPhone,
-      email   : data.email ||"",
-      phone   : _otpPhone,
-      initials: makeInitials(data.name||_otpPhone),
-      pod     : data.pod   ||"",
-      zone    : data.zone  ||"",
-      desig   : data.desig ||"",
-      color   : data.color ||"#FF6B35",
-    };
-
-    try{sessionStorage.setItem("fpi_session",JSON.stringify(currentUser));}catch(e){}
-    setUserHeader();
-
-    // Celebration flash then proceed
-    document.querySelectorAll(".otp-digit").forEach(d=>{
-      d.style.borderColor="rgba(34,197,94,.7)";
-      d.style.background="rgba(34,197,94,.1)";
-    });
-
-    setTimeout(()=>{
-      document.getElementById("login-screen").style.display="none";
-      document.getElementById("onboard-screen").style.display="flex";
-      // Pre-load first 50 hubs for instant dropdown on first tap
-      try{ hubFiltered=HUB_LIST.slice(0,50); }catch(ex){}
-      setTimeout(function(){ if(typeof startGPSDetection==="function") startGPSDetection(); }, 200);
-    }, 400);
-  };
-
-  const s=document.createElement("script");
-  s.src=url;
-  s.onerror=()=>{ clearTimeout(timer);showOtpError("Cannot reach server.");if(btn)btn.disabled=false; };
-  document.head.appendChild(s);
-}
-
-function startResendCountdown(){
-  const btn   = document.getElementById("btn-resend");
-  const timer = document.getElementById("resend-timer");
-  let   secs  = 30;
-  if(btn)  btn.disabled=true;
-  if(timer)timer.textContent="("+secs+"s)";
-  _resendTimer = setInterval(()=>{
-    secs--;
-    if(timer)timer.textContent=secs>0?"("+secs+"s)":"";
-    if(secs<=0){
-      clearInterval(_resendTimer);
-      if(btn){btn.disabled=false;}
-    }
-  },1000);
-}
-
-// ── Canvas particle animation for login background ────────
-function initLoginCanvas(){
-  const canvas=document.getElementById("login-canvas");
-  if(!canvas)return;
-  const ctx=canvas.getContext("2d");
-  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
-  const pts=Array.from({length:40},()=>({
-    x:Math.random()*canvas.width,y:Math.random()*canvas.height,
-    vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,
-    r:Math.random()*2+1,o:Math.random()*.5+.1
-  }));
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    pts.forEach(p=>{
-      p.x+=p.vx;p.y+=p.vy;
-      if(p.x<0||p.x>canvas.width)p.vx*=-1;
-      if(p.y<0||p.y>canvas.height)p.vy*=-1;
-      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      ctx.fillStyle="rgba(255,107,53,"+p.o+")";ctx.fill();
-    });
-    // Draw connecting lines
-    pts.forEach((a,i)=>pts.slice(i+1).forEach(b=>{
-      const d=Math.hypot(a.x-b.x,a.y-b.y);
-      if(d<100){
-        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);
-        ctx.strokeStyle="rgba(255,107,53,"+(0.15*(1-d/100))+")";
-        ctx.lineWidth=.5;ctx.stroke();
-      }
-    }));
-    requestAnimationFrame(draw);
-  }
-  draw();
-  window.addEventListener("resize",()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
-}
-// Init canvas on load
-if(document.readyState==="loading"){
-  document.addEventListener("DOMContentLoaded",initLoginCanvas);
-}else{
-  setTimeout(initLoginCanvas,0);
-}
-
-// Keep old email signin alias for any remaining references
-function handleEmailSignIn(){ requestOTP(); }
 
 // ── Attendance + Selfie ───────────────────────────────────
 function setAttendance(val,btn){
   attendance=val;
-  ["btn-present","btn-absent"].forEach(function(id){
-    var b=document.getElementById(id);
+  ["btn-present","btn-absent"].forEach(id=>{
+    const b=document.getElementById(id);
     if(b){b.style.background="#fff";b.style.color="var(--txt3)";b.style.borderColor="var(--bd)";}
   });
   if(btn){
@@ -10910,11 +10501,14 @@ function setAttendance(val,btn){
     btn.style.color=val==="Present"?"var(--grn)":"var(--red)";
     btn.style.borderColor=val==="Present"?"var(--grn)":"var(--red)";
   }
-  var hint=document.getElementById("selfie-hint");
-  if(hint) hint.textContent="Selfie optional — tap to take";
-  // Enter Portal is always enabled — selfie is optional
-  var nextBtn=document.getElementById("selfie-next-btn");
-  if(nextBtn) nextBtn.disabled=false;
+  const hint=document.getElementById("selfie-hint");
+  if(val==="Absent"){
+    if(hint) hint.textContent="Selfie optional when absent";
+    document.getElementById("selfie-next-btn").disabled=false;
+  }else{
+    if(hint) hint.textContent="Selfie required for check-in";
+    if(!selfieBase64) document.getElementById("selfie-next-btn").disabled=true;
+  }
 }
 function handleSelfie(event){
   const file=event.target.files[0];if(!file)return;
@@ -10965,7 +10559,6 @@ async function completeOnboarding(){
     const cb="fpiLoginCb_"+Date.now();
     const params=new URLSearchParams({
       action    :"log_login",
-      phone     :currentUser.phone||"",
       email     :currentUser.email||"",
       name      :currentUser.name||"",
       attendance:attendance||"Present",
@@ -11069,7 +10662,62 @@ function statusKeyFromLabel(label){
 
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
+function startGPSDetection(){
+  const statusBox = document.getElementById("gps-status-box");
+  const statusTxt = document.getElementById("gps-status-text");
+  const spinner   = document.getElementById("gps-spinner");
+  const retryBtn  = document.getElementById("gps-retry-btn");
+  if(!navigator.geolocation){
+    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(spinner) spinner.style.display="none";
+    return;
+  }
+  let done = false;
+  const safe = setTimeout(()=>{
+    if(done) return; done=true;
+    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="inline";
+  }, 10000);
 
+  navigator.geolocation.watchPosition(
+    pos=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      userLocation.lat = pos.coords.latitude;
+      userLocation.lng = pos.coords.longitude;
+      userLocation.isFresh = true;
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="none";
+      // Reverse geocode
+      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
+        .then(r=>r.json()).then(d=>{
+          const a=d.address||{};
+          const city=a.city||a.town||a.suburb||a.village||"";
+          const state=a.state||"";
+          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
+        }).catch(()=>{
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
+        });
+    },
+    err=>{
+      if(done) return; done=true;
+      clearTimeout(safe);
+      if(spinner) spinner.style.display="none";
+      if(retryBtn) retryBtn.style.display="inline";
+      const prev=getSavedLocation();
+      if(prev&&prev.city){
+        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
+        userLocation.address=prev.city;
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
+      } else {
+        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
+      }
+    },
+    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
+  );
+}
 function retryGPS(){ startGPSDetection(); }
 
 // ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
@@ -11102,7 +10750,20 @@ function extractUTRFromImage(base64){
 }
 
 // ── Session restore ───────────────────────────────────────
-/* session restore handled above */;
+(function(){
+  const sess=sessionStorage.getItem("fpi_session");
+  if(sess){
+    try{
+      currentUser=JSON.parse(sess);
+      try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");if(loc.hub){selectedHub=loc.hub;userLocation.hub=loc.hub;userLocation.address=loc.hub;}}catch(e){}
+      setUserHeader();
+      document.getElementById("login-screen").style.display="none";
+      document.getElementById("main-shell").style.display="flex";
+      loadMyCases();
+      return;
+    }catch(e){}
+  }
+})();
 
 // ── Sign out + profile ────────────────────────────────────
 
