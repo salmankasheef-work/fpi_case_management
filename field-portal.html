@@ -216,7 +216,7 @@ textarea.fc{resize:none;min-height:76px;}
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
-  <!-- Welcome Hero -->
+  <!-- Hero -->
   <div style="width:100%;max-width:420px;padding:52px 28px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;flex-shrink:0">
     <div style="width:64px;height:64px;background:rgba(255,255,255,.1);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1.5px solid rgba(255,255,255,.18)">
       <svg viewBox="0 0 40 40" fill="none" style="width:36px;height:36px"><polygon points="20,3 37,33 3,33" fill="#3b8ef8"/><polygon points="20,11 30,29 10,29" fill="white" opacity=".2"/><circle cx="27" cy="13" r="4.5" fill="#facc15"/></svg>
@@ -232,9 +232,8 @@ textarea.fc{resize:none;min-height:76px;}
       <div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:#fff">GPS</div><div style="font-size:9px;color:rgba(255,255,255,.35);font-family:var(--mono);letter-spacing:.08em">TRACKED</div></div>
     </div>
   </div>
-  <!-- Login Card -->
+  <!-- Card -->
   <div class="login-card" style="margin-top:auto">
-    <!-- Step 1: Phone -->
     <div id="step-phone">
       <div class="login-title">Welcome Back</div>
       <div class="login-sub">Enter your registered mobile number</div>
@@ -258,13 +257,10 @@ textarea.fc{resize:none;min-height:76px;}
       </button>
       <div id="login-error" style="display:none;color:var(--red);font-size:12px;text-align:center;margin-bottom:10px;padding:10px 14px;background:var(--red-d);border-radius:9px;border:1px solid rgba(220,38,38,.2);line-height:1.5"></div>
       <div id="login-loading" style="display:none;color:var(--acc);font-size:12px;text-align:center;margin-bottom:10px;font-family:var(--mono)">⏳ Sending OTP to your email…</div>
-      <div class="login-note">OTP sent to your registered email (valid 10 minutes)</div>
+      <div class="login-note">OTP sent to registered email · valid 10 minutes</div>
     </div>
-    <!-- Step 2: OTP -->
     <div id="step-otp" style="display:none">
-      <button onclick="backToPhone()" style="background:none;border:none;color:var(--txt3);font-size:12px;font-family:var(--sans);cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="15 18 9 12 15 6"/></svg>Change number
-      </button>
+      <button onclick="backToPhone()" style="background:none;border:none;color:var(--txt3);font-size:12px;font-family:var(--sans);cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="15 18 9 12 15 6"/></svg>Change number</button>
       <div class="login-title">Enter OTP</div>
       <div class="login-sub" id="otp-sent-msg">OTP sent to your registered email</div>
       <div style="display:flex;gap:8px;justify-content:center;margin:16px 0">
@@ -277,8 +273,7 @@ textarea.fc{resize:none;min-height:76px;}
       </div>
       <button onclick="verifyOTP()" id="btn-verify-otp"
         style="width:100%;height:50px;background:var(--acc);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;margin-bottom:14px;transition:opacity .15s;box-shadow:0 4px 12px rgba(29,78,216,.25)"
-        ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">Verify &amp; Sign In
-      </button>
+        ontouchstart="this.style.opacity='.8'" ontouchend="this.style.opacity='1'">Verify &amp; Sign In</button>
       <div id="otp-error" style="display:none;color:var(--red);font-size:12px;text-align:center;margin-bottom:10px;padding:10px 14px;background:var(--red-d);border-radius:9px;border:1px solid rgba(220,38,38,.2);line-height:1.5"></div>
       <div id="otp-loading" style="display:none;color:var(--acc);font-size:12px;text-align:center;margin-bottom:10px;font-family:var(--mono)">⏳ Verifying OTP…</div>
       <div style="text-align:center;font-size:12px;color:var(--txt3)">Didn't receive?
@@ -10398,13 +10393,11 @@ let selectedHub  = "";
 
 // ── Helpers ───────────────────────────────────────────────
 function showLoginError(msg){
-  var e=document.getElementById("login-error");
-  if(e){e.innerHTML=msg;e.style.display="block";}
+  var e=document.getElementById("login-error"); if(e){e.innerHTML=msg;e.style.display="block";}
   var l=document.getElementById("login-loading"); if(l)l.style.display="none";
 }
 function showOtpError(msg){
-  var e=document.getElementById("otp-error");
-  if(e){e.innerHTML=msg;e.style.display="block";}
+  var e=document.getElementById("otp-error"); if(e){e.innerHTML=msg;e.style.display="block";}
   var v=document.getElementById("otp-loading"); if(v)v.style.display="none";
 }
 function clearLoginError(){
@@ -10413,7 +10406,7 @@ function clearLoginError(){
   var l=document.getElementById("login-loading"); if(l)l.style.display="none";
   var v=document.getElementById("otp-loading");   if(v)v.style.display="none";
 }
-// ── OTP Login ── phone → email OTP via Apps Script MailApp ──────────
+// ── OTP Login ────────────────────────────────────────────
 var _otpPhone="", _resendInterval=null;
 
 function requestOTP(isResend){
@@ -10422,30 +10415,23 @@ function requestOTP(isResend){
   if(phone.length!==10){showLoginError("Enter a valid 10-digit mobile number.");return;}
   var btn=document.getElementById("btn-send-otp"), ld=document.getElementById("login-loading");
   if(btn)btn.disabled=true; if(ld)ld.style.display="block";
-  var ts=Date.now(), cb="otpSendCb_"+ts;
+  var ts=Date.now(), cb="otpSC_"+ts;
   var url=APPS_SCRIPT_URL+"?action=send_otp&phone="+encodeURIComponent(phone)+"&_t="+ts+"&callback="+cb;
-  var timer=setTimeout(function(){
-    try{delete window[cb];}catch(x){}
-    showLoginError("Request timed out. Check your internet connection.");
-    if(btn)btn.disabled=false;
-  },25000);
+  var timer=setTimeout(function(){try{delete window[cb];}catch(x){}showLoginError("Request timed out. Check connection.");if(btn)btn.disabled=false;},25000);
   window[cb]=function(data){
-    clearTimeout(timer); try{delete window[cb];}catch(x){}
+    clearTimeout(timer);try{delete window[cb];}catch(x){}
     if(btn)btn.disabled=false; if(ld)ld.style.display="none";
-    if(!data||!data.ok){
-      showLoginError("⚠ "+(data&&data.error||"Could not send OTP. Try again."));
-      return;
-    }
+    if(!data||!data.ok){showLoginError("⚠ "+(data&&data.error||"Could not send OTP. Try again."));return;}
     _otpPhone=phone;
     document.getElementById("step-phone").style.display="none";
     document.getElementById("step-otp").style.display="block";
     var m2=document.getElementById("otp-sent-msg");
-    if(m2) m2.textContent="OTP sent to "+(data.maskedEmail||"your registered email");
+    if(m2)m2.textContent="OTP sent to "+(data.maskedEmail||"your registered email");
     setTimeout(function(){var d=document.querySelector(".otp-digit");if(d)d.focus();},150);
     startResendTimer();
   };
   var s=document.createElement("script"); s.src=url;
-  s.onerror=function(){clearTimeout(timer);showLoginError("Cannot reach server. Check connection.");if(btn)btn.disabled=false;};
+  s.onerror=function(){clearTimeout(timer);showLoginError("Cannot reach server.");if(btn)btn.disabled=false;};
   document.head.appendChild(s);
 }
 
@@ -10460,15 +10446,12 @@ function backToPhone(){
 function otpInput(el,idx){
   el.value=el.value.replace(/[^0-9]/g,"").slice(-1);
   el.style.borderColor=el.value?"var(--acc)":"var(--bd)";
-  if(el.value){
-    var next=document.querySelector(".otp-digit[data-idx='"+(idx+1)+"']");
-    if(next) next.focus(); else verifyOTP();
-  }
+  if(el.value){var nx=document.querySelector(".otp-digit[data-idx='"+(idx+1)+"']");if(nx)nx.focus();else verifyOTP();}
 }
-function otpKey(event,idx){
-  if(event.key==="Backspace"){
+function otpKey(ev,idx){
+  if(ev.key==="Backspace"){
     var el=document.querySelector(".otp-digit[data-idx='"+idx+"']");
-    if(el&&!el.value){var prev=document.querySelector(".otp-digit[data-idx='"+(idx-1)+"']");if(prev){prev.focus();prev.value="";}}
+    if(el&&!el.value){var pv=document.querySelector(".otp-digit[data-idx='"+(idx-1)+"']");if(pv){pv.focus();pv.value="";}}
   }
 }
 
@@ -10478,31 +10461,21 @@ function verifyOTP(){
   if(digits.length<6){showOtpError("Enter all 6 digits.");return;}
   var btn=document.getElementById("btn-verify-otp"), ld=document.getElementById("otp-loading");
   if(btn)btn.disabled=true; if(ld)ld.style.display="block";
-  var ts=Date.now(), cb="otpVerifyCb_"+ts;
+  var ts=Date.now(), cb="otpVC_"+ts;
   var url=APPS_SCRIPT_URL+"?action=verify_otp&phone="+encodeURIComponent(_otpPhone)+"&otp="+encodeURIComponent(digits)+"&_t="+ts+"&callback="+cb;
-  var timer=setTimeout(function(){
-    try{delete window[cb];}catch(x){}
-    showOtpError("Verification timed out. Try again.");
-    if(btn)btn.disabled=false;
-  },25000);
+  var timer=setTimeout(function(){try{delete window[cb];}catch(x){}showOtpError("Timed out. Try again.");if(btn)btn.disabled=false;},25000);
   window[cb]=function(data){
-    clearTimeout(timer); try{delete window[cb];}catch(x){}
+    clearTimeout(timer);try{delete window[cb];}catch(x){}
     if(ld)ld.style.display="none"; if(btn)btn.disabled=false;
     if(!data||!data.ok){
       showOtpError("⚠ "+(data&&data.error||"Incorrect OTP. Try again."));
-      document.querySelectorAll(".otp-digit").forEach(function(d){
-        d.style.borderColor="var(--red)";
-        setTimeout(function(){d.style.borderColor="var(--bd)";},800);
-      });
+      document.querySelectorAll(".otp-digit").forEach(function(d){d.style.borderColor="var(--red)";setTimeout(function(){d.style.borderColor="var(--bd)";},800);});
       return;
     }
-    // ✅ Success — build currentUser exactly like old email login
     var name=data.name||_otpPhone;
-    currentUser={
-      name:name, email:data.email||"", phone:_otpPhone,
-      initials:makeInitials(name), pod:data.pod||"",
-      zone:data.zone||"", desig:data.desig||"", color:data.color||"#3b8ef8"
-    };
+    currentUser={name:name,email:data.email||"",phone:_otpPhone,
+                 initials:makeInitials(name),pod:data.pod||"",
+                 zone:data.zone||"",desig:data.desig||"",color:data.color||"#3b8ef8"};
     try{sessionStorage.setItem("fpi_session",JSON.stringify(currentUser));}catch(ex){}
     setUserHeader();
     document.querySelectorAll(".otp-digit").forEach(function(d){d.style.borderColor="var(--grn)";});
@@ -10518,11 +10491,10 @@ function verifyOTP(){
 }
 
 function startResendTimer(){
-  var btn=document.getElementById("btn-resend"), timerEl=document.getElementById("resend-timer"), secs=30;
-  if(btn)btn.disabled=true; if(timerEl)timerEl.textContent="("+secs+"s)";
+  var btn=document.getElementById("btn-resend"),te=document.getElementById("resend-timer"),secs=30;
+  if(btn)btn.disabled=true; if(te)te.textContent="("+secs+"s)";
   _resendInterval=setInterval(function(){
-    secs--;
-    if(timerEl)timerEl.textContent=secs>0?"("+secs+"s)":"";
+    secs--;if(te)te.textContent=secs>0?"("+secs+"s)":"";
     if(secs<=0){clearInterval(_resendInterval);if(btn)btn.disabled=false;}
   },1000);
 }
