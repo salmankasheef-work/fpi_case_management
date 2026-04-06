@@ -1186,7 +1186,57 @@ function renderPerf(){
 
 // SINGLE SUBMIT
 function toggleCatFields(){const cat=document.getElementById("f-cat").value;document.getElementById("awb-grp").style.display=cat==="COD"||cat==="BCP"?"none":"";}
-function submitSingle(){const awbs=document.getElementById("f-awbs").value,type=document.getElementById("f-type").value,cat=document.getElementById("f-cat").value,val=document.getElementById("f-val").value,hub=document.getElementById("f-hub").value,city=document.getElementById("f-city").value,state=document.getElementById("f-state").value,desc=document.getElementById("f-desc").value;if(!cat||!type||!hub||!city||!state||!desc){showToast("Fill all required fields","warn");return;}const id="FPI-2024-0"+(55+cases.length);cases.unshift({id,cat,awbs:awbs?awbs.split(/[,\n]/).filter(a=>a.trim()).length:0,type,fp:fpFromType(type),trend:desc,poc:"",pn:"",pc:"",val:parseInt(val)||0,pri:"",st:"unassigned",hub,city,state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]});autoAssignCase(cases[0]);const ap=cases[0];showToast("✓ "+id+" → assigned to "+ap.pn+" ("+ap.pri+")");syncCasesToStorage();setTimeout(()=>showPage("assignment"),1200);}
+function submitSingle(){
+  const awbs =document.getElementById("f-awbs").value;
+  const type =document.getElementById("f-type").value;
+  const cat  =document.getElementById("f-cat").value;
+  const val  =document.getElementById("f-val").value;
+  const hub  =document.getElementById("f-hub").value;
+  const city =document.getElementById("f-city").value;
+  const state=document.getElementById("f-state").value;
+  const desc =document.getElementById("f-desc").value;
+  if(!cat||!type||!hub||!city||!state||!desc){showToast("Fill all required fields","warn");return;}
+
+  // Generate a better unique ID using timestamp to avoid duplicate index collisions
+  const id = "FPI-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-5);
+
+  const newCase = {
+    id, cat,
+    awbs: awbs ? awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length : 0,
+    type, fp: fpFromType(type), trend: desc,
+    poc:"", pn:"", pc:"", val:parseInt(val)||0, pri:"",
+    st:"unassigned", hub, city, state,
+    date: new Date().toISOString().split("T")[0],
+    rh:[], riders:[], ridersTerminated:0,
+    policeAction:"", recovery:0, utr:"", updates:[]
+  };
+  cases.unshift(newCase);
+  filteredCases = [...cases]; // immediately reflect in All Cases
+
+  // Auto-assign
+  autoAssignCase(cases[0]);
+  const ap = cases[0];
+
+  // Immediately update all views — no delay
+  renderCasesTable(filteredCases);
+  renderCaseTypeSummary();
+  renderRecentCases();
+  updateBadges();
+  updateClosedBadge();
+
+  showToast("✓ "+id+" → assigned to "+ap.pn+" ("+ap.pri+")");
+
+  // Sync to sheet in background (fire-and-forget)
+  syncCase(ap);
+  try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
+
+  // Navigate to assignment tab to show result
+  setTimeout(()=>{
+    showPage("assignment");
+    renderAssignTab();
+    renderReassignTab();
+  }, 400); // shorter delay — UI already updated
+}
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 
 // BULK
@@ -1410,12 +1460,23 @@ function syncCase(c){
   window[cb] = function(r){
     try{delete window[cb];}catch(e){}
     const s=document.getElementById("fpi-sync-s-"+c.id);if(s)s.remove();
-    if(r&&r.ok) showToast("✓ "+c.id+" synced to sheet");
+    if(r&&r.ok){
+      showToast("✓ "+c.id+" saved to Google Sheet");
+      console.log("[Sync] Case saved:", c.id, r);
+    } else {
+      showToast("⚠ Sheet sync failed for "+c.id+" — "+((r&&r.error)||"no response"),"warn");
+      console.error("[Sync] Failed:", c.id, r);
+    }
   };
   const s=document.createElement("script");
   s.id="fpi-sync-s-"+c.id;
   s.src=APPS_SCRIPT_URL_CM+"?"+params.toString();
-  s.onerror=()=>{try{delete window[cb];}catch(e){}s.remove();};
+  s.onerror=()=>{
+    try{delete window[cb];}catch(e){}
+    if(s&&s.remove)s.remove();
+    showToast("⚠ Cannot reach Apps Script — case saved locally only","warn");
+    console.error("[Sync] JSONP onerror for", c.id, "— Apps Script unreachable");
+  };
   document.head.appendChild(s);
   setTimeout(()=>{try{delete window[cb];const s2=document.getElementById("fpi-sync-s-"+c.id);if(s2)s2.remove();}catch(e){}},10000);
 }
@@ -1499,26 +1560,115 @@ function calcPriority(fraudType, value){
 // ── Load FPI agents from sheet via JSONP ──────────────────
 function loadFPIFromSheet(){
   return new Promise(resolve=>{
-    if(FPI.length > 0){ resolve(FPI); return; }
+    // NOTE: do NOT short-circuit on FPI.length — always fetch fresh from sheet
+    // so that new agents AND new cases are always visible
     const cb = "fpiAgCb_"+Date.now();
-    const url = APPS_SCRIPT_URL_CM+"?action=get_agents&callback="+cb;
+    const url = APPS_SCRIPT_URL_CM+"?action=get_agents&_t="+Date.now()+"&callback="+cb;
     const timer = setTimeout(()=>{cleanup();resolve([]);}, 25000);
     function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("cm-ag-s");if(s)s.remove();clearTimeout(timer);}
     window[cb] = function(data){
       cleanup();
       if(data&&data.agents&&data.agents.length){
         FPI = data.agents.map((a,i)=>{
-          // Restore last GPS location
-          let lat=null,lng=null;
-          try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+a.email)||"{}");if(loc.lat){lat=loc.lat;lng=loc.lng;}}catch(e){}
-          return {...a,lat,lng,active:0,closed:0,pending:0,score:75,color:a.color||COLORS[i%COLORS.length]};
+          let lat=null,lng=null,lastHub="",lastCity="",lastLoginTs=0;
+          try{
+            const loc=JSON.parse(localStorage.getItem("fpi_loc_"+a.email)||"{}");
+            if(loc.lat){lat=loc.lat;lng=loc.lng;lastHub=loc.hub||"";lastCity=loc.city||"";lastLoginTs=loc.ts||0;}
+          }catch(e){}
+          return {...a,lat,lng,lastHub,lastCity,lastLoginTs,active:0,closed:0,pending:0,score:75,color:a.color||COLORS[i%COLORS.length]};
         });
         try{localStorage.setItem("fpi_agents",JSON.stringify(FPI));}catch(e){}
       }
-      resolve(FPI);
+      // After loading agents, also load cases from sheet so Assignment tab is in sync
+      loadCasesFromSheet().then(()=>resolve(FPI));
     };
     const s=document.createElement("script");s.id="cm-ag-s";s.src=url;
     s.onerror=()=>{cleanup();resolve([]);};
+    document.head.appendChild(s);
+  });
+}
+
+// Load ALL cases from FPI_Cases sheet — keeps Assignment tab in sync with All Cases
+function loadCasesFromSheet(){
+  return new Promise(resolve=>{
+    const ts  = Date.now();
+    const cb  = "cmCasesCb_"+ts;
+    const url = APPS_SCRIPT_URL_CM+"?action=get_cases&email=all&_t="+ts+"&callback="+cb;
+    const timer = setTimeout(()=>{cleanup();resolve();}, 20000);
+    function cleanup(){try{delete window[cb];}catch(e){}const s=document.getElementById("cm-cases-s");if(s)s.remove();clearTimeout(timer);}
+    window[cb] = function(data){
+      cleanup();
+      if(data&&data.cases&&data.cases.length){
+        // Merge sheet cases into local cases array
+        data.cases.forEach(row=>{
+          const id    = row["Case ID"]||"";
+          if(!id) return;
+          const stRaw = (row["Status"]||"").toLowerCase().trim();
+          // Map sheet status label back to internal key
+          const stKey = Object.entries(SL).find(([k,v])=>v.l.toLowerCase()===stRaw)||["pending_date"];
+          const existing = cases.find(c=>c.id===id);
+          const pocEmail  = (row["POC Email"]||"").toLowerCase();
+          const fpiAgent  = FPI.find(p=>(p.email||"").toLowerCase()===pocEmail)||{};
+          const caseData  = {
+            id   : id,
+            cat  : row["Category"]||"",
+            type : row["Fraud Type"]||"",
+            hub  : row["Hub"]||"",
+            city : row["City"]||"",
+            state: row["State"]||"",
+            val  : parseFloat(row["Value"]||0)||0,
+            st   : Array.isArray(stKey) ? stKey[0] : "pending_date",
+            pri  : row["Priority"]||"Low",
+            pn   : row["FPI POC"]||"",
+            poc_email: pocEmail,
+            poc  : fpiAgent.id||(existing&&existing.poc)||"",
+            pc   : fpiAgent.color||(existing&&existing.pc)||"#6366f1",
+            recovery: parseFloat(row["Recovery"]||0)||0,
+            utr  : row["UTR"]||"",
+            policeAction: row["Police Action"]||"",
+            date : row["Date Filed"]||"",
+            fp   : fpFromType(row["Fraud Type"]||""),
+            trend: row["Trend"]||"",
+            ridersTerminated: parseInt(row["Terminated"]||0)||0,
+            // Preserve existing arrays — don't wipe them from sheet data
+            rh      : (existing&&existing.rh)     ||[],
+            riders  : (existing&&existing.riders)  ||[],
+            updates : (existing&&existing.updates) ||[],
+          };
+          if(existing){
+            // Update existing case with sheet data (sheet is source of truth)
+            Object.assign(existing, caseData);
+          } else {
+            cases.push(caseData);
+            filteredCases.push(caseData);
+          }
+        });
+        // Recalc active counts per agent
+        FPI.forEach(p=>{
+          p.active  = cases.filter(c=>c.poc===p.id&&c.st!=="closed").length;
+          p.closed  = cases.filter(c=>c.poc===p.id&&c.st==="closed").length;
+        });
+        // CRITICAL: keep filteredCases in sync so table shows the data
+        filteredCases = [...cases];
+        try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
+      }
+      resolve();
+    };
+    const s=document.createElement("script");s.id="cm-cases-s";s.src=url;
+    s.onerror=()=>{
+      // Sheet unreachable — try loading from localStorage cache
+      try{
+        const cached = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+        cached.forEach(c=>{
+          if(c.id && !cases.find(x=>x.id===c.id)){
+            cases.push(c);
+          }
+        });
+        filteredCases = [...cases];
+      }catch(e){}
+      cleanup();
+      resolve();
+    };
     document.head.appendChild(s);
   });
 }
@@ -1532,56 +1682,82 @@ function autoAssignBestFPI(c){
   const priority  = calcPriority(c.type, c.val);
   const candidates = FPI.filter(p=>p.email&&p.email.includes("@"));
 
-  // Enrich agents with last-known GPS from Field Portal logins
+  // Enrich agents with last login GPS + timestamp from Field Portal localStorage
   candidates.forEach(p=>{
-    if(!p.lat||!p.lng){
+    try{
+      const loc=JSON.parse(localStorage.getItem("fpi_loc_"+p.email)||"{}");
+      if(loc.lat){
+        p.lat=loc.lat; p.lng=loc.lng;
+        p.lastHub=loc.hub||""; p.lastCity=loc.city||"";
+        p.lastLoginTs=loc.ts||0;  // timestamp of last Field Portal login
+      }
+    }catch(e){}
+    // Also check fpi_agents store (synced from Apps Script get_agents)
+    if(!p.lat){
       try{
-        // Check fpi_loc_ key (set by Field Portal login)
-        const loc=JSON.parse(localStorage.getItem("fpi_loc_"+p.email)||"{}");
-        if(loc.lat){ p.lat=loc.lat; p.lng=loc.lng; p.lastHub=loc.hub||""; p.lastCity=loc.city||""; }
-      }catch(e){}
-    }
-    if(!p.lat||!p.lng){
-      try{
-        // Also check fpi_agents store
         const agents=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
         const match=agents.find(a=>(a.email||"").toLowerCase()===(p.email||"").toLowerCase());
-        if(match&&match.lat){ p.lat=match.lat; p.lng=match.lng; p.lastHub=match.lastHub||""; p.lastCity=match.lastCity||""; }
+        if(match&&match.lat){
+          p.lat=match.lat; p.lng=match.lng;
+          p.lastHub=match.lastHub||""; p.lastCity=match.lastCity||"";
+          p.lastLoginTs=match.lastLoginTs||0;
+        }
       }catch(e){}
     }
   });
 
-  // PRIORITY ORDER: 1) Hub match  2) GPS distance  3) City  4) State/POD
-  
-  // 1. Exact hub match — agent's last logged-in hub matches case hub
-  if(c.hub){
-    const hubMatch = candidates.filter(p=>
-      p.lastHub && p.lastHub.toLowerCase()===c.hub.toLowerCase()
-    ).sort((a,b)=>(a.active||0)-(b.active||0));
-    if(hubMatch.length) return {fpi:hubMatch[0], priority};
-  }
+  // PRIORITY ORDER:
+  // 1. Most recent Field Portal login + within 150km of hub (best: recent + close)
+  // 2. Exact hub match (agent's last login hub = case hub)
+  // 3. GPS distance (within 150km), sorted by distance then recency
+  // 4. City match
+  // 5. POD/state match
 
-  // 2. GPS distance to hub (agents within 150km)
+  // Candidates sorted by last login time (most recent first)
+  const byRecency = [...candidates].sort((a,b)=>(b.lastLoginTs||0)-(a.lastLoginTs||0));
+
+  // 1. Most recently logged-in agent within 150km of hub
   if(hubCoords){
-    const withGPS = candidates.filter(p=>p.lat&&p.lng);
-    if(withGPS.length){
-      const scored = withGPS
-        .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
-        .filter(x=>x.dist<=150)
-        .sort((a,b)=>a.dist-b.dist||(a.p.active||0)-(b.p.active||0));
-      if(scored.length) return {fpi:scored[0].p, priority};
+    const recentAndClose = byRecency
+      .filter(p=>p.lat&&p.lng)
+      .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
+      .filter(x=>x.dist<=150);
+    if(recentAndClose.length){
+      // Sort: primary=distance, tiebreak=most recent login, tiebreak=least active
+      recentAndClose.sort((a,b)=>
+        a.dist-b.dist ||
+        (b.p.lastLoginTs||0)-(a.p.lastLoginTs||0) ||
+        (a.p.active||0)-(b.p.active||0)
+      );
+      return {fpi:recentAndClose[0].p, priority};
     }
   }
 
-  // 3. City match — agent's last known city matches case city
+  // 2. Exact hub match (agent's last login hub = case hub)
+  if(c.hub){
+    const hubMatch = byRecency.filter(p=>
+      p.lastHub && p.lastHub.toLowerCase()===c.hub.toLowerCase()
+    );
+    if(hubMatch.length) return {fpi:hubMatch[0], priority};
+  }
+
+  // 3. GPS distance only (no recency filter — any distance)
+  if(hubCoords){
+    const withGPS = candidates.filter(p=>p.lat&&p.lng)
+      .map(p=>({p, dist:haversine(hubCoords.lat,hubCoords.lng,p.lat,p.lng)}))
+      .sort((a,b)=>a.dist-b.dist||(b.p.lastLoginTs||0)-(a.p.lastLoginTs||0));
+    if(withGPS.length) return {fpi:withGPS[0].p, priority};
+  }
+
+  // 4. City match
   if(c.city){
-    const cityMatch = candidates.filter(p=>
+    const cityMatch = byRecency.filter(p=>
       p.lastCity && p.lastCity.toLowerCase().includes(c.city.toLowerCase())
-    ).sort((a,b)=>(a.active||0)-(b.active||0));
+    );
     if(cityMatch.length) return {fpi:cityMatch[0], priority};
   }
 
-  // POD/state match — used when no GPS data available
+  // 5. POD/state match
   const podStates={
     "PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh","Jammu & Kashmir"],
     "NCR":["Delhi","Haryana","Uttar Pradesh"],
@@ -1603,17 +1779,18 @@ function autoAssignBestFPI(c){
     "Pune":["Maharashtra"],
     "ROK/KL":["Karnataka","Kerala"]
   };
-  const byPod = candidates
-    .map(p=>{
-      const states=podStates[p.pod]||[];
-      const score=(states.includes(c.state)?50:0)+Math.max(0,10-(p.active||0));
-      return{p,score};
-    })
-    .sort((a,b)=>b.score-a.score);
-  if(byPod.length&&byPod[0].score>0) return {fpi:byPod[0].p, priority};
+  const byPod = byRecency
+    .map(p=>({
+      p,
+      score:(podStates[p.pod]||[]).includes(c.state)?100:0,
+      loginScore:(p.lastLoginTs||0)
+    }))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score||b.loginScore-a.loginScore||(a.p.active||0)-(b.p.active||0));
+  if(byPod.length) return {fpi:byPod[0].p, priority};
 
-  // Last resort: least active agent
-  return {fpi:[...candidates].sort((a,b)=>(a.active||0)-(b.active||0))[0]||null, priority};
+  // Last resort: most recently logged-in agent
+  return {fpi:byRecency[0]||null, priority};
 }
 
 // ── CM Login via Sheet3 JSONP ──────────────────────────────
@@ -1730,10 +1907,13 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(sess){
     document.getElementById("cm-login-overlay").style.display="none";
     document.getElementById("cm-app").style.display="flex";
+    const s = JSON.parse(sess);
+    cmSetUserDisplay(s.name||s.email||"");
+    // loadFPIFromSheet now internally calls loadCasesFromSheet too
     loadFPIFromSheet().then(()=>{
       renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
       renderPodView();renderFraudDist();renderCasesTable(filteredCases);
-      renderAssignTab();renderReassignTab();updateBadges();
+      renderAssignTab();renderReassignTab();updateBadges();updateClosedBadge();
     });
   }
   // Focus email on login screen
