@@ -199,8 +199,8 @@ textarea.fc{resize:none;min-height:76px;}
 .g-btn svg{width:18px;height:18px;flex-shrink:0;}
 .login-note{font-size:10px;color:var(--txt3);text-align:center;font-family:var(--mono);}
 /* ONBOARDING */
-.onboard-screen{position:fixed;inset:0;z-index:999;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
-.onboard-card{background:#fff;border-radius:18px;padding:18px 16px;width:100%;max-width:380px;max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.onboard-screen{position:fixed;inset:0;z-index:999;background:#f1f5f9;display:none;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.onboard-card{background:#fff;border-radius:16px;padding:20px 18px;width:100%;max-width:400px;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 24px rgba(0,0,0,.12);}
 .step-dot-row{display:flex;justify-content:center;gap:6px;margin-bottom:18px;}
 .step-dot{width:8px;height:8px;border-radius:50%;background:var(--bd);}
 .step-dot.active{background:var(--acc);}
@@ -398,7 +398,7 @@ textarea.fc{resize:none;min-height:76px;}
       </div>
       <div id="loc-warn" style="display:none;font-size:11px;color:var(--yel);background:var(--yel-d);border:1px solid rgba(217,119,6,.2);border-radius:7px;padding:8px 10px;margin-bottom:10px"></div>
 
-      <button class="btn btn-p" style="width:100%;opacity:.35;transition:opacity .2s" id="loc-next-btn" onclick="goOnboardStep2()" disabled>
+      <button class="btn btn-p" style="width:100%" id="loc-next-btn" onclick="goOnboardStep2()">
         Continue →
       </button>
     </div>
@@ -424,9 +424,9 @@ textarea.fc{resize:none;min-height:76px;}
         <span>Tap to take selfie</span>
         <input type="file" id="selfie-input" accept="image/*" capture="user" onchange="handleSelfie(event)">
       </div>
-      <div id="selfie-hint" style="font-size:10.5px;color:var(--txt3);text-align:center;margin-top:4px;margin-bottom:10px">Selfie required for check-in</div>
+      <div id="selfie-hint" style="font-size:10.5px;color:var(--txt3);text-align:center;margin-top:4px;margin-bottom:10px">Selfie optional — tap to take</div>
       <button class="btn btn-g" style="width:100%;margin-bottom:8px" onclick="goOnboardStep1()">← Back</button>
-      <button class="btn btn-p" style="width:100%" id="selfie-next-btn" onclick="completeOnboarding()" disabled>
+      <button class="btn btn-p" style="width:100%" id="selfie-next-btn" onclick="completeOnboarding()">
         Enter Portal →
       </button>
     </div>
@@ -10300,33 +10300,48 @@ function filterHubsByLocation(city, state){
 function filterHubs(q){
   q=(q||"").trim().toLowerCase();
   if(q.length<1){
-    // No query — show location-filtered list if we have GPS
     if(userLocation.city){
-      filterHubsByLocation(userLocation.city, userLocation.state);
+      filterHubsByLocation(userLocation.city,userLocation.state);
     } else {
-      hubFiltered=HUB_LIST.slice(0,80);
+      hubFiltered=HUB_LIST.slice(0,50);
       renderHubList();
+      document.getElementById("hub-dropdown").style.display="block";
     }
-  } else {
-    // User typed — search ALL hubs
-    hubFiltered=HUB_LIST.filter(h=>h.toLowerCase().includes(q)).slice(0,100);
-    renderHubList();
+    return;
   }
+  // Fast search: prefix first, then contains — cap at 50 for mobile
+  var prefix=[], contains=[];
+  for(var i=0;i<HUB_LIST.length;i++){
+    var h=HUB_LIST[i].toLowerCase();
+    if(h.startsWith(q)) prefix.push(HUB_LIST[i]);
+    else if(h.indexOf(q)>=0) contains.push(HUB_LIST[i]);
+    if(prefix.length+contains.length>=50) break;
+  }
+  hubFiltered=prefix.concat(contains).slice(0,50);
+  renderHubList();
   document.getElementById("hub-dropdown").style.display="block";
 }
 function renderHubList(){
-  const inner=document.getElementById("hub-list-inner");
-  if(!inner)return;
+  var inner=document.getElementById("hub-list-inner");
+  if(!inner) return;
+  var frag=document.createDocumentFragment();
   if(!hubFiltered.length){
-    inner.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--txt3)">No hubs found</div>';
-    return;
+    var el=document.createElement("div");
+    el.style.cssText="padding:12px 14px;font-size:12px;color:var(--txt3)";
+    el.textContent="No hubs found";
+    frag.appendChild(el);
+  } else {
+    hubFiltered.forEach(function(h){
+      var d=document.createElement("div");
+      d.style.cssText="padding:10px 14px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--sf2);color:var(--txt)";
+      d.textContent=h;
+      d.onmousedown=function(e){e.preventDefault();};
+      d.onclick=function(){selectHub(h,d);};
+      frag.appendChild(d);
+    });
   }
-  inner.innerHTML=hubFiltered.map(h=>
-    `<div onmousedown="event.preventDefault()" onclick="selectHub('${h.replace(/'/g,"\\'")}',this)"
-      style="padding:11px 14px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--bd);-webkit-tap-highlight-color:rgba(29,78,216,.08)"
-      ontouchstart="this.style.background='var(--sf2)'" ontouchend="this.style.background=''">
-      ${h}</div>`
-  ).join("");
+  inner.innerHTML="";
+  inner.appendChild(frag);
 }
 function selectHub(name){
   selectedHub=name;
@@ -10357,8 +10372,13 @@ function getSavedLocation(){
   try{const d=JSON.parse(localStorage.getItem("fpi_loc_"+(currentUser.email||""))||"{}");return(d.hub)?d:null;}catch(e){return null;}
 }
 function goOnboardStep2(){
-  if(!selectedHub){showWarn("Please select your hub first.");return;}
-  const warn=document.getElementById("loc-warn");if(warn) warn.style.display="none";
+  if(!selectedHub){
+    var hs=document.getElementById("hub-search");
+    if(hs){hs.focus();hs.style.borderColor="var(--red)";setTimeout(function(){hs.style.borderColor="var(--bd)";},1200);}
+    showWarn("Please select your hub first.");
+    return;
+  }
+  var warn=document.getElementById("loc-warn");if(warn)warn.style.display="none";
   document.getElementById("onboard-step-1").style.display="none";
   document.getElementById("onboard-step-2").style.display="block";
   document.getElementById("dot-1").className="step-dot done";
@@ -10368,63 +10388,63 @@ function goOnboardStep2(){
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
 function startGPSDetection(){
-  const statusBox = document.getElementById("gps-status-box");
-  const statusTxt = document.getElementById("gps-status-text");
-  const spinner   = document.getElementById("gps-spinner");
-  const retryBtn  = document.getElementById("gps-retry-btn");
+  var statusTxt=document.getElementById("gps-status-text");
+  var spinner  =document.getElementById("gps-spinner");
+  var retryBtn =document.getElementById("gps-retry-btn");
+
   if(!navigator.geolocation){
-    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
-    if(spinner) spinner.style.display="none";
+    if(spinner)   spinner.style.display="none";
+    if(statusTxt) statusTxt.textContent="GPS unavailable — continue without location";
     return;
   }
-  let done = false;
-  const safe = setTimeout(()=>{
-    if(done) return; done=true;
-    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
-    if(spinner) spinner.style.display="none";
-    if(retryBtn) retryBtn.style.display="inline";
-  }, 10000);
 
-  navigator.geolocation.watchPosition(
-    pos=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      userLocation.lat = pos.coords.latitude;
-      userLocation.lng = pos.coords.longitude;
-      userLocation.isFresh = true;
-      if(spinner) spinner.style.display="none";
+  // 5-second hard timeout — never block the user
+  var t = setTimeout(function(){
+    if(spinner)   spinner.style.display="none";
+    if(retryBtn)  retryBtn.style.display="inline";
+    if(statusTxt) statusTxt.textContent="Location timeout — you can still continue";
+  }, 5000);
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      clearTimeout(t);
+      if(spinner)  spinner.style.display="none";
       if(retryBtn) retryBtn.style.display="none";
-      // Reverse geocode
-      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
-        .then(r=>r.json()).then(d=>{
-          const a=d.address||{};
-          const city=a.city||a.town||a.suburb||a.village||"";
-          const state=a.state||"";
-          userLocation.city  = city;
-          userLocation.state = state;
-          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+      userLocation.lat     = pos.coords.latitude;
+      userLocation.lng     = pos.coords.longitude;
+      userLocation.isFresh = true;
+      // Reverse geocode silently — doesn't block anything
+      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+
+            "&lon="+pos.coords.longitude+"&format=json&accept-language=en")
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var a=d.address||{};
+          var city=a.city||a.town||a.suburb||a.village||"";
+          var state=a.state||"";
+          userLocation.city    =city;
+          userLocation.state   =state;
+          userLocation.address =(city&&state)?city+", "+state:
+            pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3);
           if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
-          // Pre-filter hub list to show local hubs first
-          filterHubsByLocation(city, state);
-        }).catch(()=>{
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
+          if(city) filterHubsByLocation(city,state);
+        }).catch(function(){
+          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 Location detected</span>';
         });
     },
-    err=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      if(spinner) spinner.style.display="none";
+    function(err){
+      clearTimeout(t);
+      if(spinner)  spinner.style.display="none";
       if(retryBtn) retryBtn.style.display="inline";
-      const prev=getSavedLocation();
+      var prev=getSavedLocation();
       if(prev&&prev.city){
         userLocation.lat=prev.lat; userLocation.lng=prev.lng;
         userLocation.address=prev.city;
-        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">📍 Last: '+prev.city+'</span>';
       } else {
-        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
+        if(statusTxt) statusTxt.textContent="Location unavailable — continue without GPS";
       }
     },
-    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
+    {enableHighAccuracy:false, timeout:5000, maximumAge:60000}
   );
 }
 function retryGPS(){ startGPSDetection(); }
@@ -10798,8 +10818,10 @@ function verifyOTPCode(){
     setTimeout(()=>{
       document.getElementById("login-screen").style.display="none";
       document.getElementById("onboard-screen").style.display="flex";
-      setTimeout(function(){ if(typeof startGPSDetection==="function") startGPSDetection(); }, 400);
-    }, 500);
+      // Pre-load first 50 hubs for instant dropdown on first tap
+      try{ hubFiltered=HUB_LIST.slice(0,50); }catch(ex){}
+      setTimeout(function(){ if(typeof startGPSDetection==="function") startGPSDetection(); }, 200);
+    }, 400);
   };
 
   const s=document.createElement("script");
@@ -10871,8 +10893,8 @@ function handleEmailSignIn(){ requestOTP(); }
 // ── Attendance + Selfie ───────────────────────────────────
 function setAttendance(val,btn){
   attendance=val;
-  ["btn-present","btn-absent"].forEach(id=>{
-    const b=document.getElementById(id);
+  ["btn-present","btn-absent"].forEach(function(id){
+    var b=document.getElementById(id);
     if(b){b.style.background="#fff";b.style.color="var(--txt3)";b.style.borderColor="var(--bd)";}
   });
   if(btn){
@@ -10880,14 +10902,11 @@ function setAttendance(val,btn){
     btn.style.color=val==="Present"?"var(--grn)":"var(--red)";
     btn.style.borderColor=val==="Present"?"var(--grn)":"var(--red)";
   }
-  const hint=document.getElementById("selfie-hint");
-  if(val==="Absent"){
-    if(hint) hint.textContent="Selfie optional when absent";
-    document.getElementById("selfie-next-btn").disabled=false;
-  }else{
-    if(hint) hint.textContent="Selfie required for check-in";
-    if(!selfieBase64) document.getElementById("selfie-next-btn").disabled=true;
-  }
+  var hint=document.getElementById("selfie-hint");
+  if(hint) hint.textContent="Selfie optional — tap to take";
+  // Enter Portal is always enabled — selfie is optional
+  var nextBtn=document.getElementById("selfie-next-btn");
+  if(nextBtn) nextBtn.disabled=false;
 }
 function handleSelfie(event){
   const file=event.target.files[0];if(!file)return;
@@ -11042,66 +11061,7 @@ function statusKeyFromLabel(label){
 
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
-function startGPSDetection(){
-  const statusBox = document.getElementById("gps-status-box");
-  const statusTxt = document.getElementById("gps-status-text");
-  const spinner   = document.getElementById("gps-spinner");
-  const retryBtn  = document.getElementById("gps-retry-btn");
-  if(!navigator.geolocation){
-    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
-    if(spinner) spinner.style.display="none";
-    return;
-  }
-  let done = false;
-  const safe = setTimeout(()=>{
-    if(done) return; done=true;
-    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
-    if(spinner) spinner.style.display="none";
-    if(retryBtn) retryBtn.style.display="inline";
-  }, 10000);
 
-  navigator.geolocation.watchPosition(
-    pos=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      userLocation.lat = pos.coords.latitude;
-      userLocation.lng = pos.coords.longitude;
-      userLocation.isFresh = true;
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="none";
-      // Reverse geocode
-      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
-        .then(r=>r.json()).then(d=>{
-          const a=d.address||{};
-          const city=a.city||a.town||a.suburb||a.village||"";
-          const state=a.state||"";
-          userLocation.city  = city;
-          userLocation.state = state;
-          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
-          // Pre-filter hub list to show local hubs first
-          filterHubsByLocation(city, state);
-        }).catch(()=>{
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
-        });
-    },
-    err=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="inline";
-      const prev=getSavedLocation();
-      if(prev&&prev.city){
-        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
-        userLocation.address=prev.city;
-        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
-      } else {
-        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
-      }
-    },
-    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
-  );
-}
 function retryGPS(){ startGPSDetection(); }
 
 // ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
