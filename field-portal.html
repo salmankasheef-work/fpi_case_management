@@ -10533,14 +10533,22 @@ function extractUTRFromImage(base64){
   if(sess){
     try{
       currentUser=JSON.parse(sess);
-      try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");if(loc.lat){userLocation.lat=loc.lat;userLocation.lng=loc.lng;userLocation.address=loc.city||"";}}catch(e){}
+      // Restore last hub + location
+      try{
+        const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");
+        if(loc.hub){selectedHub=loc.hub;}
+        if(loc.lat){userLocation.lat=loc.lat;userLocation.lng=loc.lng;}
+        if(loc.city){userLocation.address=loc.city;}
+      }catch(e){}
       setUserHeader();
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-shell").style.display="flex";
-      // Always re-fetch agents to pick up new additions
-      loadAgentsFromSheet().then(()=>loadMyCases());
+      loadAgentsFromSheet().then(function(){loadMyCases();});
       return;
-    }catch(e){}
+    }catch(e){
+      // Bad session — clear and show login
+      sessionStorage.removeItem("fpi_session");
+    }
   }
 })();
 
@@ -11094,20 +11102,7 @@ function extractUTRFromImage(base64){
 }
 
 // ── Session restore ───────────────────────────────────────
-(function(){
-  const sess=sessionStorage.getItem("fpi_session");
-  if(sess){
-    try{
-      currentUser=JSON.parse(sess);
-      try{const loc=JSON.parse(localStorage.getItem("fpi_loc_"+currentUser.email)||"{}");if(loc.hub){selectedHub=loc.hub;userLocation.hub=loc.hub;userLocation.address=loc.hub;}}catch(e){}
-      setUserHeader();
-      document.getElementById("login-screen").style.display="none";
-      document.getElementById("main-shell").style.display="flex";
-      loadMyCases();
-      return;
-    }catch(e){}
-  }
-})();
+/* session restore handled above */;
 
 // ── Sign out + profile ────────────────────────────────────
 
