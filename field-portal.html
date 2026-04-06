@@ -321,10 +321,10 @@ textarea.fc{resize:none;min-height:76px;}
         </button>
       </div>
 
-      <div class="selfie-preview" id="selfie-preview" onclick="document.getElementById('selfie-input').click()">
+      <div class="selfie-preview" id="selfie-preview" onclick="openCamera()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662"/></svg>
         <span>Tap to take selfie</span>
-        <input type="file" id="selfie-input" accept="image/*" capture="user" onchange="handleSelfie(event)">
+        <input type="file" id="selfie-input" accept="image/*;capture=camera" capture="user" onchange="handleSelfie(event)">
       </div>
       <div id="selfie-hint" style="font-size:10.5px;color:var(--txt3);text-align:center;margin-top:4px;margin-bottom:10px">Selfie required for check-in</div>
       <button class="btn btn-g" style="width:100%;margin-bottom:8px" onclick="goOnboardStep1()">← Back</button>
@@ -10508,6 +10508,17 @@ function setAttendance(val,btn){
   }else{
     if(hint) hint.textContent="Selfie required for check-in";
     if(!selfieBase64) document.getElementById("selfie-next-btn").disabled=true;
+  }
+}
+function openCamera(){
+  // Force camera on mobile — reset input first to ensure camera dialog opens
+  const inp = document.getElementById("selfie-input");
+  if(inp){
+    inp.value = ""; // reset so change fires even if same file
+    // Set capture attribute to force front camera
+    inp.setAttribute("capture","user");
+    inp.setAttribute("accept","image/*");
+    inp.click();
   }
 }
 function handleSelfie(event){
