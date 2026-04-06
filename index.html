@@ -768,8 +768,10 @@ function syncCasesToStorage(){
 }
 
 function renderAssignTab(){
-  // Auto-assign any still-unassigned cases immediately on load
-  cases.filter(c=>c.st==="unassigned").forEach(c=>autoAssignCase(c));
+  // Only auto-assign cases that are truly unassigned (no POC set yet)
+  // Cases already in sheet (have poc_email) keep their sheet assignment
+  cases.filter(c=>c.st==="unassigned" && !c.poc && !c.poc_email)
+       .forEach(c=>autoAssignCase(c));
   document.getElementById("tab-u-cnt").textContent="0";
   document.getElementById("nb-u").textContent="0";
   const el=document.getElementById("assign-list");
@@ -1549,11 +1551,17 @@ function getHubCoords(hubName){
 function calcPriority(fraudType, value){
   const t = (fraudType||"").toLowerCase();
   const v = parseFloat(value)||0;
-  if((t.includes("x-ray")||t.includes("pv")) && v>50000) return "High";
-  if(t.includes("dbnu") && v>=30000 && v<=50000)  return "Medium";
-  if(t.includes("dbnu") && v<30000)               return "Low";
-  if(v>50000) return "High";
-  if(v>15000) return "Medium";
+  // X-Ray and PV are ALWAYS High regardless of value
+  if(t.includes("x-ray") || t.includes("xray") || t.includes("x ray")) return "High";
+  if(t.includes(" pv ") || t.startsWith("pv ") || t.endsWith(" pv") || t===" pv") return "High";
+  if(/\bpv\b/.test(t)) return "High";
+  // DBNU by value
+  if(t.includes("dbnu") && v>=30000) return "High";
+  if(t.includes("dbnu") && v>=15000) return "Medium";
+  if(t.includes("dbnu"))             return "Low";
+  // Everything else by value
+  if(v>=50000) return "High";
+  if(v>=15000) return "Medium";
   return "Low";
 }
 
@@ -1607,8 +1615,10 @@ function loadCasesFromSheet(){
           // Map sheet status label back to internal key
           const stKey = Object.entries(SL).find(([k,v])=>v.l.toLowerCase()===stRaw)||["pending_date"];
           const existing = cases.find(c=>c.id===id);
-          const pocEmail  = (row["POC Email"]||"").toLowerCase();
-          const fpiAgent  = FPI.find(p=>(p.email||"").toLowerCase()===pocEmail)||{};
+          const pocEmail  = (row["POC Email"]||"").toLowerCase().trim();
+          // Find agent by email (exact match)
+          const fpiAgent  = pocEmail ? 
+            (FPI.find(p=>(p.email||"").toLowerCase().trim()===pocEmail) || {}) : {};
           const caseData  = {
             id   : id,
             cat  : row["Category"]||"",
@@ -1649,6 +1659,13 @@ function loadCasesFromSheet(){
           p.closed  = cases.filter(c=>c.poc===p.id&&c.st==="closed").length;
         });
         // CRITICAL: keep filteredCases in sync so table shows the data
+        // Recalculate priority for X-Ray/PV cases (always High)
+        cases.forEach(c=>{
+          if(!c.pri || c.pri==="Low") {
+            const recalc = calcPriority(c.type, c.val);
+            if(recalc !== c.pri) c.pri = recalc;
+          }
+        });
         filteredCases = [...cases];
         try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
       }
