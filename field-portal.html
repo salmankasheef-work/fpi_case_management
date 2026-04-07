@@ -10619,17 +10619,39 @@ async function loadMyCases(){
       try{
         if(data&&data.cases){
           myCases=data.cases.map(row=>{
+            // Support both new column names and old fallbacks
+            var lossType  = row["Loss Type"]||row["Fraud Type"]||"";
+            var prodVal   = parseFloat(row["Product Value"]||row["Value"]||0)||0;
+            var awbList   = row["AWB Numbers"]||row["AWB_Numbers"]||"";
+            var sfxStatus = row["SFX Status"]||row["SFX_Status"]||"";
+            var cxRider   = row["Cx as Rider - Rider Id"]||"";
+            var lmRider   = row["Last attempt LM rider id"]||"";
+            var cxName    = row["Customer name"]||row["Customer Name"]||"";
             return{
-              id:row["Case ID"]||"",cat:row["Category"]||"Shipment Fraud",
-              type:row["Fraud Type"]||"",fp:fpFromType(row["Fraud Type"]||""),
-              hub:row["Hub"]||"",city:row["City"]||"",state:row["State"]||"",
-              val:parseFloat(row["Value"]||0)||0,
-              st:statusKeyFromLabel(row["Status"]||""),
-              pri:row["Priority"]||"",poc:row["FPI POC"]||"",pn:row["FPI POC"]||"",
-              poc_email:(row["POC Email"]||"").toLowerCase(),
-              policeAction:row["Police Action"]||"",
-              recovery:parseFloat(row["Recovery"]||0)||0,
-              utr:row["UTR"]||"",trend:row["Trend"]||"",date:row["Date Filed"]||"",
+              id          : row["Case ID"]||"",
+              cat         : row["Category"]||"Shipment Fraud",
+              type        : lossType,
+              fp          : fpFromType(lossType),
+              sfxStatus   : sfxStatus,
+              hub         : row["Hub"]||"",
+              city        : row["City"]||"",
+              state       : row["State"]||"",
+              awbList     : awbList,
+              awbs        : awbList.split(/[,\n]+/).filter(a=>a.trim()).length||1,
+              val         : prodVal,
+              desc        : row["Product Description"]||row["Description"]||"",
+              cxRider     : cxRider,
+              lmRider     : lmRider,
+              cxName      : cxName,
+              st          : statusKeyFromLabel(row["Status"]||""),
+              pri         : row["Priority"]||"",
+              poc         : row["FPI POC"]||"",
+              pn          : row["FPI POC"]||"",
+              poc_email   : (row["POC Email"]||"").toLowerCase(),
+              policeAction: row["Police Action"]||"",
+              recovery    : parseFloat(row["Recovery"]||0)||0,
+              utr         : row["UTR"]||"",
+              date        : row["Date Filed"]||"",
               riders:[],ridersTerminated:0,rh:[],updates:[]
             };
           });
