@@ -10318,7 +10318,15 @@ function extractUTRFromImage(base64){
       document.getElementById("login-screen").style.display="none";
       document.getElementById("main-shell").style.display="flex";
       // Always re-fetch agents to pick up new additions
-      loadAgentsFromSheet().then(()=>loadMyCases());
+      loadAgentsFromSheet().then(()=>{
+        loadMyCases();
+        // Auto-refresh cases every 60s so newly assigned cases appear
+        if(!window._caseRefreshTimer){
+          window._caseRefreshTimer = setInterval(function(){
+            if(document.visibilityState!=="hidden") loadMyCases();
+          }, 60000);
+        }
+      });
       return;
     }catch(e){}
   }
@@ -10603,6 +10611,12 @@ async function completeOnboarding(){
   document.getElementById("onboard-screen").style.display="none";
   document.getElementById("main-shell").style.display="flex";
   loadMyCases();
+  // Auto-refresh cases every 60s so newly assigned cases appear without manual reload
+  if(!window._caseRefreshTimer){
+    window._caseRefreshTimer = setInterval(function(){
+      if(document.visibilityState!=="hidden") loadMyCases();
+    }, 60000);
+  }
 }
 
 // ── Cases ─────────────────────────────────────────────────
