@@ -414,7 +414,7 @@ textarea.fc{resize:vertical;min-height:66px;}
   <div class="page" id="page-new-case">
     <div class="tab-bar">
       <div class="tbb active" onclick="switchCaseTab('single',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Single Case</div>
-      <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 25</span></div>
+      <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 5000</span></div>
     </div>
     <div class="tab-panel active" id="ct-single">
       <div class="card" style="max-width:800px">
@@ -477,14 +477,14 @@ textarea.fc{resize:vertical;min-height:66px;}
       </div>
       <div id="bstep1">
         <div class="card">
-          <div class="ch"><div class="ct">Bulk Case Upload</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">MAX 25 CASES/BATCH</span></div>
+          <div class="ch"><div class="ct">Bulk Case Upload</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">MAX 5000 CASES/BATCH</span></div>
           <div class="cb">
-            <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Upload <strong>.xlsx or .csv</strong>. Download the template below. <strong>Max 25 cases</strong> per batch.</span></div>
+            <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Upload <strong>any file</strong> (.xlsx, .csv, .xls, .tsv, .txt, .ods). Download the template below. <strong>Max 5000 cases</strong> per batch (first 5000 rows used).</span></div>
             <div class="drop-zone" id="drop-zone" onclick="document.getElementById('bfile').click()" ondragover="doDragOver(event)" ondragleave="doDragLeave(event)" ondrop="doDrop(event)">
-              <input type="file" id="bfile" accept=".xlsx,.csv,.xls" onchange="handleFile(event)">
+              <input type="file" id="bfile" accept=".xlsx,.csv,.xls,.tsv,.txt,.ods,.numbers,*" onchange="handleFile(event)">
               <div style="font-size:36px;margin-bottom:10px">&#128202;</div>
               <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px;color:var(--navy)">Drop file here or click to browse</div>
-              <div style="font-size:12px;color:var(--txt3)">.xlsx or .csv &middot; Max 25 case rows</div>
+              <div style="font-size:12px;color:var(--txt3)">.xlsx · .csv · .xls · .tsv · .txt · any format &middot; Max 5000 rows</div>
               <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.xlsx)</button>
             </div>
             <div class="col-guide">
@@ -10580,10 +10580,13 @@ function doDragLeave(){document.getElementById("drop-zone").classList.remove("dr
 function doDrop(e){e.preventDefault();doDragLeave();const f=e.dataTransfer.files[0];if(f)processBulkFile(f);}
 function handleFile(e){if(e.target.files[0])processBulkFile(e.target.files[0]);}
 function processBulkFile(file){
-  if(!file.name.toLowerCase().match(/\.(csv|xlsx|xls)$/)){showToast("Only .xlsx or .csv supported","warn");return;}
-  if(file.name.toLowerCase().endsWith(".csv")){
+  const fname = file.name.toLowerCase();
+  const isText = fname.endsWith(".csv")||fname.endsWith(".tsv")||fname.endsWith(".txt");
+  const isXlsx = fname.endsWith(".xlsx")||fname.endsWith(".xls")||fname.endsWith(".ods")||fname.endsWith(".numbers");
+  // Accept any file — try text first (CSV/TSV/TXT), then binary (XLSX/XLS), then fallback text
+  if(isText){
     const r=new FileReader();r.onload=e=>parseCSV(e.target.result);r.readAsText(file);
-  } else {
+  } else if(isXlsx) {
     // XLSX: use SheetJS-compatible read via ArrayBuffer
     const r=new FileReader();
     r.onload=function(e){
@@ -10628,6 +10631,7 @@ function processBulkFile(file){
             rows.push(cells);
           }
           if(rows.length>1){
+            if(rows.length>5001) rows.splice(5001); // keep header + max 5000 data rows
             const csvText=rows.map(r=>r.map(v=>'"'+String(v||"").replace(/"/g,'""')+'"').join(",")).join("\n");
             parseCSV(csvText);
           } else {
@@ -10642,6 +10646,15 @@ function processBulkFile(file){
       }
     };
     r.readAsArrayBuffer(file);
+  } else {
+    // Unknown file type — try reading as plain text (handles .tsv, .txt, .ods exports, etc.)
+    const r=new FileReader();
+    r.onload=function(e){
+      try{ parseCSV(e.target.result); }
+      catch(ex){ showToast("Could not parse file. Try saving as .csv","warn"); }
+    };
+    r.onerror=function(){ showToast("Could not read file. Try saving as .csv","warn"); };
+    r.readAsText(file);
   }
 }
 function colLetterToIdx(col){
@@ -10651,7 +10664,7 @@ function getDemoCSV(){return`AWB_Numbers,Category,Fraud_Type,Sub_Type,Impacted_V
 1234567890,Shipment Fraud,DBNU Nexus,Rider as Customer,45000,Sector 29 Hub,Gurgaon,Haryana,Rider creating fake deliveries at cluster addresses,
 5556667778,COD,COD Non-Remittance,,28000,Hussainganj Hub,Lucknow,Uttar Pradesh,COD not remitted for 3 days,
 3334445556,BCP,Threat to Franchise,,0,Silk Board Hub,Bangalore,Karnataka,External threat to franchise owner,`;}
-function parseCSV(text){const lines=text.trim().split(/\r?\n/).map(l=>l.replace(/\r/g,""));if(lines.length<2){showToast("No data","warn");return;}const dataRows=lines.slice(1).filter(l=>l.trim());if(!dataRows.length){showToast("No data rows","warn");return;}if(dataRows.length>25){showToast("Max 25 rows — first 25 used","warn");dataRows.splice(25);}parseRows(dataRows.map(parseCSVRow));}
+function parseCSV(text){const lines=text.trim().split(/\r?\n/).map(l=>l.replace(/\r/g,""));if(lines.length<2){showToast("No data","warn");return;}const dataRows=lines.slice(1).filter(l=>l.trim());if(!dataRows.length){showToast("No data rows","warn");return;}if(dataRows.length>5000){showToast("File has "+dataRows.length+" rows — using first 5000","warn");dataRows.splice(5000);}parseRows(dataRows.map(parseCSVRow));}
 function parseRows(rows){
   function nk(s){return String(s||"").toLowerCase().replace(/[\s_\-\.]/g,"");}
   var dr=rows,hm=null;
