@@ -10481,6 +10481,11 @@ function submitSingle(){
   renderCasesTable(filteredCases);renderCaseTypeSummary();renderRecentCases();updateBadges();updateClosedBadge();
   showToast("✓ "+id+" filed \u2192 "+ap.pn+" ("+ap.pri+")");syncCase(ap);
   try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
+  // Reset form fields for next entry (Fix 5)
+  ["f-awbs","f-cat","f-type","f-sfx-status","f-val","f-desc","f-hub","f-city","f-state","f-cx-rider","f-lm-rider","f-cx-name"].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    if(el.tagName==="SELECT")el.selectedIndex=0;else el.value="";
+  });
   setTimeout(()=>{showPage("assignment");renderAssignTab();renderReassignTab();},400);
 }
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
@@ -10571,23 +10576,74 @@ function parseRows(rows){
   var dr=rows,hm=null;
   if(dr.length){var f=dr[0].map(function(c){return nk(String(c||""));});var SG=["awb","category","losstype","fraudtype","hub","city","state","customer","productvalue","value"];if(SG.some(function(k){return f.some(function(c){return c.includes(k);});})){hm={};f.forEach(function(k,i){hm[k]=i;});dr=dr.slice(1);}}
   function gc(cols,al,fb){if(hm){for(var i=0;i<al.length;i++){var na=nk(al[i]);if(hm[na]!==undefined)return String(cols[hm[na]]||"").trim();var h=Object.keys(hm).find(function(k){return k.includes(na)||na.includes(k);});if(h!==undefined)return String(cols[hm[h]]||"").trim();}}return String(cols[fb]||"").trim();}
-  bulkRows=dr.filter(function(cols){return cols.some(function(c){return c&&String(c).trim();});}).map(function(cols,i){
-    var awbs=gc(cols,["awbnumbers","awbs","awb"],0),cat=gc(cols,["category","cat"],1)||"Shipment Fraud",type=gc(cols,["losstype","fraudtype","loss"],2),sfxStatus=gc(cols,["sfxstatus","sfx"],3),val=parseFloat(String(gc(cols,["productvalue","value","impactedvalue"],4)||"0").replace(/[₹,\s]/g,""))||0,desc=gc(cols,["productdescription","productdesc","description"],5),hub=gc(cols,["hub","facility"],6),city=gc(cols,["city"],7),state=gc(cols,["state"],8),cxRider=gc(cols,["cxasriderriderid","cxriderid","cxrider"],9),lmRider=gc(cols,["lastattemptlmriderid","lmriderid","lmrider"],10),cxName=gc(cols,["customername","customer","cxname"],11);
-    var errs=[];if(!awbs)errs.push("AWB Numbers");if(!cat)errs.push("Category");if(!type)errs.push("Loss Type");if(!val)errs.push("Product Value");if(!hub)errs.push("Hub");if(!city)errs.push("City");if(!state)errs.push("State");if(!cxName)errs.push("Customer Name");
-    return{rowNum:i+2,awbs,cat,type,sfxStatus,val,desc,hub,city,state,cxRider,lmRider,cxName,errs,ok:errs.length===0};
+  // Parse every raw row
+  var rawRows=dr.filter(function(cols){return cols.some(function(c){return c&&String(c).trim();});}).map(function(cols,i){
+    return{rowNum:i+2,awb:gc(cols,["awbnumbers","awbs","awb"],0),cat:gc(cols,["category","cat"],1)||"Shipment Fraud",type:gc(cols,["losstype","fraudtype","loss"],2),sfxStatus:gc(cols,["sfxstatus","sfx"],3),val:parseFloat(String(gc(cols,["productvalue","value","impactedvalue"],4)||"0").replace(/[^\d.]/g,""))||0,desc:gc(cols,["productdescription","productdesc","description"],5),hub:gc(cols,["hub","facility"],6),city:gc(cols,["city"],7),state:gc(cols,["state"],8),cxRider:gc(cols,["cxasriderriderid","cxriderid","cxrider"],9),lmRider:gc(cols,["lastattemptlmriderid","lmriderid","lmrider"],10),cxName:gc(cols,["customername","customer","cxname"],11)};
   });
-  if(!bulkRows.length){showToast("No data rows found","warn");return;}renderBulkPreview();showBulkStep(2);
+  // GROUP BY HUB — each unique hub = one case
+  var hubMap={},hubOrder=[];
+  rawRows.forEach(function(r){
+    var hk=(r.hub||"__NOHUB__").trim();
+    if(!hubMap[hk]){hubMap[hk]={rowNum:r.rowNum,awbSet:[],cat:r.cat,type:r.type,sfxStatus:r.sfxStatus,totalVal:0,desc:r.desc,hub:r.hub,city:r.city,state:r.state,cxRider:r.cxRider,lmRider:r.lmRider,cxName:r.cxName,rawCount:0};hubOrder.push(hk);}
+    var g=hubMap[hk]; g.rawCount++;
+    (r.awb||"").split(/[,\r\n]+/).map(function(a){return a.trim();}).filter(Boolean).forEach(function(a){if(g.awbSet.indexOf(a)<0)g.awbSet.push(a);});
+    g.totalVal+=r.val||0;
+    if(!g.type&&r.type)g.type=r.type;if(!g.city&&r.city)g.city=r.city;if(!g.state&&r.state)g.state=r.state;if(!g.cxName&&r.cxName)g.cxName=r.cxName;
+  });
+  bulkRows=hubOrder.map(function(hk,i){
+    var g=hubMap[hk],awbList=g.awbSet.join(", ");
+    var errs=[];
+    if(!awbList)errs.push("AWB Numbers");if(!g.cat)errs.push("Category");if(!g.type)errs.push("Loss Type");if(!g.totalVal)errs.push("Product Value");if(!g.hub||hk==="__NOHUB__")errs.push("Hub");if(!g.city)errs.push("City");if(!g.state)errs.push("State");if(!g.cxName)errs.push("Customer Name");
+    return{rowNum:g.rowNum,awbs:awbList,awbCount:g.awbSet.length,rawCount:g.rawCount,cat:g.cat,type:g.type,sfxStatus:g.sfxStatus,val:g.totalVal,desc:g.desc,hub:hk==="__NOHUB__"?"":g.hub,city:g.city,state:g.state,cxRider:g.cxRider,lmRider:g.lmRider,cxName:g.cxName,errs:errs,ok:errs.length===0};
+  });
+  if(!bulkRows.length){showToast("No data rows found","warn");return;}
+  renderBulkPreview();showBulkStep(2);
 }
 function parseCSVRow(row){const res=[];let cur="";let inQ=false;for(const c of row){if(c==="\""){inQ=!inQ;}else if(c===","&&!inQ){res.push(cur);cur="";}else{cur+=c;}}res.push(cur);return res;}
 function renderBulkPreview(){
   var v=bulkRows.filter(function(r){return r.ok;}).length,e=bulkRows.filter(function(r){return!r.ok;}).length;
-  document.getElementById("bcnt-txt").textContent=bulkRows.length+" rows \xb7 "+v+" valid \xb7 "+e+" errors";
-  document.getElementById("bsum-cards").innerHTML='<div class="bs-card"><div class="bs-val" style="color:var(--blue)">'+bulkRows.length+'</div><div class="bs-lbl">Total</div></div><div class="bs-card"><div class="bs-val" style="color:var(--grn)">'+v+'</div><div class="bs-lbl">Valid</div></div><div class="bs-card"><div class="bs-val" style="color:var(--red)">'+e+'</div><div class="bs-lbl">Errors</div></div>';
-  var html='<div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>AWB Numbers</th><th>Category</th><th>Loss Type</th><th>SFX Status</th><th>Product Value</th><th>Product Desc</th><th>Hub</th><th>City</th><th>State</th><th>Cx Rider ID</th><th>LM Rider ID</th><th>Customer Name</th><th>Status</th></tr></thead><tbody>';
-  bulkRows.forEach(function(r){var cls=r.ok?"rv":"re",st=r.ok?'<span style="color:var(--grn);font-size:10px">\u2713 OK</span>':'<span style="color:var(--red);font-size:10px">\u2717 '+r.errs.join(", ")+'</span>';html+='<tr class="'+cls+'"><td>'+r.rowNum+'</td><td>'+r.awbs+'</td><td><span class="ct-tag '+(CC[r.cat]||"ct-oth")+'">'+(r.cat||"\u2014")+'</span></td><td>'+(r.type||"\u2014")+'</td><td>'+(r.sfxStatus||"\u2014")+'</td><td>Rs.'+(r.val||0)+'</td><td>'+(r.desc||"\u2014")+'</td><td>'+(r.hub||"\u2014")+'</td><td>'+(r.city||"\u2014")+'</td><td>'+(r.state||"\u2014")+'</td><td>'+(r.cxRider||"\u2014")+'</td><td>'+(r.lmRider||"\u2014")+'</td><td>'+(r.cxName||"\u2014")+'</td><td>'+st+'</td></tr>';});
-  html+='</tbody></table></div>';document.getElementById("bulk-preview-table").innerHTML=html;
+  var totalAWBs=bulkRows.reduce(function(s,r){return s+(r.awbCount||0);},0);
+  document.getElementById("bcnt-txt").textContent=bulkRows.length+" cases ("+totalAWBs+" AWBs) \xb7 "+v+" valid \xb7 "+e+" errors";
+  document.getElementById("bsum-cards").innerHTML=
+    '<div class="bs-card"><div class="bs-val" style="color:var(--blue)">'+bulkRows.length+'</div><div class="bs-lbl">Unique Hubs</div></div>'+
+    '<div class="bs-card"><div class="bs-val" style="color:var(--grn)">'+totalAWBs+'</div><div class="bs-lbl">Total AWBs</div></div>'+
+    '<div class="bs-card"><div class="bs-val" style="color:var(--red)">'+e+'</div><div class="bs-lbl">Errors</div></div>';
+  var html='<div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>Hub</th><th>AWBs</th><th>Count</th><th>Category</th><th>Loss Type</th><th>Product Value</th><th>City</th><th>State</th><th>Customer Name</th><th>Status</th></tr></thead><tbody>';
+  bulkRows.forEach(function(r,i){
+    var cls=r.ok?"rv":"re";
+    var st=r.ok?'<span style="color:var(--grn);font-size:10px">\u2713 OK</span>':'<span style="color:var(--red);font-size:10px">\u2717 '+r.errs.join(", ")+'</span>';
+    var awbPreview=(r.awbs||"").split(", ").slice(0,3).join(", ")+(r.awbCount>3?" +more":"");
+    html+='<tr class="'+cls+'">'+
+      '<td style="color:var(--txt3);font-family:var(--mono)">'+(i+1)+'</td>'+
+      '<td style="font-weight:600;color:var(--navy)">'+(r.hub||"\u2014")+'</td>'+
+      '<td style="font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono)" title="'+(r.awbs||"")+'">'+awbPreview+'</td>'+
+      '<td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--acc)">'+(r.awbCount||0)+'</td>'+
+      '<td><span class="ct-tag '+(CC[r.cat]||"ct-oth")+'">'+(r.cat||"\u2014")+'</span></td>'+
+      '<td>'+(r.type||"\u2014")+'</td>'+
+      '<td style="font-family:var(--mono)">Rs.'+(r.val?r.val.toLocaleString("en-IN"):"0")+'</td>'+
+      '<td>'+(r.city||"\u2014")+'</td>'+
+      '<td>'+(r.state||"\u2014")+'</td>'+
+      '<td>'+(r.cxName||"\u2014")+'</td>'+
+      '<td>'+st+'</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  document.getElementById("bulk-preview-table").innerHTML=html;
 }
-function goStep3(){const v=bulkRows.filter(r=>r.ok);document.getElementById("bconfirm-body").innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--blue)">${v.length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TO CREATE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--red)">₹${(v.reduce((s,r)=>s+r.val,0)/1000).toFixed(0)}K</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TOTAL VALUE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--yel)">${bulkRows.filter(r=>!r.ok).length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">ROWS SKIPPED</div></div></div>`;document.getElementById("b-date").valueAsDate=new Date();showBulkStep(3);}
+function goStep3(){
+  var v=bulkRows.filter(function(r){return r.ok;});
+  var totalAWBs=v.reduce(function(s,r){return s+(r.awbCount||0);},0);
+  var totalVal=v.reduce(function(s,r){return s+(r.val||0);},0);
+  var skipped=bulkRows.filter(function(r){return!r.ok;}).length;
+  document.getElementById("bconfirm-body").innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px">'+
+    '<div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--blue)">'+v.length+'</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">CASES (HUBS)</div></div>'+
+    '<div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--grn)">'+totalAWBs+'</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TOTAL AWBs</div></div>'+
+    '<div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--red)">&#8377;'+(totalVal/1000).toFixed(0)+'K</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TOTAL VALUE</div></div>'+
+    '</div>';
+  document.getElementById("b-date").valueAsDate=new Date();
+  showBulkStep(3);
+}
 function goStep2(){showBulkStep(2);}
 function resetBulk(){bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);}
 function submitBulk(){
