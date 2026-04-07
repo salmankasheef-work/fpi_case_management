@@ -417,57 +417,18 @@ textarea.fc{resize:vertical;min-height:66px;}
       <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 500</span></div>
     </div>
     <div class="tab-panel active" id="ct-single">
-      <div class="card" style="max-width:800px">
-        <div class="ch"><div class="ct">File New FPI Case</div><span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">T&S CT &middot; Single</span></div>
+      <div class="card" style="max-width:900px">
+        <div class="ch"><div class="ct">File New FPI Case</div><span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">T&amp;S CT &middot; Single</span></div>
         <div class="cb">
-          <div class="fsec">
-            <div class="fsec-t"><div class="sn">1</div>Case Category &amp; Type</div>
-            <div class="fg3" style="margin-bottom:10px">
-              <div class="fgrp"><label class="fl">Case Category <span class="fr">*</span></label>
-                <select class="fc" id="f-cat" onchange="toggleCatFields()"><option value="">Select category...</option><option value="Shipment Fraud">Shipment Fraud</option><option value="COD">COD Fraud</option><option value="BCP">BCP Case</option><option value="Other">Other</option></select>
-              </div>
-              <div class="fgrp"><label class="fl">Fraud Type <span class="fr">*</span></label>
-                <select class="fc" id="f-type"><option value="">Select type...</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Threat to Franchise</option><option>Strike / Agitation</option><option>Other</option></select>
-              </div>
-              <div class="fgrp"><label class="fl">Sub-type / Pattern</label>
-                <select class="fc" id="f-sub"><option value="">Sub-type...</option><option>Rider as Customer</option><option>Unattempted Shipments</option><option>Product Mismatch RP</option><option>GPS Spoofing</option><option>Fake OTP</option><option>Hub Insider Collusion</option><option>COD Shortfall</option><option>External Threat</option><option>Other</option></select>
-              </div>
-            </div>
-            <div class="fg2">
-              <div class="fgrp" id="awb-grp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="3" id="f-awbs"></textarea></div>
-              <div class="fgrp"><label class="fl">Impacted Value (&#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"><label class="fl" style="margin-top:7px">No. of Shipments</label><input type="number" class="fc" placeholder="e.g. 12" id="f-cnt"></div>
-            </div>
-          </div>
-          <div class="fsec">
-            <div class="fsec-t"><div class="sn">2</div>Location</div>
-            <div class="fg3">
-              <div class="fgrp" style="position:relative">
-                <label class="fl">Hub / Facility <span class="fr">*</span></label>
-                <input type="text" class="fc" placeholder="Type to search hub…" id="f-hub" autocomplete="off"
-                  oninput="cmHubSearch(this.value)"
-                  onfocus="cmHubSearch(this.value)"
-                  onblur="setTimeout(()=>{const d=document.getElementById('cm-hub-dd');if(d)d.style.display='none';},200)"
-                  onkeydown="cmHubKey(event)">
-                <div id="cm-hub-dd" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--acc);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)"></div>
-              </div>
-              <div class="fgrp"><label class="fl">City <span class="fr">*</span></label><input type="text" class="fc" placeholder="City" id="f-city"></div>
-              <div class="fgrp"><label class="fl">State <span class="fr">*</span></label><select class="fc" id="f-state"><option value="">State...</option><option>Delhi</option><option>Haryana</option><option>Uttar Pradesh</option><option>Maharashtra</option><option>Karnataka</option><option>Tamil Nadu</option><option>Telangana</option><option>Gujarat</option><option>Rajasthan</option><option>West Bengal</option><option>Punjab</option><option>Madhya Pradesh</option><option>Himachal Pradesh</option><option>Bihar</option><option>Kerala</option><option>Other</option></select></div>
-              <div class="fgrp"><label class="fl">Zone</label><select class="fc" id="f-zone"><option value="">Zone...</option><option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option></select></div>
-              <div class="fgrp" style="grid-column:span 2"><label class="fl">Proof Links</label><textarea class="fc" placeholder="Drive/CCTV/GPS links, one per line" rows="2" id="f-links"></textarea></div>
-            </div>
-          </div>
-          <div class="fsec">
-            <div class="fsec-t"><div class="sn">3</div>Description</div>
-            <div class="fgrp"><label class="fl">Short Description <span class="fr">*</span></label><textarea class="fc" placeholder="e.g. Rider creating fake deliveries at cluster addresses in Sector 14. GPS no movement. CCTV confirms." rows="3" id="f-desc"></textarea></div>
-          </div>
-          <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--bd)">
-            <button class="btn btn-g" onclick="showPage('all-cases')">Cancel</button>
-            <button class="btn btn-p" onclick="submitSingle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Create &amp; Assign</button>
-          </div>
+          <div class="fsec"><div class="fsec-t"><div class="sn">1</div>Case Identity</div><div class="fg3"><div class="fgrp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="2" id="f-awbs"></textarea></div><div class="fgrp"><label class="fl">Category <span class="fr">*</span></label><select class="fc" id="f-cat"><option value="">Select category&hellip;</option><option>Shipment Fraud</option><option>COD</option><option>BCP</option><option>Other</option></select></div><div class="fgrp"><label class="fl">Loss Type <span class="fr">*</span></label><select class="fc" id="f-type"><option value="">Select type&hellip;</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Threat to Franchise</option><option>Strike / Agitation</option><option>Other</option></select></div></div></div>
+          <div class="fsec"><div class="fsec-t"><div class="sn">2</div>Product &amp; Status</div><div class="fg3"><div class="fgrp"><label class="fl">SFX Status</label><select class="fc" id="f-sfx-status"><option value="">Select&hellip;</option><option>Delivered</option><option>Undelivered</option><option>In Transit</option><option>RTO</option><option>Lost</option><option>Damaged</option><option>Out for Delivery</option><option>Picked Up</option><option>Cancelled</option></select></div><div class="fgrp"><label class="fl">Product Value (&amp;#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"></div><div class="fgrp"><label class="fl">Product Description</label><input type="text" class="fc" placeholder="e.g. Mobile phone" id="f-desc"></div></div></div>
+          <div class="fsec"><div class="fsec-t"><div class="sn">3</div>Location</div><div class="fg3"><div class="fgrp" style="position:relative"><label class="fl">Hub / Facility <span class="fr">*</span></label><input type="text" class="fc" placeholder="Type to search hub&hellip;" id="f-hub" autocomplete="off" oninput="cmHubSearch(this.value)" onfocus="cmHubSearch(this.value)" onblur="setTimeout(()=>{const d=document.getElementById('cm-hub-dd');if(d)d.style.display='none';},200)" onkeydown="cmHubKey(event)"><div id="cm-hub-dd" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--acc);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)"></div></div><div class="fgrp"><label class="fl">City <span class="fr">*</span></label><input type="text" class="fc" placeholder="City" id="f-city"></div><div class="fgrp"><label class="fl">State <span class="fr">*</span></label><select class="fc" id="f-state"><option value="">State&hellip;</option><option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Delhi</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Other</option></select></div></div></div>
+          <div class="fsec"><div class="fsec-t"><div class="sn">4</div>Rider &amp; Customer</div><div class="fg3"><div class="fgrp"><label class="fl">Cx as Rider &mdash; Rider ID</label><input type="text" class="fc" placeholder="Rider ID if cx posed as rider" id="f-cx-rider"></div><div class="fgrp"><label class="fl">Last Attempt LM Rider ID</label><input type="text" class="fc" placeholder="Last mile rider ID" id="f-lm-rider"></div><div class="fgrp"><label class="fl">Customer Name <span class="fr">*</span></label><input type="text" class="fc" placeholder="Customer full name" id="f-cx-name"></div></div></div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px"><button class="btn btn-p" onclick="submitSingle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="20 6 9 17 4 12"/></svg> File &amp; Auto-Assign</button></div>
         </div>
       </div>
     </div>
-    <div class="tab-panel" id="ct-bulk">
+        <div class="tab-panel" id="ct-bulk">
       <div class="stepper">
         <div class="st-item"><div class="st-c act" id="s1c">1</div><div class="st-l act" id="s1l">Upload</div></div>
         <div class="st-line" id="sl1"></div>
@@ -487,16 +448,7 @@ textarea.fc{resize:vertical;min-height:66px;}
               <div style="font-size:12px;color:var(--txt3)">.xlsx or .csv &middot; Max 500 case rows</div>
               <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.xlsx)</button>
             </div>
-            <div class="col-guide">
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">A&middot;AWB_Numbers</div><div class="cg-desc">Comma-sep</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">B&middot;Category</div><div class="cg-desc">Shipment/COD/BCP</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">C&middot;Fraud_Type</div><div class="cg-desc">X-Ray/PV/DBNU...</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">D&middot;Hub</div><div class="cg-desc">Hub name</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">E&middot;City &middot; F&middot;State</div><div class="cg-desc">Location</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">G&middot;Value</div><div class="cg-desc">Amount (&#8377;)</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">H&middot;Description</div><div class="cg-desc">Trend note</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">I&middot;Proof_Links</div><div class="cg-desc">Optional URLs</div></div>
-            </div>
+            <div class="col-guide" style="grid-template-columns:repeat(4,1fr)"><div class="cg-card"><div class="cg-name" style="color:var(--red)">A &middot; AWB_Numbers *</div><div class="cg-desc">Required. AWBs comma-sep</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">B &middot; Category *</div><div class="cg-desc">Shipment Fraud/COD/BCP</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">C &middot; Loss_Type *</div><div class="cg-desc">X-Ray/PV/DBNU/RTOD etc.</div></div><div class="cg-card"><div class="cg-name" style="color:var(--blue)">D &middot; SFX_Status</div><div class="cg-desc">Delivered/RTO etc.</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">E &middot; Product_Value *</div><div class="cg-desc">Required. Numeric Rs.</div></div><div class="cg-card"><div class="cg-name" style="color:var(--blue)">F &middot; Product_Description</div><div class="cg-desc">Item description</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">G &middot; Hub *</div><div class="cg-desc">Hub name</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">H &middot; City *</div><div class="cg-desc">City name</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">I &middot; State *</div><div class="cg-desc">State name</div></div><div class="cg-card"><div class="cg-name" style="color:var(--blue)">J &middot; Cx_as_rider_Rider_Id</div><div class="cg-desc">Optional rider ID</div></div><div class="cg-card"><div class="cg-name" style="color:var(--blue)">K &middot; Last_attempt_LM_rider_id</div><div class="cg-desc">Optional LM rider ID</div></div><div class="cg-card"><div class="cg-name" style="color:var(--red)">L &middot; Customer_name *</div><div class="cg-desc">Required. Full name</div></div></div>
           </div>
         </div>
       </div>
@@ -504,7 +456,7 @@ textarea.fc{resize:vertical;min-height:66px;}
         <div class="bsum" id="bsum-cards"></div>
         <div class="card">
           <div class="ch"><div class="ct">Review Parsed Cases</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)" id="bcnt-txt"></span></div>
-          <div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>AWBs</th><th>Category</th><th>Fraud Type</th><th>Value</th><th>Hub</th><th>City</th><th>State</th><th>Description</th><th>OK?</th></tr></thead><tbody id="bprev-body"></tbody></table></div>
+          <div class="bulk-tw" id="bulk-preview-table"><div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">Upload a file to see preview</div></div>
           <div style="padding:11px 16px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end">
             <button class="btn btn-g" onclick="resetBulk()">&#8592; Re-upload</button>
             <button class="btn btn-p" id="bproceed" onclick="goStep3()">Proceed &#8594;</button>
@@ -10513,55 +10465,15 @@ function cmAutoFillCity(hub){
 
 
 function submitSingle(){
-  const awbs =document.getElementById("f-awbs").value;
-  const type =document.getElementById("f-type").value;
-  const cat  =document.getElementById("f-cat").value;
-  const val  =document.getElementById("f-val").value;
-  const hub  =document.getElementById("f-hub").value;
-  const city =document.getElementById("f-city").value;
-  const state=document.getElementById("f-state").value;
-  const desc =document.getElementById("f-desc").value;
-  if(!cat||!type||!hub||!city||!state||!desc){showToast("Fill all required fields","warn");return;}
-
-  // Generate a better unique ID using timestamp to avoid duplicate index collisions
-  const id = "FPI-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-5);
-
-  const newCase = {
-    id, cat,
-    awbs: awbs ? awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length : 0,
-    type, fp: fpFromType(type), trend: desc,
-    poc:"", pn:"", pc:"", val:parseInt(val)||0, pri:"",
-    st:"unassigned", hub, city, state,
-    date: new Date().toISOString().split("T")[0],
-    rh:[], riders:[], ridersTerminated:0,
-    policeAction:"", recovery:0, utr:"", updates:[]
-  };
-  cases.unshift(newCase);
-  filteredCases = [...cases]; // immediately reflect in All Cases
-
-  // Auto-assign
-  autoAssignCase(cases[0]);
-  const ap = cases[0];
-
-  // Immediately update all views — no delay
-  renderCasesTable(filteredCases);
-  renderCaseTypeSummary();
-  renderRecentCases();
-  updateBadges();
-  updateClosedBadge();
-
-  showToast("✓ "+id+" → assigned to "+ap.pn+" ("+ap.pri+")");
-
-  // Sync to sheet in background (fire-and-forget)
-  syncCase(ap);
+  var awbs=((document.getElementById("f-awbs")||{}).value||"").trim(),cat=((document.getElementById("f-cat")||{}).value||"").trim(),type=((document.getElementById("f-type")||{}).value||"").trim(),sfxStatus=((document.getElementById("f-sfx-status")||{}).value||"").trim(),val=((document.getElementById("f-val")||{}).value||"").trim(),desc=((document.getElementById("f-desc")||{}).value||"").trim(),hub=((document.getElementById("f-hub")||{}).value||"").trim(),city=((document.getElementById("f-city")||{}).value||"").trim(),state=((document.getElementById("f-state")||{}).value||"").trim(),cxRider=((document.getElementById("f-cx-rider")||{}).value||"").trim(),lmRider=((document.getElementById("f-lm-rider")||{}).value||"").trim(),cxName=((document.getElementById("f-cx-name")||{}).value||"").trim();
+  if(!awbs){showToast("AWB Numbers required","warn");return;}if(!cat){showToast("Category required","warn");return;}if(!type){showToast("Loss Type required","warn");return;}if(!val){showToast("Product Value required","warn");return;}if(!hub){showToast("Hub required","warn");return;}if(!city){showToast("City required","warn");return;}if(!state){showToast("State required","warn");return;}if(!cxName){showToast("Customer Name required","warn");return;}
+  const id="FPI-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-5);
+  const nc={id,cat,awbs:awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length,awbList:awbs,type,fp:fpFromType(type),sfxStatus,desc,cxRider,lmRider,cxName,poc:"",pn:"",pc:"",poc_email:"",val:parseFloat(val)||0,pri:"",st:"unassigned",hub,city,state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]};
+  cases.unshift(nc);filteredCases=[...cases];autoAssignCase(cases[0]);const ap=cases[0];
+  renderCasesTable(filteredCases);renderCaseTypeSummary();renderRecentCases();updateBadges();updateClosedBadge();
+  showToast("✓ "+id+" filed \u2192 "+ap.pn+" ("+ap.pri+")");syncCase(ap);
   try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
-
-  // Navigate to assignment tab to show result
-  setTimeout(()=>{
-    showPage("assignment");
-    renderAssignTab();
-    renderReassignTab();
-  }, 400); // shorter delay — UI already updated
+  setTimeout(()=>{showPage("assignment");renderAssignTab();renderReassignTab();},400);
 }
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 
@@ -10647,41 +10559,38 @@ function getDemoCSV(){return`AWB_Numbers,Category,Fraud_Type,Sub_Type,Impacted_V
 3334445556,BCP,Threat to Franchise,,0,Silk Board Hub,Bangalore,Karnataka,External threat to franchise owner,`;}
 function parseCSV(text){const lines=text.trim().split(/\r?\n/).map(l=>l.replace(/\r/g,""));if(lines.length<2){showToast("No data","warn");return;}const dataRows=lines.slice(1).filter(l=>l.trim());if(!dataRows.length){showToast("No data rows","warn");return;}if(dataRows.length>500){showToast("Max 500 rows — first 500 used","warn");dataRows.splice(500);}parseRows(dataRows.map(parseCSVRow));}
 function parseRows(rows){
-  // Skip header row if present
-  let dataRows=rows;
-  if(dataRows.length){
-    const h=String(dataRows[0][0]||"").toLowerCase();
-    if(h.includes("awb")||h.includes("category")||h.includes("case")||h.includes("number")){dataRows=dataRows.slice(1);}
-  }
-  bulkRows=dataRows.filter(cols=>cols.some(c=>c&&String(c).trim())).map((cols,i)=>{
-    // A=AWB_Numbers B=Category C=Fraud_Type D=Sub_Type E=Impacted_Value F=Hub G=City H=State I=Description J=Proof_Links
-    const awbs=String(cols[0]||"").trim();
-    const cat=String(cols[1]||"").trim()||"Shipment Fraud";
-    const type=String(cols[2]||"").trim();
-    const sub=String(cols[3]||"").trim();
-    const val=parseFloat(String(cols[4]||"0").replace(/[₹,\s]/g,""))||0;
-    const hub=String(cols[5]||"").trim();
-    const city=String(cols[6]||"").trim();
-    const state=String(cols[7]||"").trim();
-    const desc=String(cols[8]||"").trim();
-    const links=String(cols[9]||"").trim();
-    const errs=[];
-    if(!type)errs.push("Fraud Type");
-    if(!hub)errs.push("Hub");
-    if(!city)errs.push("City");
-    if(!state)errs.push("State");
-    if(!desc)errs.push("Description");
-    return{rowNum:i+2,awbs,cat,type,sub,val,hub,city,state,desc,links,errs,ok:errs.length===0};
+  function nk(s){return String(s||"").toLowerCase().replace(/[\s_\-\.]/g,"");}
+  var dr=rows,hm=null;
+  if(dr.length){var f=dr[0].map(function(c){return nk(String(c||""));});var SG=["awb","category","losstype","fraudtype","hub","city","state","customer","productvalue","value"];if(SG.some(function(k){return f.some(function(c){return c.includes(k);});})){hm={};f.forEach(function(k,i){hm[k]=i;});dr=dr.slice(1);}}
+  function gc(cols,al,fb){if(hm){for(var i=0;i<al.length;i++){var na=nk(al[i]);if(hm[na]!==undefined)return String(cols[hm[na]]||"").trim();var h=Object.keys(hm).find(function(k){return k.includes(na)||na.includes(k);});if(h!==undefined)return String(cols[hm[h]]||"").trim();}}return String(cols[fb]||"").trim();}
+  bulkRows=dr.filter(function(cols){return cols.some(function(c){return c&&String(c).trim();});}).map(function(cols,i){
+    var awbs=gc(cols,["awbnumbers","awbs","awb"],0),cat=gc(cols,["category","cat"],1)||"Shipment Fraud",type=gc(cols,["losstype","fraudtype","loss"],2),sfxStatus=gc(cols,["sfxstatus","sfx"],3),val=parseFloat(String(gc(cols,["productvalue","value","impactedvalue"],4)||"0").replace(/[₹,\s]/g,""))||0,desc=gc(cols,["productdescription","productdesc","description"],5),hub=gc(cols,["hub","facility"],6),city=gc(cols,["city"],7),state=gc(cols,["state"],8),cxRider=gc(cols,["cxasriderriderid","cxriderid","cxrider"],9),lmRider=gc(cols,["lastattemptlmriderid","lmriderid","lmrider"],10),cxName=gc(cols,["customername","customer","cxname"],11);
+    var errs=[];if(!awbs)errs.push("AWB Numbers");if(!cat)errs.push("Category");if(!type)errs.push("Loss Type");if(!val)errs.push("Product Value");if(!hub)errs.push("Hub");if(!city)errs.push("City");if(!state)errs.push("State");if(!cxName)errs.push("Customer Name");
+    return{rowNum:i+2,awbs,cat,type,sfxStatus,val,desc,hub,city,state,cxRider,lmRider,cxName,errs,ok:errs.length===0};
   });
-  if(!bulkRows.length){showToast("No data rows found","warn");return;}
-  renderBulkPreview();showBulkStep(2);
+  if(!bulkRows.length){showToast("No data rows found","warn");return;}renderBulkPreview();showBulkStep(2);
 }
 function parseCSVRow(row){const res=[];let cur="";let inQ=false;for(const c of row){if(c==="\""){inQ=!inQ;}else if(c===","&&!inQ){res.push(cur);cur="";}else{cur+=c;}}res.push(cur);return res;}
-function renderBulkPreview(){const v=bulkRows.filter(r=>r.ok).length,e=bulkRows.filter(r=>!r.ok).length;document.getElementById("bcnt-txt").textContent=`${bulkRows.length} rows · ${v} valid · ${e} errors`;document.getElementById("bsum-cards").innerHTML=`<div class="bs-card"><div class="bs-val" style="color:var(--blue)">${bulkRows.length}</div><div class="bs-lbl">Total</div></div><div class="bs-card"><div class="bs-val" style="color:var(--grn)">${v}</div><div class="bs-lbl">Valid</div></div><div class="bs-card"><div class="bs-val" style="color:var(--red)">${e}</div><div class="bs-lbl">Errors</div></div><div class="bs-card"><div class="bs-val" style="color:var(--acc)">₹${(bulkRows.filter(r=>r.ok).reduce((s,r)=>s+r.val,0)/1000).toFixed(0)}K</div><div class="bs-lbl">Value</div></div>`;document.getElementById("bprev-body").innerHTML=bulkRows.map(r=>`<tr class="${r.ok?"rv":"re"}"><td style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">${r.rowNum}</td><td style="font-family:var(--mono);font-size:9.5px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.awbs||"—"}</td><td><span class="ct-tag ${CC[r.cat]||"ct-oth"}">${r.cat||"—"}</span></td><td><span class="fp ${fpFromType(r.type)}">${r.type||"—"}</span></td><td style="font-family:var(--mono);font-size:10.5px">₹${r.val.toLocaleString()}</td><td style="font-size:10.5px">${r.hub||"—"}</td><td style="font-size:10.5px">${r.city||"—"}</td><td style="font-size:10.5px">${r.state||"—"}</td><td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--txt2)">${r.desc||"—"}</td><td>${r.ok?`<span style="color:var(--grn);font-family:var(--mono);font-size:9.5px">✓</span>`:`<span style="color:var(--red);font-family:var(--mono);font-size:9px">${r.errs.join(",")}</span>`}</td></tr>`).join("");document.getElementById("bproceed").disabled=v===0;}
+function renderBulkPreview(){
+  var v=bulkRows.filter(function(r){return r.ok;}).length,e=bulkRows.filter(function(r){return!r.ok;}).length;
+  document.getElementById("bcnt-txt").textContent=bulkRows.length+" rows \xb7 "+v+" valid \xb7 "+e+" errors";
+  document.getElementById("bsum-cards").innerHTML='<div class="bs-card"><div class="bs-val" style="color:var(--blue)">'+bulkRows.length+'</div><div class="bs-lbl">Total</div></div><div class="bs-card"><div class="bs-val" style="color:var(--grn)">'+v+'</div><div class="bs-lbl">Valid</div></div><div class="bs-card"><div class="bs-val" style="color:var(--red)">'+e+'</div><div class="bs-lbl">Errors</div></div>';
+  var html='<div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>AWB Numbers</th><th>Category</th><th>Loss Type</th><th>SFX Status</th><th>Product Value</th><th>Product Desc</th><th>Hub</th><th>City</th><th>State</th><th>Cx Rider ID</th><th>LM Rider ID</th><th>Customer Name</th><th>Status</th></tr></thead><tbody>';
+  bulkRows.forEach(function(r){var cls=r.ok?"rv":"re",st=r.ok?'<span style="color:var(--grn);font-size:10px">\u2713 OK</span>':'<span style="color:var(--red);font-size:10px">\u2717 '+r.errs.join(", ")+'</span>';html+='<tr class="'+cls+'"><td>'+r.rowNum+'</td><td>'+r.awbs+'</td><td><span class="ct-tag '+(CC[r.cat]||"ct-oth")+'">'+(r.cat||"\u2014")+'</span></td><td>'+(r.type||"\u2014")+'</td><td>'+(r.sfxStatus||"\u2014")+'</td><td>Rs.'+(r.val||0)+'</td><td>'+(r.desc||"\u2014")+'</td><td>'+(r.hub||"\u2014")+'</td><td>'+(r.city||"\u2014")+'</td><td>'+(r.state||"\u2014")+'</td><td>'+(r.cxRider||"\u2014")+'</td><td>'+(r.lmRider||"\u2014")+'</td><td>'+(r.cxName||"\u2014")+'</td><td>'+st+'</td></tr>';});
+  html+='</tbody></table></div>';document.getElementById("bulk-preview-table").innerHTML=html;
+}
 function goStep3(){const v=bulkRows.filter(r=>r.ok);document.getElementById("bconfirm-body").innerHTML=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px"><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--blue)">${v.length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TO CREATE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--red)">₹${(v.reduce((s,r)=>s+r.val,0)/1000).toFixed(0)}K</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">TOTAL VALUE</div></div><div style="background:var(--sf2);border-radius:9px;padding:10px;border:1.5px solid var(--bd)"><div style="font-family:var(--disp);font-size:19px;font-weight:800;color:var(--yel)">${bulkRows.filter(r=>!r.ok).length}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">ROWS SKIPPED</div></div></div>`;document.getElementById("b-date").valueAsDate=new Date();showBulkStep(3);}
 function goStep2(){showBulkStep(2);}
 function resetBulk(){bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);}
-function submitBulk(){const v=bulkRows.filter(r=>r.ok);v.forEach(r=>{const id="FPI-2024-0"+(60+cases.length);cases.unshift({id,cat:r.cat||"Shipment Fraud",awbs:r.awbs?r.awbs.split(",").filter(a=>a.trim()).length:0,type:r.type,fp:fpFromType(r.type),trend:r.desc,poc:"",pn:"",pc:"",val:r.val,pri:"",st:"unassigned",hub:r.hub,city:r.city,state:r.state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]});});v.forEach((_,i)=>autoAssignCase(cases[i]));showToast(`✓ ${v.length} cases auto-assigned`);syncCasesToStorage();setTimeout(()=>{bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);showPage("assignment");},1400);}
+function submitBulk(){
+  var valid=bulkRows.filter(function(r){return r.ok;});if(!valid.length){showToast("No valid rows","warn");return;}
+  var year=new Date().getFullYear();
+  valid.forEach(function(r){var id="FPI-"+year+"-"+String(Date.now()+Math.floor(Math.random()*9999)).slice(-6);cases.unshift({id,cat:r.cat||"Shipment Fraud",awbs:r.awbs?r.awbs.split(/[,\r\n]+/).filter(function(a){return a.trim();}).length:0,awbList:r.awbs||"",type:r.type,fp:fpFromType(r.type),sfxStatus:r.sfxStatus||"",desc:r.desc||"",cxRider:r.cxRider||"",lmRider:r.lmRider||"",cxName:r.cxName||"",poc:"",pn:"",pc:"",poc_email:"",val:r.val||0,pri:"",st:"unassigned",hub:r.hub,city:r.city,state:r.state,date:new Date().toISOString().split("T")[0],rh:[],riders:[],ridersTerminated:0,policeAction:"",recovery:0,utr:"",updates:[]});});
+  valid.forEach(function(_,i){autoAssignCase(cases[i]);});filteredCases=[...cases];renderCasesTable(filteredCases);renderCaseTypeSummary();updateBadges();
+  showToast("✓ "+valid.length+" cases filed & auto-assigned");cases.slice(0,valid.length).forEach(function(c){syncCase(c);});
+  try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
+  setTimeout(function(){bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);showPage("assignment");},1400);
+}
 // DOWNLOAD FULL CASE SUMMARY (CSV)
 function downloadCaseSummaryCSV(){
   const rows=[["Case ID","Category","Fraud Type","Hub","City","State","AWBs Impacted","Impacted Value (INR)","Priority","Status","FPI POC","POD","Date Filed","Trend / Description","Riders Involved","Riders Terminated","Police Action","Recovery Done (INR)","UTR Number","FPI Updates Summary"]];
@@ -10761,28 +10670,7 @@ function syncCase(c){
   // Use JSONP GET — the only reliable cross-origin method for Apps Script
   // no-cors POST silently drops the body; Apps Script never receives it
   const cb = "fpiSyncCb_"+Date.now();
-  const params = new URLSearchParams({
-    action          : "upsert_case",
-    case_id         : c.id||"",
-    category        : c.cat||"",
-    fraud_type      : c.type||"",
-    hub             : c.hub||"",
-    city            : c.city||"",
-    state           : c.state||"",
-    value           : c.val||0,
-    status          : (SL[c.st]||{l:c.st}).l||"",
-    priority        : c.pri||"",
-    poc_name        : fpiP.name||c.pn||"",
-    poc_email       : c.poc_email||fpiP.email||"",
-    poc_pod         : fpiP.pod||"",
-    police_action   : c.policeAction||"",
-    recovery        : c.recovery||0,
-    utr             : c.utr||"",
-    trend           : (c.trend||"").substring(0,200),
-    riders_terminated: c.ridersTerminated||0,
-    date_filed      : c.date||"",
-    callback        : cb
-  });
+  const params = new URLSearchParams({action:"upsert_case",case_id:c.id||"",category:c.cat||"",fraud_type:c.type||"",sfx_status:c.sfxStatus||"",hub:c.hub||"",city:c.city||"",state:c.state||"",value:c.val||0,status:(SL[c.st]||{l:c.st}).l||"",priority:c.pri||"",poc_name:fpiP.name||c.pn||"",poc_email:c.poc_email||fpiP.email||"",poc_pod:fpiP.pod||"",police_action:c.policeAction||"",recovery:c.recovery||0,utr:c.utr||"",product_desc:(c.desc||"").substring(0,200),cx_rider_id:c.cxRider||"",lm_rider_id:c.lmRider||"",customer_name:c.cxName||"",riders_terminated:c.ridersTerminated||0,date_filed:c.date||"",callback:cb});
   window[cb] = function(r){
     try{delete window[cb];}catch(e){}
     const s=document.getElementById("fpi-sync-s-"+c.id);if(s)s.remove();
@@ -10948,29 +10836,25 @@ function loadCasesFromSheet(){
           const existing = cases.find(c=>c.id===id);
 
           newCases.push({
-            id          : id,
-            cat         : row["Category"]||"",
-            type        : row["Fraud Type"]||"",
-            hub         : row["Hub"]||"",
-            city        : row["City"]||"",
-            state       : row["State"]||"",
-            val         : parseFloat(row["Value"]||0)||0,
-            st          : Array.isArray(stKey) ? stKey[0] : "pending_date",
-            pri         : calcPriority(row["Fraud Type"]||"", parseFloat(row["Value"]||0)||0),
-            pn          : row["FPI POC"]||"",
-            poc_email   : pocEmail,
-            poc         : fpiAgent.id||(existing&&existing.poc)||"",
-            pc          : fpiAgent.color||(existing&&existing.pc)||"#6366f1",
-            recovery    : parseFloat(row["Recovery"]||0)||0,
-            utr         : row["UTR"]||"",
-            policeAction: row["Police Action"]||"",
-            date        : row["Date Filed"]||"",
-            fp          : fpFromType(row["Fraud Type"]||""),
-            trend       : row["Trend"]||"",
-            ridersTerminated: parseInt(row["Terminated"]||0)||0,
-            rh          : (existing&&existing.rh)     ||[],
-            riders      : (existing&&existing.riders)  ||[],
-            updates     : (existing&&existing.updates) ||[],
+            id:id, cat:row["Category"]||"",
+            type:row["Loss Type"]||row["Fraud Type"]||"",
+            sfxStatus:row["SFX Status"]||row["SFX_Status"]||"",
+            hub:row["Hub"]||"", city:row["City"]||"", state:row["State"]||"",
+            val:parseFloat(row["Product Value"]||row["Value"]||0)||0,
+            desc:row["Product Description"]||row["Description"]||"",
+            cxRider:row["Cx as Rider - Rider Id"]||row["Cx_as_rider_Rider_Id"]||"",
+            lmRider:row["Last attempt LM rider id"]||row["LM Rider ID"]||"",
+            cxName:row["Customer name"]||row["Customer Name"]||"",
+            st:Array.isArray(stKey)?stKey[0]:"pending_date",
+            pri:calcPriority(row["Loss Type"]||row["Fraud Type"]||"",parseFloat(row["Product Value"]||row["Value"]||0)||0),
+            pn:row["FPI POC"]||"", poc_email:pocEmail,
+            poc:fpiAgent.id||(existing&&existing.poc)||"",
+            pc:fpiAgent.color||(existing&&existing.pc)||"#6366f1",
+            recovery:parseFloat(row["Recovery"]||0)||0, utr:row["UTR"]||"",
+            policeAction:row["Police Action"]||"", date:row["Date Filed"]||"",
+            fp:fpFromType(row["Loss Type"]||row["Fraud Type"]||""),
+            ridersTerminated:parseInt(row["Terminated"]||0)||0,
+            rh:(existing&&existing.rh)||[], riders:(existing&&existing.riders)||[], updates:(existing&&existing.updates)||[]
           });
         });
 
