@@ -485,17 +485,21 @@ textarea.fc{resize:vertical;min-height:66px;}
               <div style="font-size:36px;margin-bottom:10px">&#128202;</div>
               <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px;color:var(--navy)">Drop file here or click to browse</div>
               <div style="font-size:12px;color:var(--txt3)">.xlsx · .csv · .xls · .tsv · .txt · any format &middot; Max 5000 rows</div>
-              <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.xlsx)</button>
+              <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.csv)</button>
             </div>
-            <div class="col-guide">
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">A&middot;AWB_Numbers</div><div class="cg-desc">Comma-sep</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">B&middot;Category</div><div class="cg-desc">Shipment/COD/BCP</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">C&middot;Fraud_Type</div><div class="cg-desc">X-Ray/PV/DBNU...</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">D&middot;Hub</div><div class="cg-desc">Hub name</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--yel)">E&middot;City &middot; F&middot;State</div><div class="cg-desc">Location</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">G&middot;Value</div><div class="cg-desc">Amount (&#8377;)</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">H&middot;Description</div><div class="cg-desc">Trend note</div></div>
-              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">I&middot;Proof_Links</div><div class="cg-desc">Optional URLs</div></div>
+            <div class="col-guide" style="grid-template-columns:repeat(4,1fr)">
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">A &middot; AWB_Numbers <span style="color:var(--red)">*</span></div><div class="cg-desc">Comma-separated AWBs</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">B &middot; Category <span style="color:var(--red)">*</span></div><div class="cg-desc">Shipment Fraud / COD / BCP</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">C &middot; Loss_Type <span style="color:var(--red)">*</span></div><div class="cg-desc">X-Ray / PV / DBNU / RTOD etc.</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">D &middot; SFX_Status</div><div class="cg-desc">Delivered / RTO / In Transit</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">E &middot; Product_Value <span style="color:var(--red)">*</span></div><div class="cg-desc">Numeric value in Rs.</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">F &middot; Product_Description</div><div class="cg-desc">Item description</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">G &middot; Hub <span style="color:var(--red)">*</span></div><div class="cg-desc">Hub / facility name</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">H &middot; City <span style="color:var(--red)">*</span></div><div class="cg-desc">City name</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">I &middot; State <span style="color:var(--red)">*</span></div><div class="cg-desc">State name</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">J &middot; Cx_Rider_Id</div><div class="cg-desc">Cx as rider ID (optional)</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--blue)">K &middot; LM_Rider_Id</div><div class="cg-desc">Last mile rider ID (optional)</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--red)">L &middot; Customer_Name <span style="color:var(--red)">*</span></div><div class="cg-desc">Customer full name</div></div>
             </div>
           </div>
         </div>
@@ -504,7 +508,7 @@ textarea.fc{resize:vertical;min-height:66px;}
         <div class="bsum" id="bsum-cards"></div>
         <div class="card">
           <div class="ch"><div class="ct">Review Parsed Cases</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)" id="bcnt-txt"></span></div>
-          <div class="bulk-tw"><table class="bulk-t"><thead><tr><th>#</th><th>AWBs</th><th>Category</th><th>Fraud Type</th><th>Value</th><th>Hub</th><th>City</th><th>State</th><th>Description</th><th>OK?</th></tr></thead><tbody id="bprev-body"></tbody></table></div>
+          <div id="bulk-preview-table"><div style="padding:24px;text-align:center;color:var(--txt3);font-size:12px;font-family:var(--mono)">Upload a file to see preview here</div></div>
           <div style="padding:11px 16px;border-top:1px solid var(--bd);display:flex;gap:10px;justify-content:flex-end">
             <button class="btn btn-g" onclick="resetBulk()">&#8592; Re-upload</button>
             <button class="btn btn-p" id="bproceed" onclick="goStep3()">Proceed &#8594;</button>
@@ -10631,9 +10635,11 @@ function processBulkFile(file){
             rows.push(cells);
           }
           if(rows.length>1){
-            if(rows.length>5001) rows.splice(5001); // keep header + max 5000 data rows
-            const csvText=rows.map(r=>r.map(v=>'"'+String(v||"").replace(/"/g,'""')+'"').join(",")).join("\n");
-            parseCSV(csvText);
+            if(rows.length>5001) rows.splice(5001);
+            const headerRow=rows[0];
+            const dataRows=rows.slice(1).filter(function(r){return r.some(function(v){return v&&String(v).trim();});});
+            if(!dataRows.length){showToast("No data rows in XLSX","warn");}
+            else{ parseRows(dataRows, headerRow); }
           } else {
             showToast("Could not read XLSX data. Try saving as .csv","warn");
           }
@@ -10660,15 +10666,45 @@ function processBulkFile(file){
 function colLetterToIdx(col){
   let n=0;for(let i=0;i<col.length;i++){n=n*26+(col.charCodeAt(i)-64);}return n-1;
 }
-function getDemoCSV(){return`AWB_Numbers,Category,Fraud_Type,Sub_Type,Impacted_Value,Hub,City,State,Description,Proof_Links
-1234567890,Shipment Fraud,DBNU Nexus,Rider as Customer,45000,Sector 29 Hub,Gurgaon,Haryana,Rider creating fake deliveries at cluster addresses,
-5556667778,COD,COD Non-Remittance,,28000,Hussainganj Hub,Lucknow,Uttar Pradesh,COD not remitted for 3 days,
-3334445556,BCP,Threat to Franchise,,0,Silk Board Hub,Bangalore,Karnataka,External threat to franchise owner,`;}
-function parseCSV(text){const lines=text.trim().split(/\r?\n/).map(l=>l.replace(/\r/g,""));if(lines.length<2){showToast("No data","warn");return;}const dataRows=lines.slice(1).filter(l=>l.trim());if(!dataRows.length){showToast("No data rows","warn");return;}if(dataRows.length>5000){showToast("File has "+dataRows.length+" rows — using first 5000","warn");dataRows.splice(5000);}parseRows(dataRows.map(parseCSVRow));}
-function parseRows(rows){
+function getDemoCSV(){return`AWB_Numbers,Category,Loss_Type,SFX_Status,Product_Value,Product_Description,Hub,City,State,Cx_Rider_Id,LM_Rider_Id,Customer_Name
+1234567890,Shipment Fraud,DBNU Nexus,Undelivered,45000,Mobile Phone,BLR_Kudlugate,Bangalore,Karnataka,,PV001,Rahul Sharma
+5556667778,COD,COD Non-Remittance,Delivered,28000,Clothing,DEL_MaidanGarhi,Delhi,Delhi,,,Priya Singh
+3334445556,Shipment Fraud,X-Ray,In Transit,95000,Electronics,BOM_Andheri,Mumbai,Maharashtra,,LM002,Amit Kumar
+7778889990,Shipment Fraud,PV,Undelivered,120000,Laptop,HYD_Kukatpally,Hyderabad,Telangana,RID123,,Sunita Rao`;}
+function parseCSV(text){
+  if(!text||!text.trim()){showToast("File appears empty","warn");return;}
+  const lines=text.trim().split(/\r?\n/).map(function(l){return l.replace(/\r/g,"");}).filter(function(l){return l.trim();});
+  if(lines.length<2){showToast("File needs at least 1 header row + 1 data row","warn");return;}
+  // Auto-detect delimiter: tab, comma, semicolon, pipe
+  const sample=lines[0];
+  var delim=",";
+  if((sample.match(/\t/g)||[]).length>(sample.match(/,/g)||[]).length) delim="\t";
+  else if((sample.match(/;/g)||[]).length>(sample.match(/,/g)||[]).length) delim=";";
+  else if((sample.match(/\|/g)||[]).length>(sample.match(/,/g)||[]).length) delim="|";
+  var dataRows=lines.slice(1).filter(function(l){return l.trim();});
+  if(!dataRows.length){showToast("No data rows found in file","warn");return;}
+  if(dataRows.length>5000){showToast("File has "+dataRows.length+" rows — using first 5000","warn");dataRows.splice(5000);}
+  // Parse all rows: header + data
+  var allLines=[lines[0]].concat(dataRows);
+  var parsed=allLines.map(function(row){return parseDelimitedRow(row,delim);});
+  parseRows(parsed.slice(1), parsed[0]); // pass header separately
+}
+function parseDelimitedRow(row,delim){
+  if(delim===",") return parseCSVRow(row);
+  // For tab/semicolon/pipe — simple split (no quote handling needed usually)
+  return row.split(delim).map(function(v){return v.trim().replace(/^"|"$/g,"");});
+}
+function parseRows(rows, headerRow){
   function nk(s){return String(s||"").toLowerCase().replace(/[\s_\-\.]/g,"");}
   var dr=rows,hm=null;
-  if(dr.length){var f=dr[0].map(function(c){return nk(String(c||""));});var SG=["awb","category","losstype","fraudtype","hub","city","state","customer","productvalue","value"];if(SG.some(function(k){return f.some(function(c){return c.includes(k);});})){hm={};f.forEach(function(k,i){hm[k]=i;});dr=dr.slice(1);}}
+  // Use explicit headerRow if provided (from parseCSV), else detect from first row
+  if(headerRow){
+    hm={}; headerRow.map(function(c){return nk(String(c||""));}).forEach(function(k,i){hm[k]=i;});
+  } else if(dr.length){
+    var f=dr[0].map(function(c){return nk(String(c||""));});
+    var SG=["awb","category","losstype","fraudtype","hub","city","state","customer","productvalue","value"];
+    if(SG.some(function(k){return f.some(function(c){return c.includes(k);});})){hm={};f.forEach(function(k,i){hm[k]=i;});dr=dr.slice(1);}
+  }
   function gc(cols,al,fb){if(hm){for(var i=0;i<al.length;i++){var na=nk(al[i]);if(hm[na]!==undefined)return String(cols[hm[na]]||"").trim();var h=Object.keys(hm).find(function(k){return k.includes(na)||na.includes(k);});if(h!==undefined)return String(cols[hm[h]]||"").trim();}}return String(cols[fb]||"").trim();}
   // Parse every raw row
   var rawRows=dr.filter(function(cols){return cols.some(function(c){return c&&String(c).trim();});}).map(function(cols,i){
@@ -10797,10 +10833,28 @@ function downloadCaseSummaryCSV(){
   showToast('Case summary downloaded — '+cases.length+' cases');
 }
 function downloadTemplate(){
-  const b64="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";
-  const bin=atob(b64),len=bin.length,buf=new Uint8Array(len);for(let i=0;i<len;i++)buf[i]=bin.charCodeAt(i);
-  const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="FPI_Bulk_Case_Template.xlsx";a.click();showToast("Template downloaded");
+  // Generate CSV template with correct columns
+  const headers = [
+    "AWB_Numbers","Category","Loss_Type","SFX_Status","Product_Value",
+    "Product_Description","Hub","City","State",
+    "Cx_Rider_Id","LM_Rider_Id","Customer_Name"
+  ];
+  const sampleRows = [
+    ["1234567890,1234567891","Shipment Fraud","DBNU Nexus","Undelivered","45000","Mobile Phone","BLR_Kudlugate","Bangalore","Karnataka","","PV001","Rahul Sharma"],
+    ["5556667778","Shipment Fraud","X-Ray","In Transit","120000","Laptop","DEL_MaidanGarhi","Delhi","Delhi","RID123","LM002","Priya Singh"],
+    ["3334445556","COD","COD Non-Remittance","Delivered","28000","Clothing","BOM_Andheri","Mumbai","Maharashtra","","","Amit Kumar"]
+  ];
+  const csvContent = [headers].concat(sampleRows)
+    .map(function(row){ return row.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(","); })
+    .join("\n");
+  const blob = new Blob(["\uFEFF"+csvContent], {type:"text/csv;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "FPI_Bulk_Case_Template.csv";
+  a.click();
+  showToast("Template downloaded — fill and upload");
 }
+
 function updateBadges(){const u=cases.filter(c=>c.st==="unassigned").length;document.getElementById("nb-u").textContent=u;document.getElementById("nb-all").textContent=cases.length;const tc=document.getElementById("tab-u-cnt");if(tc)tc.textContent=u;}
 // GOOGLE SHEETS SYNC
 // Replace SHEET_URL with your deployed Apps Script Web App URL
