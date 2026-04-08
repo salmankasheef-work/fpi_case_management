@@ -839,11 +839,15 @@ function autoAssignCase(c){
         pocAgent.pending = (pocAgent.pending||0)+1;
         updateBadges();
         syncNewCase(c);
-        return; // ← STOP here, do not continue to hub/login logic
+        return;
       }
-      // Email provided but no matching agent found — leave unassigned
+      // Email provided but no agent in FPI array has that email → unassigned
+      // This means either: FPI not loaded yet, OR email not in Sheet1
       c.st = "unassigned";
-      c._assignReason = "POC email not matched: "+overrideEmail;
+      c._assignReason = "POC email not in agent list: "+overrideEmail;
+      // Store the intended email so UI can show it
+      c.poc_email = overrideEmail;
+      c.pn = overrideEmail; // show email as placeholder name
       updateBadges();
       return;
     }
@@ -10915,7 +10919,7 @@ function parseRows(rows, headerRow){
     var g=hubMap[hk]; g.rawCount++;
     (r.awb||"").split(/[,\r\n]+/).map(function(a){return a.trim();}).filter(Boolean).forEach(function(a){if(g.awbSet.indexOf(a)<0)g.awbSet.push(a);});
     g.totalVal+=r.val||0;
-    if(!g.type&&r.type)g.type=r.type;if(!g.city&&r.city)g.city=r.city;if(!g.state&&r.state)g.state=r.state;if(!g.cxName&&r.cxName)g.cxName=r.cxName;
+    if(!g.type&&r.type)g.type=r.type;if(!g.city&&r.city)g.city=r.city;if(!g.state&&r.state)g.state=r.state;if(!g.cxName&&r.cxName)g.cxName=r.cxName;if(!g.pocEmail&&r.pocEmail)g.pocEmail=r.pocEmail.toLowerCase().trim();
   });
   bulkRows=hubOrder.map(function(hk){
     var g=hubMap[hk],awbList=g.awbSet.join(", ");
