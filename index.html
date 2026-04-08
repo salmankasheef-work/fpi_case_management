@@ -414,7 +414,7 @@ textarea.fc{resize:vertical;min-height:66px;}
   <div class="page" id="page-new-case">
     <div class="tab-bar">
       <div class="tbb active" onclick="switchCaseTab('single',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>Single Case</div>
-      <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 5000</span></div>
+      <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 55,000</span></div>
     </div>
     <div class="tab-panel active" id="ct-single">
       <div class="card" style="max-width:800px">
@@ -477,14 +477,14 @@ textarea.fc{resize:vertical;min-height:66px;}
       </div>
       <div id="bstep1">
         <div class="card">
-          <div class="ch"><div class="ct">Bulk Case Upload</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">MAX 5000 CASES/BATCH</span></div>
+          <div class="ch"><div class="ct">Bulk Case Upload</div><span style="font-family:var(--mono);font-size:9.5px;color:var(--txt3)">MAX 55,000 CASES/BATCH</span></div>
           <div class="cb">
-            <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Upload <strong>any file</strong> (.xlsx, .csv, .xls, .tsv, .txt, .ods). Download the template below. <strong>Max 5000 cases</strong> per batch (first 5000 rows used).</span></div>
+            <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>Upload <strong>any file</strong> (.xlsx, .csv, .xls, .tsv, .txt, .ods). Download the template below. <strong>Max 55,000 cases</strong> per batch (first 5000 rows used).</span></div>
             <div class="drop-zone" id="drop-zone" onclick="document.getElementById('bfile').click()" ondragover="doDragOver(event)" ondragleave="doDragLeave(event)" ondrop="doDrop(event)">
               <input type="file" id="bfile" accept=".xlsx,.csv,.xls,.tsv,.txt,.ods,.numbers,*" onchange="handleFile(event)">
               <div style="font-size:36px;margin-bottom:10px">&#128202;</div>
               <div style="font-family:var(--disp);font-size:15px;font-weight:700;margin-bottom:4px;color:var(--navy)">Drop file here or click to browse</div>
-              <div style="font-size:12px;color:var(--txt3)">.xlsx · .csv · .xls · .tsv · .txt · any format &middot; Max 5000 rows</div>
+              <div style="font-size:12px;color:var(--txt3)">.xlsx · .csv · .xls · .tsv · .txt · any format &middot; Max 55,000 rows</div>
               <button class="tpl-btn" onclick="event.stopPropagation();downloadTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Template (.csv)</button>
             </div>
             <div class="col-guide" style="grid-template-columns:repeat(4,1fr)">
@@ -750,8 +750,38 @@ function renderPodView(){
 }
 function renderFraudDist(){
   const dist=document.getElementById("fraud-dist");if(!dist)return;
-  const types=[{l:"DBNU Nexus",n:5,c:"var(--red)"},{l:"COD Fraud",n:4,c:"var(--grn)"},{l:"X-Ray",n:4,c:"var(--pur)"},{l:"BCP",n:3,c:"var(--org)"},{l:"LH Theft",n:3,c:"var(--org)"},{l:"RTOD",n:2,c:"var(--yel)"},{l:"PV",n:2,c:"var(--blue)"}];
-  dist.innerHTML=`<div style="display:flex;flex-direction:column;gap:7px">`+types.map(t=>`<div style="display:flex;align-items:center;gap:8px"><div style="width:84px;font-size:11px;color:var(--txt2);text-align:right;flex-shrink:0">${t.l}</div><div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)"><div style="height:100%;width:${(t.n/5)*100}%;background:${t.c};border-radius:3px;display:flex;align-items:center;padding:0 6px"><span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">${t.n}</span></div></div></div>`).join("")+`</div>`;
+  // Build from ACTUAL cases data only — no hardcoded values
+  if(!cases||!cases.length){
+    dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No case data loaded yet.</div>';
+    return;
+  }
+  // Count by loss type / fraud type from real cases
+  const countMap={};
+  cases.forEach(function(c){
+    var t=(c.type||"Unknown").trim();
+    countMap[t]=(countMap[t]||0)+1;
+  });
+  // Sort descending
+  const sorted=Object.entries(countMap).sort(function(a,b){return b[1]-a[1];});
+  if(!sorted.length){
+    dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No fraud type data in cases.</div>';
+    return;
+  }
+  const maxN=sorted[0][1];
+  const COLORS=["var(--red)","var(--grn)","var(--pur)","var(--org)","var(--yel)","var(--blue)","var(--acc)","var(--txt2)"];
+  const types=sorted.slice(0,10).map(function(e,i){return{l:e[0],n:e[1],c:COLORS[i%COLORS.length]};});
+  dist.innerHTML='<div style="display:flex;flex-direction:column;gap:7px">'+
+    types.map(function(t){
+      return '<div style="display:flex;align-items:center;gap:8px">'+
+        '<div style="width:90px;font-size:11px;color:var(--txt2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+t.l+'">'+t.l+'</div>'+
+        '<div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)">'+
+          '<div style="height:100%;width:'+(maxN>0?(t.n/maxN)*100:0)+'%;background:'+t.c+';border-radius:3px;display:flex;align-items:center;padding:0 6px;min-width:28px">'+
+            '<span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">'+t.n+'</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join("")+
+  '</div><div style="margin-top:8px;font-size:9.5px;color:var(--txt3);text-align:right;font-family:var(--mono)">Based on '+cases.length+' cases in sheet</div>';
 }
 
 // ASSIGNMENT
@@ -806,8 +836,8 @@ function renderAssignTab(){
       reasons.push("📍 City match: "+fp.lastCity);
     else if(fp.lastHub && fp.lastHub.toLowerCase()===(c.hub||"").toLowerCase())
       reasons.push("🏢 Hub match: "+fp.lastHub);
-    else if(fp.pod)
-      reasons.push("🗺️ POD match ("+fp.pod+")");
+    else if(fp.lastHub)
+      reasons.push("🏢 Hub fallback: "+fp.lastHub);
     else
       reasons.push("⚠️ No GPS — fallback assignment");
     const t=(c.type||"").toLowerCase();
@@ -851,7 +881,7 @@ function renderAssignTab(){
       html+='<div style="display:flex;align-items:center;gap:9px">';
       html+='<div class="av" style="background:'+(fp.color||"#6366f1")+';width:30px;height:30px;font-size:10px">'+c.poc+'</div>';
       html+='<div>';
-      html+='<div style="font-weight:700;font-size:13.5px;color:var(--navy)">'+(fp.name||c.pn||c.poc)+'</div>';
+      html+='<div style="font-weight:700;font-size:13.5px;color:var(--navy)">'+(c.pn||c.pocName||fp.name||c.poc)+'</div>';
       html+='<div style="font-size:9.5px;color:var(--txt3);font-family:var(--mono)">'+(fp.pod||"")+' \u00B7 '+(fp.city||"")+' \u00B7 '+(fp.active||0)+' active</div>';
 html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp.email||"no email")+'</div>';
       html+='</div>';
@@ -1050,7 +1080,7 @@ function refreshClosedCases(){
   renderClosedTab();
   showToast("↻ Refreshing closed cases…");
 }
-function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=document.getElementById("rr-"+cid).value;if(!np||!rr){showToast("Select new POC and reason","warn");return;}const c=cases.find(x=>x.id===cid),newP=FPI.find(p=>p.id===np);if(!c.rh)c.rh=[];c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});c.poc=newP.id;c.pn=newP.name.split(" ")[0]+" "+newP.name.split(" ").slice(-1)[0][0]+".";c.pc=newP.color;c.poc_email=(newP.email||'').toLowerCase();renderReassignTab();syncCasesToStorage();showToast(`✓ ${cid} reassigned to ${newP.name}`);}
+function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=document.getElementById("rr-"+cid).value;if(!np||!rr){showToast("Select new POC and reason","warn");return;}const c=cases.find(x=>x.id===cid),newP=FPI.find(p=>p.id===np);if(!c.rh)c.rh=[];c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});c.poc=newP.id;c.pn=newP.name;c.pocName=newP.name;c.pc=newP.color;c.poc_pod=newP.pod||"";c.poc_email=(newP.email||"").toLowerCase();renderReassignTab();syncCasesToStorage();showToast(`✓ ${cid} reassigned to ${newP.name}`);}
 
 // ALL CASES TABLE
 function renderCasesTable(data){
@@ -1089,7 +1119,7 @@ function openModal(cid){
       </div>
     </div>`:""}
     ${c.updates&&c.updates.length?`<div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:7px;letter-spacing:.08em">FPI FIELD UPDATES (${c.updates.length})</div>${c.updates.map(u=>`<div style="padding:9px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd);margin-bottom:6px;border-left:3px solid var(--acc)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span class="bdg ${SL[u.status]?.c||"bgr"}" style="font-size:9px">${SL[u.status]?.l||u.status}</span><span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${u.date}</span></div><div style="font-size:11.5px;color:var(--txt2);margin-bottom:3px">${u.notes}</div>${u.police?`<span class="bdg ${u.police==="FIR Filed"?"br":u.police==="Police Complaint"?"by":"bgr"}" style="font-size:9px">${u.police}</span>`:""} ${u.photos?`<span class="bdg bgr" style="font-size:9px">📸 ${u.photos} photo${u.photos>1?"s":""}</span>`:""}</div>`).join("")}</div>`:""}
-    ${c.poc?`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--sf2);border-radius:7px;margin-bottom:10px;border:1px solid var(--bd)"><div class="av" style="background:${c.pc};width:34px;height:34px;font-size:12px">${c.poc}</div><div><div style="font-weight:600;font-size:13px">${p.name||c.pn}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod||""} · ${p.city||""} · ${p.desig||""}</div></div><span class="bdg bb" style="margin-left:auto">FPI POC</span></div>`:`<div style="padding:9px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:7px;margin-bottom:9px;font-size:12px;color:var(--yel)">⚠ No FPI POC assigned yet</div>`}
+    ${c.poc?`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--sf2);border-radius:7px;margin-bottom:10px;border:1px solid var(--bd)"><div class="av" style="background:${c.pc};width:34px;height:34px;font-size:12px">${c.poc}</div><div><div style="font-weight:600;font-size:13px">${c.pn||c.pocName||p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${c.poc_pod||p.pod||""} · ${p.city||""} · ${p.desig||""}</div></div><span class="bdg bb" style="margin-left:auto">FPI POC</span></div>`:`<div style="padding:9px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:7px;margin-bottom:9px;font-size:12px;color:var(--yel)">⚠ No FPI POC assigned yet</div>`}
     <div><div style="font-family:var(--mono);font-size:8.5px;color:var(--txt3);margin-bottom:6px">TIMELINE</div>
     <div class="tl"><div class="tl-i"><div class="tl-d on"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${c.date}</div><div style="font-size:11.5px;color:var(--txt2)">Case filed by T&S CT.</div></div>
     <div class="tl-i"><div class="tl-d ${c.poc?"on":""}"></div><div style="font-family:var(--mono);font-size:9px;color:var(--txt3)">+1 day</div><div style="font-size:11.5px;color:var(--txt2)">${c.poc?"FPI POC assigned.":"Awaiting POC."}</div></div>
@@ -1146,7 +1176,7 @@ function downloadCaseSummary(cid){
         <div class="info-box"><div class="ib-lbl">City &amp; State</div><div class="ib-val">${c.city}, ${c.state}</div></div>
         <div class="info-box"><div class="ib-lbl">Impacted Value</div><div class="ib-val" style="color:#dc2626">₹${c.val.toLocaleString()}</div></div>
         <div class="info-box"><div class="ib-lbl">Date Filed</div><div class="ib-val">${c.date}</div></div>
-        <div class="info-box"><div class="ib-lbl">FPI POC</div><div class="ib-val">${p.name||c.pn||"Unassigned"} ${p.pod?"("+p.pod+")":""}</div></div>
+        <div class="info-box"><div class="ib-lbl">FPI POC</div><div class="ib-val">${c.pn||c.pocName||p.name||"Unassigned"} ${c.poc_pod||p.pod?"("+(c.poc_pod||p.pod)+")":""}</div></div>
         <div class="info-box"><div class="ib-lbl">Current Status</div><div class="ib-val">${(SL[c.st]||{l:c.st}).l}</div></div>
       </div>
     </div>
@@ -10683,7 +10713,7 @@ function parseCSV(text){
   else if((sample.match(/\|/g)||[]).length>(sample.match(/,/g)||[]).length) delim="|";
   var dataRows=lines.slice(1).filter(function(l){return l.trim();});
   if(!dataRows.length){showToast("No data rows found in file","warn");return;}
-  if(dataRows.length>5000){showToast("File has "+dataRows.length+" rows — using first 5000","warn");dataRows.splice(5000);}
+  if(dataRows.length>55000){showToast("File has "+dataRows.length+" rows — using first 55,000","warn");dataRows.splice(55000);}
   // Parse all rows: header + data
   var allLines=[lines[0]].concat(dataRows);
   var parsed=allLines.map(function(row){return parseDelimitedRow(row,delim);});
@@ -11428,22 +11458,12 @@ function autoAssignBestFPI(c){
   });
   if(s4.length){var w4=best(s4);if(w4)return{fpi:w4,priority:priority,reason:"City match (24h) \xb7 "+caseCity};}
 
-  // ── STEP 5: POD / state match ─────────────────────────────────
-  var POD_STATES={
-    "PB/HP/HR/J&K":["Punjab","Haryana","Himachal Pradesh","Jammu & Kashmir"],
-    "NCR":["Delhi","Haryana","Uttar Pradesh"],"UP/UK":["Uttar Pradesh","Uttarakhand"],
-    "MH":["Maharashtra"],"KA":["Karnataka"],"TN":["Tamil Nadu"],
-    "AP/TS":["Andhra Pradesh","Telangana"],"GJ":["Gujarat"],"RJ":["Rajasthan"],
-    "WB":["West Bengal"],"ROKA":["Karnataka","Kerala","Goa"],
-    "ROTN":["Tamil Nadu","Puducherry"],"BH/JH":["Bihar","Jharkhand"],
-    "North East":["Assam","Meghalaya","Tripura","Manipur","Nagaland","Arunachal Pradesh","Mizoram","Sikkim"],
-    "MP/RJ":["Madhya Pradesh","Rajasthan"],"ROMH":["Maharashtra","Goa"],
-    "BOM/PNQ":["Maharashtra"],"Pune":["Maharashtra"],"ROK/KL":["Karnataka","Kerala"]
-  };
-  var s5a=agents.filter(function(p){return(POD_STATES[p.pod]||[]).includes(c.state);});
-  if(s5a.length){var w5=best(s5a);if(w5)return{fpi:w5,priority:priority,reason:"POD match \xb7 "+(w5.pod||c.state)};}
+  // ── STEP 5: Hub-active agents fallback (POD-based removed) ──────
+  // Only use agents who have any hub login recorded (hub-based geo signal)
+  var s5a=agents.filter(function(p){return p.lastHub;});
+  if(s5a.length){var w5=best(s5a);if(w5)return{fpi:w5,priority:priority,reason:"Hub agent fallback · "+w5.lastHub};}
 
-  // ── LAST RESORT: least active ─────────────────────────────────
+    // ── LAST RESORT: least active ─────────────────────────────────
   var fallback=best(agents);
   return{fpi:fallback,priority:priority,reason:"Fallback \xb7 least active"};
 }
