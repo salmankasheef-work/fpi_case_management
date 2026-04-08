@@ -411,10 +411,16 @@ textarea.fc{resize:vertical;min-height:66px;}
             <div class="fg3">
               <div class="fgrp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="2" id="f-awbs"></textarea></div>
               <div class="fgrp"><label class="fl">Category <span class="fr">*</span></label>
-                <select class="fc" id="f-cat"><option value="">Select category&hellip;</option><option value="Shipment Fraud">Shipment Fraud</option><option value="COD">COD</option><option value="Shipment Fraud &amp; COD">Shipment Fraud &amp; COD</option><option value="Miscellaneous">Miscellaneous</option></select>
+                <select class="fc" id="f-cat" onchange="updateFraudTypeOptions()">
+                  <option value="">Select category&hellip;</option>
+                  <option value="Shipment Fraud">Shipment Fraud</option>
+                  <option value="COD">COD</option>
+                  <option value="Shipment Fraud &amp; COD">Shipment Fraud &amp; COD</option>
+                  <option value="Others">Others</option>
+                </select>
               </div>
-              <div class="fgrp"><label class="fl">Loss Type <span class="fr">*</span></label>
-                <select class="fc" id="f-type"><option value="">Select type&hellip;</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Short</option><option>Pendency</option><option>Other</option></select>
+              <div class="fgrp"><label class="fl">Fraud Type <span class="fr">*</span></label>
+                <select class="fc" id="f-type"><option value="">Select category first&hellip;</option></select>
               </div>
             </div>
           </div>
@@ -448,6 +454,15 @@ textarea.fc{resize:vertical;min-height:66px;}
               <div class="fgrp"><label class="fl">Cx as Rider &mdash; Rider ID</label><input type="text" class="fc" placeholder="Rider ID if cx posed as rider" id="f-cx-rider"></div>
               <div class="fgrp"><label class="fl">Last Attempt LM Rider ID</label><input type="text" class="fc" placeholder="Last mile rider ID" id="f-lm-rider"></div>
               <div class="fgrp"><label class="fl">Customer Name <span class="fr">*</span></label><input type="text" class="fc" placeholder="Customer full name" id="f-cx-name"></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-t"><div class="sn">5</div>Assignment Override</div>
+            <div class="fg3">
+              <div class="fgrp"><label class="fl">POC Email <span style="font-size:9px;color:var(--txt3)">(optional — auto-assigns to this agent)</span></label>
+                <input type="email" class="fc" placeholder="agent@shadowfax.in" id="f-poc-email" autocomplete="off" oninput="validatePocEmail()">
+                <div id="f-poc-hint" style="font-size:10px;margin-top:3px;min-height:14px"></div>
+              </div>
             </div>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--bd)">
@@ -489,6 +504,7 @@ textarea.fc{resize:vertical;min-height:66px;}
               <div class="cg-card"><div class="cg-name" style="color:var(--blue)">J &middot; Cx_Rider_Id</div><div class="cg-desc">Cx as rider ID (optional)</div></div>
               <div class="cg-card"><div class="cg-name" style="color:var(--blue)">K &middot; LM_Rider_Id</div><div class="cg-desc">Last mile rider ID (optional)</div></div>
               <div class="cg-card"><div class="cg-name" style="color:var(--red)">L &middot; Customer_Name <span style="color:var(--red)">*</span></div><div class="cg-desc">Customer full name</div></div>
+              <div class="cg-card"><div class="cg-name" style="color:var(--grn)">M &middot; POC_Email</div><div class="cg-desc">Agent email (optional override)</div></div>
             </div>
           </div>
         </div>
@@ -795,20 +811,36 @@ function renderFraudDist(targetId){
 
 // Silently auto-assign a case immediately — no UI interaction
 function autoAssignCase(c){
-  const {fpi:p, priority:pri, reason} = autoAssignBestFPI(c);
+  // Check POC email override first (from single form or bulk upload)
+  var overrideEmail = (c._overridePocEmail||"").toLowerCase().trim();
+  var assignedAgent = null;
+  if(overrideEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(overrideEmail)){
+    assignedAgent = FPI.find(function(p){
+      return (p.email||"").toLowerCase().trim() === overrideEmail;
+    }) || null;
+  }
+  var p, pri, reason;
+  if(assignedAgent){
+    p      = assignedAgent;
+    pri    = calcPriority(c.type, c.val);
+    reason = "POC override: "+overrideEmail;
+  } else {
+    var res = autoAssignBestFPI(c);
+    p = res.fpi; pri = res.priority; reason = res.reason;
+  }
   if(!p){ c.st="unassigned"; return; }
-  // Store ALL poc fields consistently — same values in CM, Field Portal, Sheet
-  c.poc          = p.id;                               // initials (avatar display)
-  c.pn           = p.name||"";                         // FULL name shown in tables
-  c.pocName      = p.name||"";                         // alias kept in sync
+  c.poc          = p.id;
+  c.pn           = p.name||"";
+  c.pocName      = p.name||"";
   c.pc           = p.color||"#3b8ef8";
-  c.poc_email    = (p.email||"").toLowerCase().trim(); // Field Portal filters by this
-  c.poc_pod      = p.pod||"";                          // sent to sheet
+  c.poc_email    = (p.email||"").toLowerCase().trim();
+  c.poc_pod      = p.pod||"";
   c.pri          = pri||calcPriority(c.type,c.val);
   c.st           = "pending_date";
-  c._assignReason= reason||"Hub/City/POD match";
-  p.active    = (p.active||0)+1;
-  p.pending   = (p.pending||0)+1;
+  c._assignReason= reason||"Hub/City match";
+  delete c._overridePocEmail;
+  p.active  = (p.active||0)+1;
+  p.pending = (p.pending||0)+1;
   updateBadges();
   syncNewCase(c);
 }
@@ -1298,6 +1330,33 @@ function renderPerf(){
 
 // SINGLE SUBMIT
 function toggleCatFields(){/* all categories use AWBs */}
+
+// Fraud Type options per category
+var FRAUD_TYPES_BY_CAT={
+  "Shipment Fraud":["DBNU","Fake Bagging","Fake Closure","Inhouse theft","Lane Case","LM to ODC","MDND","Multiple fraud bucket","RTOD","RTOND","RVP QC/X-ray","RVP/QC","RVP/RTO","Seller Fraud","Shipment Swap","Shipment Theft","X-Ray","X-ray/RTOnd","Xray/RTOnd/PV"],
+  "COD":["COD","COD non-deposition (FP)","COD non-deposition (Franchise)","COD non-deposition (HI/TL/Rider)","COD non-deposition (HL riders)","CX Fraud","HL COD case","Rider absconded with COD","Rider COD fraud","Rider not deposited COD"],
+  "Shipment Fraud & COD":["DBNU/COD misused","Rider absconded","Shipment Hold","Shipment Theft & COD fraud"],
+  "Others":["BCP","HHD Missing","Hub Robbery","Integrity Issue","LH Robbery"]
+};
+function updateFraudTypeOptions(){
+  var cat=((document.getElementById("f-cat")||{}).value||"").trim();
+  var sel=document.getElementById("f-type");
+  if(!sel) return;
+  var opts=FRAUD_TYPES_BY_CAT[cat]||[];
+  sel.innerHTML='<option value="">'+(cat?"Select fraud type…":"Select category first…")+'</option>'+
+    opts.map(function(o){return'<option value="'+o+'">'+o+'</option>';}).join("");
+}
+function validatePocEmail(){
+  var email=((document.getElementById("f-poc-email")||{}).value||"").trim().toLowerCase();
+  var hint=document.getElementById("f-poc-hint");
+  if(!hint) return;
+  if(!email){hint.textContent="";hint.style.color="";return;}
+  var valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if(!valid){hint.textContent="⚠ Invalid email format";hint.style.color="var(--red)";return;}
+  var agent=FPI.find(function(p){return(p.email||"").toLowerCase().trim()===email;});
+  if(agent){hint.textContent="✓ Will assign to: "+agent.name;hint.style.color="var(--grn)";}
+  else{hint.textContent="⚠ No agent found with this email — will use auto-assign";hint.style.color="var(--yel)";}
+}
 const HUB_LIST = [
   "Guwahati Superstore",
   "FGSB_TaianaRK_SCC",
@@ -10632,14 +10691,16 @@ function submitSingle(){
   const cxRider   = ((document.getElementById("f-cx-rider")||{}).value||"").trim();
   const lmRider   = ((document.getElementById("f-lm-rider")||{}).value||"").trim();
   const cxName    = ((document.getElementById("f-cx-name")||{}).value||"").trim();
+  const pocEmail  = ((document.getElementById("f-poc-email")||{}).value||"").trim().toLowerCase();
   if(!awbs)  {showToast("AWB Numbers required","warn");return;}
   if(!cat)   {showToast("Category required","warn");return;}
-  if(!type)  {showToast("Loss Type required","warn");return;}
+  if(!type)  {showToast("Fraud Type required","warn");return;}
   if(!val)   {showToast("Product Value required","warn");return;}
   if(!hub)   {showToast("Hub required","warn");return;}
   if(!city)  {showToast("City required","warn");return;}
   if(!state) {showToast("State required","warn");return;}
   if(!cxName){showToast("Customer Name required","warn");return;}
+  if(pocEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail)){showToast("Invalid POC email format","warn");return;}
   const id = "FPI-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-5);
   const newCase = {
     id, cat,
@@ -10647,6 +10708,7 @@ function submitSingle(){
     awbList: awbs, type, fp: fpFromType(type),
     sfxStatus, desc, cxRider, lmRider, cxName,
     poc:"", pn:"", pocName:"", pc:"", poc_email:"", poc_pod:"",
+    _overridePocEmail: pocEmail,
     val: parseFloat(val)||0, pri:"",
     st:"unassigned", hub, city, state,
     date: new Date().toISOString().split("T")[0],
@@ -10665,12 +10727,13 @@ function submitSingle(){
   showToast("\u2713 "+id+" \u2192 assigned to "+ap.pn+" ("+ap.pri+")");
   syncCase(ap);
   try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e_){}
-  ["f-awbs","f-val","f-desc","f-hub","f-city","f-cx-rider","f-lm-rider","f-cx-name"].forEach(function(fid){
+  ["f-awbs","f-val","f-desc","f-hub","f-city","f-cx-rider","f-lm-rider","f-cx-name","f-poc-email"].forEach(function(fid){
     var el=document.getElementById(fid); if(el) el.value="";
   });
   ["f-cat","f-type","f-sfx-status","f-state"].forEach(function(fid){
     var el=document.getElementById(fid); if(el) el.selectedIndex=0;
   });
+  var ph=document.getElementById("f-poc-hint"); if(ph) ph.textContent="";
   setTimeout(()=>{showPage("assignment");renderAssignTab();renderReassignTab();}, 400);
 }
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
@@ -10808,13 +10871,13 @@ function parseRows(rows, headerRow){
   function gc(cols,al,fb){if(hm){for(var i=0;i<al.length;i++){var na=nk(al[i]);if(hm[na]!==undefined)return String(cols[hm[na]]||"").trim();var h=Object.keys(hm).find(function(k){return k.includes(na)||na.includes(k);});if(h!==undefined)return String(cols[hm[h]]||"").trim();}}return String(cols[fb]||"").trim();}
   // Parse every raw row
   var rawRows=dr.filter(function(cols){return cols.some(function(c){return c&&String(c).trim();});}).map(function(cols,i){
-    return{rowNum:i+2,awb:gc(cols,["awbnumbers","awbs","awb"],0),cat:gc(cols,["category","cat"],1)||"Shipment Fraud",type:gc(cols,["losstype","fraudtype","loss"],2),sfxStatus:gc(cols,["sfxstatus","sfx"],3),val:parseFloat(String(gc(cols,["productvalue","value","impactedvalue"],4)||"0").replace(/[^\d.]/g,""))||0,desc:gc(cols,["productdescription","productdesc","description"],5),hub:gc(cols,["hub","facility"],6),city:gc(cols,["city"],7),state:gc(cols,["state"],8),cxRider:gc(cols,["cxasriderriderid","cxriderid","cxrider"],9),lmRider:gc(cols,["lastattemptlmriderid","lmriderid","lmrider"],10),cxName:gc(cols,["customername","customer","cxname"],11)};
+    return{rowNum:i+2,awb:gc(cols,["awbnumbers","awbs","awb"],0),cat:gc(cols,["category","cat"],1)||"Shipment Fraud",type:gc(cols,["losstype","fraudtype","loss"],2),sfxStatus:gc(cols,["sfxstatus","sfx"],3),val:parseFloat(String(gc(cols,["productvalue","value","impactedvalue"],4)||"0").replace(/[^\d.]/g,""))||0,desc:gc(cols,["productdescription","productdesc","description"],5),hub:gc(cols,["hub","facility"],6),city:gc(cols,["city"],7),state:gc(cols,["state"],8),cxRider:gc(cols,["cxasriderriderid","cxriderid","cxrider"],9),lmRider:gc(cols,["lastattemptlmriderid","lmriderid","lmrider"],10),cxName:gc(cols,["customername","customer","cxname"],11),pocEmail:(gc(cols,["pocemail","poc","pocemailoverride"],12)||"").toLowerCase().trim()};
   });
   // GROUP BY HUB — each unique hub becomes one case
   var hubMap={},hubOrder=[];
   rawRows.forEach(function(r){
     var hk=(r.hub||"__NOHUB__").trim();
-    if(!hubMap[hk]){hubMap[hk]={rowNum:r.rowNum,awbSet:[],cat:r.cat,type:r.type,sfxStatus:r.sfxStatus,totalVal:0,desc:r.desc,hub:r.hub,city:r.city,state:r.state,cxRider:r.cxRider,lmRider:r.lmRider,cxName:r.cxName,rawCount:0};hubOrder.push(hk);}
+    if(!hubMap[hk]){hubMap[hk]={rowNum:r.rowNum,awbSet:[],cat:r.cat,type:r.type,sfxStatus:r.sfxStatus,totalVal:0,desc:r.desc,hub:r.hub,city:r.city,state:r.state,cxRider:r.cxRider,lmRider:r.lmRider,cxName:r.cxName,pocEmail:(r.pocEmail||"").toLowerCase().trim(),rawCount:0};hubOrder.push(hk);}
     var g=hubMap[hk]; g.rawCount++;
     (r.awb||"").split(/[,\r\n]+/).map(function(a){return a.trim();}).filter(Boolean).forEach(function(a){if(g.awbSet.indexOf(a)<0)g.awbSet.push(a);});
     g.totalVal+=r.val||0;
@@ -10893,6 +10956,7 @@ function submitBulk(){
       sfxStatus:r.sfxStatus||"", desc:r.desc||"",
       cxRider:r.cxRider||"", lmRider:r.lmRider||"", cxName:r.cxName||"",
       poc:"", pn:"", pocName:"", pc:"", poc_email:"", poc_pod:"",
+      _overridePocEmail:r.pocEmail||"",
       val:r.val||0, pri:"", st:"unassigned",
       hub:r.hub, city:r.city, state:r.state,
       date:new Date().toISOString().split("T")[0],
