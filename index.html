@@ -811,24 +811,55 @@ function renderFraudDist(targetId){
 
 // Silently auto-assign a case immediately — no UI interaction
 function autoAssignCase(c){
-  // Check POC email override first (from single form or bulk upload)
   var overrideEmail = (c._overridePocEmail||"").toLowerCase().trim();
-  var assignedAgent = null;
-  if(overrideEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(overrideEmail)){
-    assignedAgent = FPI.find(function(p){
-      return (p.email||"").toLowerCase().trim() === overrideEmail;
-    }) || null;
+  delete c._overridePocEmail; // clean up regardless
+
+  // ── POC EMAIL OVERRIDE: fully bypasses all other assignment logic ──
+  if(overrideEmail){
+    var isValidEmail = overrideEmail.indexOf("@") > 0 && overrideEmail.indexOf(".") > overrideEmail.indexOf("@");
+    if(isValidEmail){
+      var pocAgent = null;
+      for(var pi=0; pi<FPI.length; pi++){
+        if((FPI[pi].email||"").toLowerCase().trim() === overrideEmail){
+          pocAgent = FPI[pi]; break;
+        }
+      }
+      if(pocAgent){
+        // Direct assignment — skip ALL hub/login/geo logic
+        c.poc          = pocAgent.id;
+        c.pn           = pocAgent.name||"";
+        c.pocName      = pocAgent.name||"";
+        c.pc           = pocAgent.color||"#3b8ef8";
+        c.poc_email    = overrideEmail;
+        c.poc_pod      = pocAgent.pod||"";
+        c.pri          = calcPriority(c.type, c.val);
+        c.st           = "pending_date";
+        c._assignReason= "POC direct: "+overrideEmail;
+        pocAgent.active  = (pocAgent.active||0)+1;
+        pocAgent.pending = (pocAgent.pending||0)+1;
+        updateBadges();
+        syncNewCase(c);
+        return; // ← STOP here, do not continue to hub/login logic
+      }
+      // Email provided but no matching agent found — leave unassigned
+      c.st = "unassigned";
+      c._assignReason = "POC email not matched: "+overrideEmail;
+      updateBadges();
+      return;
+    }
   }
-  var p, pri, reason;
-  if(assignedAgent){
-    p      = assignedAgent;
-    pri    = calcPriority(c.type, c.val);
-    reason = "POC override: "+overrideEmail;
-  } else {
-    var res = autoAssignBestFPI(c);
-    p = res.fpi; pri = res.priority; reason = res.reason;
+
+  // ── NORMAL ASSIGNMENT: hub/login/geo logic ─────────────────────
+  var res = autoAssignBestFPI(c);
+  var p = res.fpi; var pri = res.priority; var reason = res.reason;
+
+  if(!p){
+    // No valid logged-in agent found → leave unassigned (goes to Reassign tab)
+    c.st = "unassigned";
+    c._assignReason = "No eligible agent found";
+    updateBadges();
+    return;
   }
-  if(!p){ c.st="unassigned"; return; }
   c.poc          = p.id;
   c.pn           = p.name||"";
   c.pocName      = p.name||"";
@@ -838,7 +869,6 @@ function autoAssignCase(c){
   c.pri          = pri||calcPriority(c.type,c.val);
   c.st           = "pending_date";
   c._assignReason= reason||"Hub/City match";
-  delete c._overridePocEmail;
   p.active  = (p.active||0)+1;
   p.pending = (p.pending||0)+1;
   updateBadges();
@@ -10829,11 +10859,11 @@ function processBulkFile(file){
 function colLetterToIdx(col){
   let n=0;for(let i=0;i<col.length;i++){n=n*26+(col.charCodeAt(i)-64);}return n-1;
 }
-function getDemoCSV(){return`AWB_Numbers,Category,Loss_Type,SFX_Status,Product_Value,Product_Description,Hub,City,State,Cx_Rider_Id,LM_Rider_Id,Customer_Name
-1234567890,Shipment Fraud,DBNU Nexus,Undelivered,45000,Mobile Phone,BLR_Kudlugate,Bangalore,Karnataka,,PV001,Rahul Sharma
-5556667778,COD,COD Non-Remittance,Delivered,28000,Clothing,DEL_MaidanGarhi,Delhi,Delhi,,,Priya Singh
-3334445556,Shipment Fraud,X-Ray,In Transit,95000,Electronics,BOM_Andheri,Mumbai,Maharashtra,,LM002,Amit Kumar
-7778889990,Shipment Fraud,PV,Undelivered,120000,Laptop,HYD_Kukatpally,Hyderabad,Telangana,RID123,,Sunita Rao`;}
+function getDemoCSV(){return`AWB_Numbers,Category,Loss_Type,SFX_Status,Product_Value,Product_Description,Hub,City,State,Cx_Rider_Id,LM_Rider_Id,Customer_Name,POC_Email
+1234567890,Shipment Fraud,DBNU Nexus,Undelivered,45000,Mobile Phone,BLR_Kudlugate,Bangalore,Karnataka,,PV001,Rahul Sharma,
+5556667778,COD,COD Non-Remittance,Delivered,28000,Clothing,DEL_MaidanGarhi,Delhi,Delhi,,,Priya Singh,pushkar.verma@shadowfax.in
+3334445556,Shipment Fraud,X-Ray,In Transit,95000,Electronics,BOM_Andheri,Mumbai,Maharashtra,,LM002,Amit Kumar,
+7778889990,Shipment Fraud,PV,Undelivered,120000,Laptop,HYD_Kukatpally,Hyderabad,Telangana,RID123,,Sunita Rao,`;}
 function parseCSV(text){
   if(!text||!text.trim()){showToast("File appears empty","warn");return;}
   const lines=text.trim().split(/\r?\n/).map(function(l){return l.replace(/\r/g,"");}).filter(function(l){return l.trim();});
@@ -11051,12 +11081,12 @@ function downloadTemplate(){
   const headers = [
     "AWB_Numbers","Category","Loss_Type","SFX_Status","Product_Value",
     "Product_Description","Hub","City","State",
-    "Cx_Rider_Id","LM_Rider_Id","Customer_Name"
+    "Cx_Rider_Id","LM_Rider_Id","Customer_Name","POC_Email"
   ];
   const sampleRows = [
-    ["1234567890,1234567891","Shipment Fraud","DBNU Nexus","Undelivered","45000","Mobile Phone","BLR_Kudlugate","Bangalore","Karnataka","","PV001","Rahul Sharma"],
-    ["5556667778","Shipment Fraud","X-Ray","In Transit","120000","Laptop","DEL_MaidanGarhi","Delhi","Delhi","RID123","LM002","Priya Singh"],
-    ["3334445556","COD","COD Non-Remittance","Delivered","28000","Clothing","BOM_Andheri","Mumbai","Maharashtra","","","Amit Kumar"]
+    ["1234567890,1234567891","Shipment Fraud","DBNU Nexus","Undelivered","45000","Mobile Phone","BLR_Kudlugate","Bangalore","Karnataka","","PV001","Rahul Sharma",""],
+    ["5556667778","Shipment Fraud","X-Ray","In Transit","120000","Laptop","DEL_MaidanGarhi","Delhi","Delhi","RID123","LM002","Priya Singh","pushkar.verma@shadowfax.in"],
+    ["3334445556","COD","COD Non-Remittance","Delivered","28000","Clothing","BOM_Andheri","Mumbai","Maharashtra","","","Amit Kumar",""]
   ];
   const csvContent = [headers].concat(sampleRows)
     .map(function(row){ return row.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(","); })
@@ -11529,10 +11559,15 @@ function autoAssignBestFPI(c){
 
   function eligibleAgents(){
     var all=FPI.filter(function(p){return p.email&&p.email.includes("@");});
-    var loggedIn=all.filter(function(p){return p.lastHub||(p.lastLoginTs&&p.lastLoginTs>0);});
-    var pool=loggedIn.length>0?loggedIn:all;
-    var avail=pool.filter(function(p){return(p.active||0)<MAX_CASES;});
-    return avail.length>0?avail:pool;
+    // STRICT: only agents who have logged in via Field Portal
+    // (have a lastHub OR a recorded lastLoginTs > 0)
+    // Prakash Virkar and other never-logged-in agents are excluded
+    var loggedIn=all.filter(function(p){
+      return p.lastHub||(p.lastLoginTs&&p.lastLoginTs>0);
+    });
+    if(!loggedIn.length) return []; // no logged-in agents → caller returns null → unassigned
+    var avail=loggedIn.filter(function(p){return(p.active||0)<MAX_CASES;});
+    return avail.length>0?avail:loggedIn; // if all at capacity, still only logged-in
   }
   function best(list){
     return list.slice().sort(function(a,b){
@@ -11594,14 +11629,12 @@ function autoAssignBestFPI(c){
   });
   if(s4.length){var w4=best(s4);if(w4)return{fpi:w4,priority:priority,reason:"City match (24h) \xb7 "+caseCity};}
 
-  // ── STEP 5: Hub-active agents fallback (POD-based removed) ──────
-  // Only use agents who have any hub login recorded (hub-based geo signal)
+  // ── STEP 5: Hub-active agents with recorded hub ──────────────
   var s5a=agents.filter(function(p){return p.lastHub;});
   if(s5a.length){var w5=best(s5a);if(w5)return{fpi:w5,priority:priority,reason:"Hub agent fallback · "+w5.lastHub};}
 
-    // ── LAST RESORT: least active ─────────────────────────────────
-  var fallback=best(agents);
-  return{fpi:fallback,priority:priority,reason:"Fallback \xb7 least active"};
+  // No logged-in agent matched → return null so case goes to Reassign tab
+  return{fpi:null,priority:priority,reason:"No eligible logged-in agent"};
 }
 
 
