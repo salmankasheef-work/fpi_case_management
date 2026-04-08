@@ -391,7 +391,7 @@ textarea.fc{resize:vertical;min-height:66px;}
     </div>
     <div id="trends-type-cards" class="g3" style="margin-bottom:16px"></div>
     <div class="g2">
-      <div class="card"><div class="ch"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Loss Type Distribution</div></div><div class="cb" id="fraud-dist"></div></div>
+      <div class="card"><div class="ch"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Loss Type Distribution</div></div><div class="cb" id="trends-fraud-dist"></div></div>
       <div class="card"><div class="ch"><div class="ct">Cases by State (Top 5)</div></div><div class="cb" id="trends-state-table"></div></div>
     </div>
   </div>
@@ -568,7 +568,10 @@ textarea.fc{resize:vertical;min-height:66px;}
 
   <!-- PERFORMANCE -->
   <div class="page" id="page-performance">
-    <div class="chip-row"><div class="chip active">Q1 2024</div><div class="chip">Q4 2023</div><div class="chip">Q3 2023</div><div class="chip">All Time</div></div>
+    <div class="abanner blue" style="margin-bottom:16px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      <span>FPI Agent Performance — real-time scores computed from actual case data.</span>
+    </div>
     <div class="g3" id="perf-grid"></div>
   </div>
 
@@ -626,7 +629,7 @@ function showPage(id){
   document.getElementById("page-"+id).classList.add("active");
   document.getElementById("page-title").textContent=PT[id]||id;
   document.querySelectorAll(".ni").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+id+"'"))n.classList.add("active");});
-  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},trends:()=>{renderTrendsPage();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
+  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist("fraud-dist");},trends:()=>{renderTrendsPage();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
   if(R[id])R[id]();
 }
 function switchCaseTab(id,el){document.querySelectorAll("#page-new-case .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-new-case .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("ct-"+id).classList.add("active");}
@@ -755,11 +758,14 @@ function renderTrendsPage(){
         return '<tr><td>'+e[0]+'</td><td style="font-family:var(--mono);font-weight:600">'+e[1]+'</td><td>'+lvl+'</td></tr>';
       }).join("")+'</tbody></table>';
   }
-  renderFraudDist();
+  renderFraudDist("trends-fraud-dist");
 }
 
-function renderFraudDist(){
-  const dist=document.getElementById("fraud-dist");if(!dist)return;
+function renderFraudDist(targetId){
+  // Use explicit targetId if provided, otherwise check which page is active
+  const id = targetId || (document.getElementById("page-trends") && document.getElementById("page-trends").classList.contains("active") ? "trends-fraud-dist" : "fraud-dist");
+  const dist=document.getElementById(id);
+  if(!dist)return;
   if(!cases||!cases.length){
     dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No case data loaded yet.</div>';
     return;
@@ -1234,7 +1240,60 @@ function renderTracker(){
 
 // PERFORMANCE
 function renderPerf(){
-  document.getElementById("perf-grid").innerHTML=FPI.slice(0,12).map(p=>{const s=p.score;const clr=s>=90?"var(--grn)":s>=75?"var(--yel)":"var(--red)";const r=25;const circ=2*Math.PI*r;const off=circ-(s/100)*circ;const dots=Array.from({length:10},(_,i)=>`<div class="rd ${i<Math.floor(s/10)?"f":""}"></div>`).join("");return`<div class="pc"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div class="fpiav" style="background:${p.color};width:36px;height:36px;font-size:11px">${p.id}</div><div style="flex:1"><div style="font-weight:700;font-size:12.5px">${p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod} · ${p.desig}</div></div><div class="sr"><svg width="56" height="56" viewBox="0 0 56 56"><circle fill="none" stroke="var(--sf2)" stroke-width="5" cx="28" cy="28" r="${r}"/><circle fill="none" stroke="${clr}" stroke-width="5" stroke-linecap="round" cx="28" cy="28" r="${r}" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/></svg><div class="rt" style="color:${clr}">${s}</div></div></div><div class="pm"><div class="pmv"><div class="pmn" style="color:var(--grn)">${p.closed}</div><div class="pml">CLOSED</div></div><div class="pmv"><div class="pmn" style="color:var(--blue)">${Math.floor(Math.random()*4+2)}</div><div class="pml">AVG DAYS</div></div><div class="pmv"><div class="pmn" style="color:var(--yel)">${Math.floor(60+Math.random()*35)}%</div><div class="pml">RECOVERY</div></div><div class="pmv"><div class="pmn" style="color:var(--red)">${Math.floor(p.closed*0.3)}</div><div class="pml">FIR FILED</div></div></div><div class="rb">${dots}</div><div style="display:flex;justify-content:space-between;margin-top:6px"><span style="font-size:10px;color:var(--txt3)">Score: <strong style="color:${clr}">${s}/100</strong></span><span class="bdg ${s>=90?"bg":s>=75?"by":"br"}" style="font-size:9px">${s>=90?"Excellent":s>=75?"Good":"Needs Attention"}</span></div></div>`;}).join("");
+  const grid=document.getElementById("perf-grid");
+  if(!grid) return;
+  if(!FPI||!FPI.length){
+    grid.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3);font-size:13px;grid-column:1/-1">No agent data loaded yet.</div>';
+    return;
+  }
+  // Compute real metrics per agent from cases array
+  grid.innerHTML=FPI.filter(function(p){return p.id&&p.name;}).map(function(p){
+    const myCases   = cases.filter(function(c){return c.poc===p.id;});
+    const closed    = myCases.filter(function(c){return c.st==="closed";}).length;
+    const active    = myCases.filter(function(c){return c.st!=="closed"&&c.st!=="unassigned";}).length;
+    const totalVal  = myCases.reduce(function(s,c){return s+(c.val||0);},0);
+    const recovered = myCases.reduce(function(s,c){return s+(c.recovery||0);},0);
+    const firCount  = myCases.filter(function(c){return c.policeAction==="FIR Filed";}).length;
+    const total     = myCases.length;
+    // Score: closed rate (40%) + recovery rate (40%) + activity (20%)
+    const closeRate = total>0 ? (closed/total)*100 : 0;
+    const recRate   = totalVal>0 ? Math.min((recovered/totalVal)*100,100) : 0;
+    const actScore  = Math.min(active*10,20);
+    const score     = Math.round(closeRate*0.4 + recRate*0.4 + actScore*0.2);
+    const clr=score>=70?"var(--grn)":score>=40?"var(--yel)":"var(--red)";
+    const label=score>=70?"Good":score>=40?"Average":"Needs Attention";
+    const bdgCls=score>=70?"bg":score>=40?"by":"br";
+    const r=25; const circ=2*Math.PI*r;
+    const off=circ-(score/100)*circ;
+    const recPct=totalVal>0?Math.round((recovered/totalVal)*100):0;
+    return '<div class="pc">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+
+        '<div class="fpiav" style="background:'+p.color+';width:36px;height:36px;font-size:11px">'+p.id+'</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:700;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.name+'</div>'+
+          '<div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">'+(p.pod||"")+(p.desig?' · '+p.desig:'')+'</div>'+
+        '</div>'+
+        '<div class="sr">'+
+          '<svg width="56" height="56" viewBox="0 0 56 56">'+
+            '<circle fill="none" stroke="var(--sf2)" stroke-width="5" cx="28" cy="28" r="'+r+'"/>'+
+            '<circle fill="none" stroke="'+clr+'" stroke-width="5" stroke-linecap="round" cx="28" cy="28" r="'+r+'" stroke-dasharray="'+circ+'" stroke-dashoffset="'+off+'"/>'+
+          '</svg>'+
+          '<div class="rt" style="color:'+clr+'">'+score+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="pm">'+
+        '<div class="pmv"><div class="pmn" style="color:var(--grn)">'+closed+'</div><div class="pml">CLOSED</div></div>'+
+        '<div class="pmv"><div class="pmn" style="color:var(--blue)">'+active+'</div><div class="pml">ACTIVE</div></div>'+
+        '<div class="pmv"><div class="pmn" style="color:var(--yel)">'+recPct+'%</div><div class="pml">RECOVERY</div></div>'+
+        '<div class="pmv"><div class="pmn" style="color:var(--red)">'+firCount+'</div><div class="pml">FIR FILED</div></div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;margin-top:8px;align-items:center">'+
+        '<span style="font-size:10px;color:var(--txt3)">Score: <strong style="color:'+clr+'">'+score+'/100</strong></span>'+
+        '<span class="bdg '+bdgCls+'" style="font-size:9px">'+label+'</span>'+
+      '</div>'+
+      (total===0?'<div style="margin-top:6px;font-size:10px;color:var(--txt4);text-align:center">No cases assigned</div>':'')+
+    '</div>';
+  }).join("");
 }
 
 // SINGLE SUBMIT
@@ -11545,7 +11604,7 @@ function cmLoginSuccess(email, name){
   cmSetUserDisplay(name||email);
   loadFPIFromSheet().then(()=>{
     renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
-    renderPodView();renderFraudDist();renderCasesTable(filteredCases);
+    renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
     renderAssignTab();renderReassignTab();updateBadges();
   });
 }
@@ -11616,7 +11675,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     // Always load fresh from sheet on login — localStorage is only a backup
     loadFPIFromSheet().then(()=>{
       renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
-      renderPodView();renderFraudDist();renderCasesTable(filteredCases);
+      renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
       renderAssignTab();renderReassignTab();updateBadges();updateClosedBadge();
       // If sheet returned 0 cases, show a helpful message
       if(cases.length===0){
