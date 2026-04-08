@@ -810,57 +810,13 @@ function renderFraudDist(targetId){
 // autoAssignBestFPI defined below
 
 // Silently auto-assign a case immediately — no UI interaction
-function autoAssignCase(c){
-  var overrideEmail = (c._overridePocEmail||"").toLowerCase().trim();
-  delete c._overridePocEmail; // clean up regardless
-
-  // ── POC EMAIL OVERRIDE: fully bypasses all other assignment logic ──
-  if(overrideEmail){
-    var isValidEmail = overrideEmail.indexOf("@") > 0 && overrideEmail.indexOf(".") > overrideEmail.indexOf("@");
-    if(isValidEmail){
-      var pocAgent = null;
-      for(var pi=0; pi<FPI.length; pi++){
-        if((FPI[pi].email||"").toLowerCase().trim() === overrideEmail){
-          pocAgent = FPI[pi]; break;
-        }
-      }
-      if(pocAgent){
-        // Direct assignment — skip ALL hub/login/geo logic
-        c.poc          = pocAgent.id;
-        c.pn           = pocAgent.name||"";
-        c.pocName      = pocAgent.name||"";
-        c.pc           = pocAgent.color||"#3b8ef8";
-        c.poc_email    = overrideEmail;
-        c.poc_pod      = pocAgent.pod||"";
-        c.pri          = calcPriority(c.type, c.val);
-        c.st           = "pending_date";
-        c._assignReason= "POC direct: "+overrideEmail;
-        pocAgent.active  = (pocAgent.active||0)+1;
-        pocAgent.pending = (pocAgent.pending||0)+1;
-        updateBadges();
-        syncNewCase(c);
-        return;
-      }
-      // Email provided but no agent in FPI array has that email → unassigned
-      // This means either: FPI not loaded yet, OR email not in Sheet1
-      c.st = "unassigned";
-      c._assignReason = "POC email not in agent list: "+overrideEmail;
-      // Store the intended email so UI can show it
-      c.poc_email = overrideEmail;
-      c.pn = overrideEmail; // show email as placeholder name
-      updateBadges();
-      return;
-    }
-  }
-
-  // ── NORMAL ASSIGNMENT: hub/login/geo logic ─────────────────────
+// ── autoAssignByHub: hub/login logic ONLY — called when POC is blank ──
+function autoAssignByHub(c){
   var res = autoAssignBestFPI(c);
-  var p = res.fpi; var pri = res.priority; var reason = res.reason;
-
+  var p = res.fpi;
   if(!p){
-    // No valid logged-in agent found → leave unassigned (goes to Reassign tab)
     c.st = "unassigned";
-    c._assignReason = "No eligible agent found";
+    c._assignReason = "No eligible logged-in agent";
     updateBadges();
     return;
   }
@@ -870,13 +826,57 @@ function autoAssignCase(c){
   c.pc           = p.color||"#3b8ef8";
   c.poc_email    = (p.email||"").toLowerCase().trim();
   c.poc_pod      = p.pod||"";
-  c.pri          = pri||calcPriority(c.type,c.val);
+  c.pri          = res.priority||calcPriority(c.type,c.val);
   c.st           = "pending_date";
-  c._assignReason= reason||"Hub/City match";
+  c._assignReason= res.reason||"Hub/City match";
   p.active  = (p.active||0)+1;
   p.pending = (p.pending||0)+1;
   updateBadges();
   syncNewCase(c);
+}
+
+// ── autoAssignCase: used by single case form + renderAssignTab ──
+// Checks POC email override first, then falls to hub/login logic
+function autoAssignCase(c){
+  // Read and immediately clean up the override
+  var overrideEmail = (c._overridePocEmail||"").toLowerCase().trim();
+  delete c._needsAutoAssign;
+  delete c._overridePocEmail;
+
+  // ── STEP 1: POC EMAIL OVERRIDE ─────────────────────────────────
+  if(overrideEmail && overrideEmail.indexOf("@") > 0){
+    var pocAgent = null;
+    for(var pi=0; pi<FPI.length; pi++){
+      var agEmail = (FPI[pi].email||"").toLowerCase().trim();
+      if(agEmail && agEmail === overrideEmail){ pocAgent = FPI[pi]; break; }
+    }
+    if(pocAgent){
+      c.poc          = pocAgent.id;
+      c.pn           = pocAgent.name||"";
+      c.pocName      = pocAgent.name||"";
+      c.pc           = pocAgent.color||"#3b8ef8";
+      c.poc_email    = overrideEmail;
+      c.poc_pod      = pocAgent.pod||"";
+      c.pri          = calcPriority(c.type, c.val);
+      c.st           = "pending_date";
+      c._assignReason= "POC direct: "+overrideEmail;
+      pocAgent.active  = (pocAgent.active||0)+1;
+      pocAgent.pending = (pocAgent.pending||0)+1;
+      updateBadges();
+      syncNewCase(c);
+      return;
+    }
+    // Email provided but agent not found → unassigned
+    c.st = "unassigned";
+    c.poc_email = overrideEmail;
+    c.pn = overrideEmail;
+    c._assignReason = "POC email not in agent list: "+overrideEmail;
+    updateBadges();
+    return;
+  }
+
+  // ── STEP 2: HUB/LOGIN LOGIC (POC was blank) ────────────────────
+  autoAssignByHub(c);
 }
 
 function syncCasesToStorage(){
@@ -888,7 +888,7 @@ function renderAssignTab(){
   // Only auto-assign cases that are truly unassigned (no POC set yet)
   // Cases already in sheet (have poc_email) keep their sheet assignment
   cases.filter(c=>c.st==="unassigned" && !c.poc && !c.poc_email)
-       .forEach(c=>autoAssignCase(c));
+       .forEach(c=>autoAssignByHub(c)); // hub/login only — no POC email means no override
   document.getElementById("tab-u-cnt").textContent="0";
   document.getElementById("nb-u").textContent="0";
   const el=document.getElementById("assign-list");
@@ -10988,25 +10988,70 @@ function submitBulk(){
   var year=new Date().getFullYear(), newCases=[];
   dedupValid.forEach(function(r){
     var id="FPI-"+year+"-"+String(Date.now()+Math.floor(Math.random()*9999)).slice(-6);
-    newCases.push({
+    var pocEmail=(r.pocEmail||"").toLowerCase().trim();
+
+    // ── POC EMAIL: resolve agent NOW, directly, before anything else ──
+    var pocAgent=null;
+    if(pocEmail){
+      for(var pi=0;pi<FPI.length;pi++){
+        var agEmail=(FPI[pi].email||"").toLowerCase().trim();
+        if(agEmail && agEmail===pocEmail){pocAgent=FPI[pi];break;}
+      }
+    }
+
+    var nc={
       id:id, cat:r.cat||"Shipment Fraud",
       awbs:r.awbCount||0, awbList:r.awbs||"",
       type:r.type, fp:fpFromType(r.type),
       sfxStatus:r.sfxStatus||"", desc:r.desc||"",
       cxRider:r.cxRider||"", lmRider:r.lmRider||"", cxName:r.cxName||"",
-      poc:"", pn:"", pocName:"", pc:"", poc_email:"", poc_pod:"",
-      _overridePocEmail:r.pocEmail||"",
-      val:r.val||0, pri:"", st:"unassigned",
+      val:r.val||0, pri:"",
       hub:r.hub, city:r.city, state:r.state,
       date:new Date().toISOString().split("T")[0],
       rh:[], riders:[], ridersTerminated:0,
       policeAction:"", recovery:0, utr:"", updates:[]
-    });
-  });
+    };
 
-  // ── Add to cases array + auto-assign ─────────────────────────
+    if(pocAgent){
+      // Direct POC assignment — email matched
+      nc.poc         = pocAgent.id;
+      nc.pn          = pocAgent.name||"";
+      nc.pocName     = pocAgent.name||"";
+      nc.pc          = pocAgent.color||"#3b8ef8";
+      nc.poc_email   = pocEmail;
+      nc.poc_pod     = pocAgent.pod||"";
+      nc.pri         = calcPriority(r.type, r.val||0);
+      nc.st          = "pending_date";
+      nc._assignReason = "POC direct: "+pocEmail;
+      pocAgent.active  = (pocAgent.active||0)+1;
+      pocAgent.pending = (pocAgent.pending||0)+1;
+    } else if(pocEmail){
+      // Email provided but no matching agent in FPI list
+      nc.poc=""; nc.pn=pocEmail; nc.pocName=pocEmail;
+      nc.pc="#94a3b8"; nc.poc_email=pocEmail; nc.poc_pod="";
+      nc.pri=calcPriority(r.type, r.val||0);
+      nc.st="unassigned";
+      nc._assignReason="POC email not in agent list: "+pocEmail;
+    } else {
+      // No POC email — will be auto-assigned by hub/login logic below
+      nc.poc=""; nc.pn=""; nc.pocName=""; nc.pc=""; nc.poc_email=""; nc.poc_pod="";
+      nc.pri=""; nc.st="unassigned";
+      nc._needsAutoAssign=true;
+    }
+    newCases.push(nc);
+  });
+  // ── Add to cases array ───────────────────────────────────────
   newCases.forEach(function(c){cases.unshift(c);});
-  newCases.forEach(function(c){autoAssignCase(c);});
+  // Auto-assign ONLY cases that have no POC email (blank POC column)
+  newCases.forEach(function(c){
+    if(c._needsAutoAssign){
+      delete c._needsAutoAssign;
+      autoAssignByHub(c); // hub/login logic only
+    } else {
+      delete c._needsAutoAssign;
+      syncNewCase(c); // sync directly to sheet
+    }
+  });
   filteredCases=[...cases];
 
   // ── Render all views ─────────────────────────────────────────
