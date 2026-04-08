@@ -310,7 +310,7 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="ni" onclick="showPage('new-case')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>File New Case</div>
     <div class="ni" onclick="showPage('assignment')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Case Assignment<span class="nb blue" id="nb-u" style="display:none">0</span></div>
     <div class="ni" onclick="showPage('all-cases')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>All Cases<span class="nb blue" id="nb-all">9</span></div>
-    <div class="ni" onclick="showPage('alerts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Mobile Alerts</div>
+
     <div class="ns">Team</div>
     <div class="ni" onclick="showPage('tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>FPI Tracker</div>
     <div class="ni" onclick="showPage('performance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Performance</div>
@@ -385,28 +385,14 @@ textarea.fc{resize:vertical;min-height:66px;}
 
   <!-- TRENDS -->
   <div class="page" id="page-trends">
-    <div class="abanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg><span><strong>3 new trends</strong> this week. Rider-as-Customer spiked 42% in North Zone.</span></div>
-    <div class="g3">
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">Rider as Customer</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--red)">14</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">DBNU / Unattempted</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:82%;background:var(--red)"></div></div></div></div>
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">Product Mismatch RP</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--yel)">9</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Reverse Pickup</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:53%;background:var(--yel)"></div></div></div></div>
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">GPS Spoofing / RTOD</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--pur)">7</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">RTOD / Location</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:41%;background:var(--pur)"></div></div></div></div>
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">COD Non-Remittance</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--grn)">6</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">COD Shortfall</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:35%;background:var(--grn)"></div></div></div></div>
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">BCP Threats</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--org)">4</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Franchise Threats</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:24%;background:var(--org)"></div></div></div></div>
-      <div class="card" style="margin:0"><div class="cb"><div style="font-size:11.5px;font-weight:600;margin-bottom:3px">LH Theft</div><div style="font-family:var(--disp);font-size:22px;font-weight:800;color:var(--org)">3</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">Night Shift</div><div class="pbar" style="margin-top:7px"><div class="pfill" style="width:18%;background:var(--org)"></div></div></div></div>
+    <div id="trends-live-banner" class="abanner blue" style="margin-bottom:16px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+      <span>Fraud Trends — live data from Google Sheet. Updated each time you open this tab.</span>
     </div>
+    <div id="trends-type-cards" class="g3" style="margin-bottom:16px"></div>
     <div class="g2">
-      <div class="card"><div class="ch"><div class="ct">Zone Heatmap</div></div><div class="cb"><table><thead><tr><th>Zone</th><th>Cases</th><th>Level</th><th>Trend</th></tr></thead><tbody>
-        <tr><td>North</td><td>18</td><td><span class="bdg br">High</span></td><td style="color:var(--red);font-family:var(--mono);font-size:11px">&#9650; 42%</td></tr>
-        <tr><td>South</td><td>11</td><td><span class="bdg by">Medium</span></td><td style="color:var(--yel);font-family:var(--mono);font-size:11px">&#9650; 12%</td></tr>
-        <tr><td>East</td><td>7</td><td><span class="bdg bb">Low</span></td><td style="color:var(--grn);font-family:var(--mono);font-size:11px">&#9660; 5%</td></tr>
-        <tr><td>West</td><td>9</td><td><span class="bdg by">Medium</span></td><td style="color:var(--yel);font-family:var(--mono);font-size:11px">&#9650; 18%</td></tr>
-        <tr><td>Central</td><td>5</td><td><span class="bdg bb">Low</span></td><td style="color:var(--grn);font-family:var(--mono);font-size:11px">&#9660; 3%</td></tr>
-      </tbody></table></div></div>
-      <div class="card"><div class="ch"><div class="ct">Common Patterns</div></div><div class="cb" style="display:flex;flex-direction:column;gap:9px">
-        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--red)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">Rider as Customer (RaC)</div><div style="font-size:11px;color:var(--txt2)">Fake delivery attempts at own/known addresses. Detected via GPS + CCTV.</div></div>
-        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--grn)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">COD Non-Remittance</div><div style="font-size:11px;color:var(--txt2)">Hub collecting COD but not remitting to system. Identified via reconciliation.</div></div>
-        <div style="padding:9px;background:var(--sf2);border-radius:7px;border-left:3px solid var(--org)"><div style="font-weight:600;font-size:12px;margin-bottom:2px">BCP Threats</div><div style="font-size:11px;color:var(--txt2)">External threats to franchise owner/staff. Escalated to police &amp; management.</div></div>
-      </div></div>
+      <div class="card"><div class="ch"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>Loss Type Distribution</div></div><div class="cb" id="fraud-dist"></div></div>
+      <div class="card"><div class="ch"><div class="ct">Cases by State (Top 5)</div></div><div class="cb" id="trends-state-table"></div></div>
     </div>
   </div>
 
@@ -560,7 +546,8 @@ textarea.fc{resize:vertical;min-height:66px;}
         <div class="chip active" onclick="filterCases('all',this)">All</div>
         <div class="chip" onclick="filterCases('shipment',this)">Shipment Fraud</div>
         <div class="chip" onclick="filterCases('cod',this)">COD</div>
-        <div class="chip" onclick="filterCases('bcp',this)">BCP</div>
+        <div class="chip" onclick="filterCases('sf-cod',this)">SF &amp; COD</div>
+        <div class="chip" onclick="filterCases('misc',this)">Miscellaneous</div>
         <div class="chip" onclick="filterCases('unassigned',this)">Unassigned</div>
         <div class="chip" onclick="filterCases('closed',this)">Closed</div>
       </div>
@@ -571,37 +558,7 @@ textarea.fc{resize:vertical;min-height:66px;}
   </div>
 
   <!-- MOBILE ALERTS -->
-  <div class="page" id="page-alerts">
-    <div class="g2">
-      <div class="card"><div class="ch"><div class="ct">FPI Field Portal Preview</div></div>
-        <div class="cb" style="display:flex;justify-content:center;padding:16px 8px">
-          <div style="width:250px;background:#0f172a;border-radius:30px;padding:11px;border:5px solid #1e293b;box-shadow:0 18px 44px rgba(15,23,42,.4)">
-            <div style="height:15px;display:flex;align-items:center;justify-content:center"><div style="width:50px;height:6px;background:#1e293b;border-radius:4px"></div></div>
-            <div style="background:#fff;border-radius:18px;overflow:hidden;min-height:340px">
-              <div style="background:var(--acc);padding:9px 12px;display:flex;align-items:center;gap:6px">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <span style="font-family:var(--disp);font-weight:700;font-size:11px;color:white">FPI Field Portal</span>
-              </div>
-              <div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">
-                <div style="font-size:28px;margin-bottom:8px">📱</div>
-                <div style="font-family:var(--disp);font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px">Live Updates</div>
-                Cases assigned to FPI agents appear in the Field Portal in real-time.
-                <div style="margin-top:12px"><button class="btn btn-p btn-sm" onclick="window.open('field-portal.html','_blank')">Open Field Portal ↗</button></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="card"><div class="ch"><div class="ct">CT Daily Status Feed</div></div>
-        <div class="cb" id="ct-status-feed">
-          <div style="text-align:center;padding:20px;color:var(--txt3);font-size:12px">
-            <div style="font-size:24px;margin-bottom:8px">📋</div>
-            Field updates from agents will appear here.
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
 
   <!-- TRACKER -->
   <div class="page" id="page-tracker">
@@ -661,7 +618,7 @@ let currentCaseId=null;
 
 let cases=[];
 let filteredCases=[...cases];
-const PT={dashboard:"Dashboard",trends:"Fraud Trends","new-case":"File New Case",assignment:"Case Assignment","all-cases":"All Cases",alerts:"Mobile Alerts",tracker:"FPI Tracker — Live",performance:"Performance"};
+const PT={dashboard:"Dashboard",trends:"Fraud Trends","new-case":"File New Case",assignment:"Case Assignment","all-cases":"All Cases",tracker:"FPI Tracker — Live",performance:"Performance"};
 
 function showPage(id){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
@@ -669,7 +626,7 @@ function showPage(id){
   document.getElementById("page-"+id).classList.add("active");
   document.getElementById("page-title").textContent=PT[id]||id;
   document.querySelectorAll(".ni").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+id+"'"))n.classList.add("active");});
-  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
+  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},trends:()=>{renderTrendsPage();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
   if(R[id])R[id]();
 }
 function switchCaseTab(id,el){document.querySelectorAll("#page-new-case .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-new-case .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("ct-"+id).classList.add("active");}
@@ -687,14 +644,18 @@ function renderCaseTypeSummary(){
   const cats=[
     {key:"Shipment Fraud",icon:"📦",col:"var(--blue)",bg:"rgba(29,78,216,.07)",label:"Shipment Fraud",sub:"Fraud on shipments"},
     {key:"COD",icon:"💵",col:"var(--grn)",bg:"rgba(22,163,74,.07)",label:"COD Cases",sub:"Collection fraud"},
-    {key:"BCP",icon:"🚨",col:"var(--org)",bg:"rgba(234,88,12,.07)",label:"BCP Cases",sub:"Business continuity"},
-    {key:"Other",icon:"📋",col:"var(--pur)",bg:"rgba(124,58,237,.07)",label:"Other Cases",sub:"Miscellaneous"},
+    {key:"Shipment Fraud & COD",icon:"🔀",col:"var(--pur)",bg:"rgba(124,58,237,.07)",label:"SF & COD",sub:"Combined fraud"},
+    {key:"other",icon:"📋",col:"var(--org)",bg:"rgba(234,88,12,.07)",label:"Other Cases",sub:"Miscellaneous & BCP",isOther:true},
   ];
+  // For "Other Cases": count all cases NOT in the three main categories
+  const MAIN_CATS_DASH=["Shipment Fraud","COD","Shipment Fraud & COD"];
   document.getElementById("ct-summary-cards").innerHTML=cats.map(cat=>{
-    const total=cases.filter(c=>c.cat===cat.key).length;
-    const active=cases.filter(c=>c.cat===cat.key&&!["closed","unassigned"].includes(c.st)).length;
-    const closed=cases.filter(c=>c.cat===cat.key&&c.st==="closed").length;
-    const val=cases.filter(c=>c.cat===cat.key).reduce((s,c)=>s+c.val,0);
+    const isOther=cat.isOther===true;
+    const matchFn=isOther?(c=>!MAIN_CATS_DASH.includes(c.cat)):(c=>c.cat===cat.key);
+    const total=cases.filter(matchFn).length;
+    const active=cases.filter(c=>matchFn(c)&&!["closed","unassigned"].includes(c.st)).length;
+    const closed=cases.filter(c=>matchFn(c)&&c.st==="closed").length;
+    const val=cases.filter(matchFn).reduce((s,c)=>s+(c.val||0),0);
     return`<div class="ctc" onclick="filterByType('${cat.key}')">
       <div class="ctc-icon" style="background:${cat.bg}">${cat.icon}</div>
       <div class="ctc-title">${cat.label}</div>
@@ -708,7 +669,13 @@ function renderCaseTypeSummary(){
     </div>`;
   }).join("");
 }
-function filterByType(cat){showPage("all-cases");filteredCases=cases.filter(c=>c.cat===cat);renderCasesTable(filteredCases);}
+function filterByType(cat){
+  showPage("all-cases");
+  const MAIN_CATS_FBT=["Shipment Fraud","COD","Shipment Fraud & COD"];
+  if(cat==="other") filteredCases=cases.filter(c=>!MAIN_CATS_FBT.includes(c.cat));
+  else              filteredCases=cases.filter(c=>c.cat===cat);
+  renderCasesTable(filteredCases);
+}
 
 // SHIPMENT DRILLDOWN
 function renderShipmentDrill(){
@@ -751,6 +718,46 @@ function renderPodView(){
   const mx=Math.max(...pList.map(p=>p.active+p.closed),1);
   document.getElementById("pod-view").innerHTML=`<div style="display:flex;gap:10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--red)"></div>Active</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--grn)"></div>Closed</div></div>`+pList.map(p=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="font-size:11px;font-weight:600">${p.pod}</div><div style="font-size:9.5px;font-family:var(--mono);color:var(--txt3)">${p.fpi.length} FPI · A:${p.active} C:${p.closed}</div></div>${p.fpi.map(f=>`<div class="pod-bar-row"><div class="pod-bar-lbl" title="${f.name}${f.lastCity?' · '+f.lastCity:''}">${f.name.split(" ")[0]} ${f.name.split(" ").slice(-1)[0]}${f.lastCity?' <span style="color:var(--grn);font-size:8px">📍</span>':''}</div><div class="pod-bar-track"><div class="pod-bar-a" style="width:${f.active>0?Math.max(8,Math.round((f.active/mx)*100))+"%":"0%"}">${f.active>0?f.active:""}</div><div class="pod-bar-c" style="width:${f.closed>0?Math.max(8,Math.round((f.closed/mx)*100))+"%":"0%"}">${f.closed>0?f.closed:""}</div></div></div>`).join("")}</div>`).join("");
 }
+function renderTrendsPage(){
+  // ── Loss Type count cards ──────────────────────────────────
+  const cardsEl=document.getElementById("trends-type-cards");
+  const stateEl=document.getElementById("trends-state-table");
+  if(!cardsEl) return;
+  if(!cases||!cases.length){
+    if(cardsEl) cardsEl.innerHTML='<div style="padding:20px;color:var(--txt3);font-size:12px;grid-column:1/-1">No case data loaded yet.</div>';
+    if(stateEl) stateEl.innerHTML='';
+    renderFraudDist();
+    return;
+  }
+  // Count by loss type
+  const typeMap={};
+  cases.forEach(function(c){var t=(c.type||"Unknown").trim();typeMap[t]=(typeMap[t]||0)+1;});
+  const typeSorted=Object.entries(typeMap).sort(function(a,b){return b[1]-a[1];});
+  const COLS=["var(--red)","var(--grn)","var(--pur)","var(--org)","var(--yel)","var(--blue)"];
+  cardsEl.innerHTML=typeSorted.slice(0,6).map(function(e,i){
+    return '<div class="card" style="margin:0"><div class="cb">'+
+      '<div style="font-size:11.5px;font-weight:600;margin-bottom:3px">'+e[0]+'</div>'+
+      '<div style="font-family:var(--disp);font-size:22px;font-weight:800;color:'+COLS[i%COLS.length]+'">'+e[1]+'</div>'+
+      '<div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">CASES</div>'+
+      '<div class="pbar" style="margin-top:7px"><div class="pfill" style="width:'+
+        (typeSorted[0][1]>0?(e[1]/typeSorted[0][1]*100).toFixed(0):0)+'%;background:'+COLS[i%COLS.length]+'"></div></div>'+
+    '</div></div>';
+  }).join("");
+  // Top 5 states table
+  if(stateEl){
+    const stateMap={};
+    cases.forEach(function(c){var s=(c.state||"Unknown").trim();stateMap[s]=(stateMap[s]||0)+1;});
+    const stateSorted=Object.entries(stateMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+    const maxS=stateSorted.length?stateSorted[0][1]:1;
+    stateEl.innerHTML='<table><thead><tr><th>State</th><th>Cases</th><th>Level</th></tr></thead><tbody>'+
+      stateSorted.map(function(e){
+        var lvl=e[1]>=10?'<span class="bdg br">High</span>':e[1]>=5?'<span class="bdg by">Medium</span>':'<span class="bdg bb">Low</span>';
+        return '<tr><td>'+e[0]+'</td><td style="font-family:var(--mono);font-weight:600">'+e[1]+'</td><td>'+lvl+'</td></tr>';
+      }).join("")+'</tbody></table>';
+  }
+  renderFraudDist();
+}
+
 function renderFraudDist(){
   const dist=document.getElementById("fraud-dist");if(!dist)return;
   if(!cases||!cases.length){
@@ -1080,7 +1087,19 @@ function renderCasesTable(data){
   if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div style="text-align:center;padding:24px;color:var(--txt3)">No cases found</div></td></tr>`;return;}
   tb.innerHTML=data.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<tr onclick="openModal('${c.id}')" style="cursor:pointer"><td><span style="font-family:var(--mono);font-size:10.5px">${c.id}</span></td><td><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span></td><td><span class="fp ${c.fp}">${c.type}</span></td><td><div style="font-size:11px"><div style="font-weight:600">${c.hub||"—"}</div><div style="color:var(--txt3);font-size:9.5px;font-family:var(--mono)">${c.city||"—"}, ${c.state||"—"}</div></div></td><td>${c.poc?`<div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><div style="font-size:11.5px">${c.pn}</div></div>`:`<span style="color:var(--yel);font-size:10px">⚠ Unassigned</span>`}</td><td style="font-family:var(--mono);font-size:11.5px">₹${c.val.toLocaleString()}</td><td>${c.pri?`<span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}">${c.pri}</span>`:`<span style="color:var(--txt3)">—</span>`}</td><td><span class="bdg ${s.c}">${s.l}</span></td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();openModal('${c.id}')">View</button></td></tr>`;}).join("");
 }
-function filterCases(f,el){document.querySelectorAll("#filter-chips .chip").forEach(c=>c.classList.remove("active"));el.classList.add("active");const catMap={"shipment":"Shipment Fraud","cod":"COD","bcp":"BCP","other":"Other"};const catKey=catMap[f]||f;const fullCats=["Shipment Fraud","COD","BCP","Other"];if(fullCats.includes(catKey))filteredCases=cases.filter(c=>c.cat===catKey);else if(f==="unassigned")filteredCases=cases.filter(c=>c.st==="unassigned");else if(f==="active")filteredCases=cases.filter(c=>["rider_inv","hi_tl_inv","cx_fraud","other_pending"].includes(c.st));else if(f==="closed")filteredCases=cases.filter(c=>c.st==="closed");else filteredCases=[...cases];renderCasesTable(filteredCases);}
+function filterCases(f,el){
+  document.querySelectorAll("#filter-chips .chip").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  const MAIN_CATS=["Shipment Fraud","COD","Shipment Fraud & COD"];
+  if(f==="shipment")        filteredCases=cases.filter(c=>c.cat==="Shipment Fraud");
+  else if(f==="cod")        filteredCases=cases.filter(c=>c.cat==="COD");
+  else if(f==="sf-cod")     filteredCases=cases.filter(c=>c.cat==="Shipment Fraud & COD");
+  else if(f==="misc")       filteredCases=cases.filter(c=>!MAIN_CATS.includes(c.cat));
+  else if(f==="unassigned") filteredCases=cases.filter(c=>c.st==="unassigned");
+  else if(f==="closed")     filteredCases=cases.filter(c=>c.st==="closed");
+  else                      filteredCases=[...cases];
+  renderCasesTable(filteredCases);
+}
 function searchCases(q){q=q.toLowerCase();filteredCases=cases.filter(c=>c.id.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)||c.cat.toLowerCase().includes(q)||c.pn.toLowerCase().includes(q)||(c.city&&c.city.toLowerCase().includes(q))||(c.hub&&c.hub.toLowerCase().includes(q)));renderCasesTable(filteredCases);}
 
 // CASE MODAL
