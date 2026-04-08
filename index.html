@@ -451,11 +451,8 @@ textarea.fc{resize:vertical;min-height:66px;}
               <div class="fgrp"><label class="fl">SFX Status</label>
                 <select class="fc" id="f-sfx-status">
                   <option value="">Select&hellip;</option>
-                  <option>Lost Not Accepted</option>
-                  <option>Lost Accepted</option>
-                  <option>High ageing</option>
-                  <option>Hold</option>
-                  <option>Others</option>
+                  <option>Lost Not Accepted</option><option>Lost Accepted</option>
+                  <option>High ageing</option><option>Hold</option><option>Others</option>
                 </select>
               </div>
               <div class="fgrp"><label class="fl">Product Value (&amp;#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"></div>
@@ -784,18 +781,15 @@ function renderPodView(){
 }
 function renderFraudDist(){
   const dist=document.getElementById("fraud-dist");if(!dist)return;
-  // Build from ACTUAL cases data only — no hardcoded values
   if(!cases||!cases.length){
     dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No case data loaded yet.</div>';
     return;
   }
-  // Count by loss type / fraud type from real cases
   const countMap={};
   cases.forEach(function(c){
     var t=(c.type||"Unknown").trim();
     countMap[t]=(countMap[t]||0)+1;
   });
-  // Sort descending
   const sorted=Object.entries(countMap).sort(function(a,b){return b[1]-a[1];});
   if(!sorted.length){
     dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No fraud type data in cases.</div>';
@@ -853,9 +847,9 @@ function renderAssignTab(){
   try{
     cases.filter(c=>c.st==="unassigned" && !c.poc && !c.poc_email)
          .forEach(c=>autoAssignCase(c));
-  }catch(e_){console.warn("autoAssign error:",e_);}
-  var tcnt=document.getElementById("tab-u-cnt"); if(tcnt) tcnt.textContent="0";
-  var nbu=document.getElementById("nb-u"); if(nbu) nbu.textContent="0";
+  }catch(e_){console.warn("autoAssign:",e_);}
+  const _tcnt=document.getElementById("tab-u-cnt"); if(_tcnt) _tcnt.textContent="0";
+  const _nbu=document.getElementById("nb-u"); if(_nbu) _nbu.textContent="0";
   const el=document.getElementById("assign-list");
 
   // Show all cases that have been assigned (pending_date or active) with assignment details
@@ -941,8 +935,8 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
     stillUnassigned.forEach(function(c){
       var unReason='';
       if(c.val>30000) unReason='Value > \u20B930K but FPI has \u2265 2 active cases — check workload';
-      else if(c.val>15000) unReason='Value \u20B9'+c.val.toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
-      else unReason='Value \u20B9'+c.val.toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
+      else if(c.val>15000) unReason='Value \u20B9'+(c.val||0).toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
+      else unReason='Value \u20B9'+(c.val||0).toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
       html+='<div class="acard" style="border-left:3px solid var(--yel);opacity:.9;margin-bottom:10px">';
       html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
       html+='<div>';
@@ -11432,7 +11426,6 @@ function autoAssignBestFPI(c){
 
   function eligibleAgents(){
     var all=FPI.filter(function(p){return p.email&&p.email.includes("@");});
-    // Only assign to agents who have logged in via Field Portal (have lastHub or lastLoginTs)
     var loggedIn=all.filter(function(p){return p.lastHub||(p.lastLoginTs&&p.lastLoginTs>0);});
     var pool=loggedIn.length>0?loggedIn:all;
     var avail=pool.filter(function(p){return(p.active||0)<MAX_CASES;});
