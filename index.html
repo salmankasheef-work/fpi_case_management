@@ -922,7 +922,7 @@ function renderAssignTab(){
     html+='<div style="text-align:center;padding:40px 20px;color:var(--txt3)"><div style="font-size:32px;margin-bottom:10px">\u2705</div><div style="font-family:var(--disp);font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px">No assignments yet</div><div style="font-size:12px">File a case — it will auto-assign instantly and appear here.</div></div>';
   } else {
     assigned.forEach(function(c){
-      var fp=FPI.find(function(x){return x.id===c.poc;})||{};
+      var fp=FPI.find(function(x){var pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
       var pc=priColor(c.pri), pe=priEmoji(c.pri), pd=priDays(c.pri);
       var reason=priReason(c,fp);
       var statusObj=SL[c.st]||{l:c.st,c:"bgr"};
@@ -1000,7 +1000,7 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
 
 function renderReassignTab(){
   const a=cases.filter(c=>c.poc&&c.st!=="closed");
-  document.getElementById("reassign-list").innerHTML=a.map(c=>{const p=FPI.find(x=>x.id===c.poc)||{};const s=SL[c.st]||{l:c.st,c:"bgr"};const h=c.rh||[];
+  document.getElementById("reassign-list").innerHTML=a.map(c=>{const p=FPI.find(x=>{const pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};const s=SL[c.st]||{l:c.st,c:"bgr"};const h=c.rh||[];
     return`<div class="rcrd"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px"><div><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-family:var(--mono);font-size:11.5px;font-weight:600">${c.id}</span><span class="fp ${c.fp}">${c.type}</span><span class="bdg ${s.c}">${s.l}</span></div><div style="font-size:10px;color:var(--txt3)">${c.hub} · ${c.city}, ${c.state}</div></div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)"><span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span><div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><span style="font-weight:600;font-size:12px">${p.name||c.pn}</span></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">
@@ -1177,7 +1177,7 @@ function openModal(cid){
   document.getElementById("mo-id").textContent=c.id;
   document.getElementById("mo-sub").textContent=c.type+" · "+c.hub+", "+c.city+", "+c.state;
   document.getElementById("mo-dl-btn").onclick=()=>downloadCaseSummary(cid);
-  const s=SL[c.st]||{l:c.st,c:"bgr"},p=FPI.find(x=>x.id===c.poc)||{};
+  const s=SL[c.st]||{l:c.st,c:"bgr"},p=FPI.find(x=>{const pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
   document.getElementById("mo-body").innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px">
       <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">CATEGORY</div></div>
@@ -1211,7 +1211,7 @@ function openModal(cid){
 // DOWNLOAD SINGLE CASE SUMMARY
 function downloadCaseSummary(cid){
   const c=cases.find(x=>x.id===cid);if(!c)return;
-  const p=FPI.find(x=>x.id===c.poc)||{};
+  const p=FPI.find(x=>{const pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
   const lastUpdate=c.updates&&c.updates.length?c.updates[c.updates.length-1]:null;
   const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>FPI Case ${c.id}</title>
   <style>body{font-family:Arial,sans-serif;margin:0;padding:0;color:#0f172a;background:#fff;}
@@ -1290,14 +1290,14 @@ function downloadCaseSummary(cid){
 function downloadAllSummary(){
   const data=filteredCases.length?filteredCases:cases;
   const rows=[["Case ID","Category","Fraud Type","Hub","City","State","AWBs","Impacted Value (Rs)","FPI POC","POD","Designation","Status","Priority","Riders Involved","Riders Terminated","Police Action","Recovery (Rs)","UTR","Date Filed","Description","Updates Count"]];
-  data.forEach(c=>{const p=FPI.find(x=>x.id===c.poc)||{};rows.push([c.id,c.cat,c.type,c.hub,c.city,c.state,c.awbs||0,c.val,p.name||c.pn||"Unassigned",p.pod||"",p.desig||"",(SL[c.st]||{l:c.st}).l,c.pri||"",c.riders.join("|"),c.ridersTerminated||0,c.policeAction||"No Action",c.recovery||0,c.utr||"",c.date,c.trend.replace(/,/g,";").replace(/\n/g," "),c.updates?c.updates.length:0]);});
+  data.forEach(c=>{const p=FPI.find(x=>{const pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};rows.push([c.id,c.cat,c.type,c.hub,c.city,c.state,c.awbs||0,c.val,p.name||c.pn||"Unassigned",p.pod||"",p.desig||"",(SL[c.st]||{l:c.st}).l,c.pri||"",c.riders.join("|"),c.ridersTerminated||0,c.policeAction||"No Action",c.recovery||0,c.utr||"",c.date,c.trend.replace(/,/g,";").replace(/\n/g," "),c.updates?c.updates.length:0]);});
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,"\"")}"`).join(",")).join("\n");
   const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`FPI_Cases_Summary_${new Date().toISOString().split("T")[0]}.csv`;a.click();showToast("Summary CSV downloaded");
 }
 
 // TRACKER
 function renderTracker(){
-  document.getElementById("fpi-tracker-grid").innerHTML=FPI.map(p=>{const mc=cases.filter(c=>c.poc===p.id).slice(0,3);return`<div class="fpicard"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div class="fpiav" style="background:${p.color}">${p.id}</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px">${p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod}${p.lastCity?' · 📍'+p.lastCity:''}</div></div><span class="bdg ${p.active>2?"br":p.active>0?"by":"bg"}">${p.active}</span></div><div class="fpi-stats"><div style="text-align:center"><div class="fpi-sv" style="color:var(--blue)">${p.active}</div><div class="fpi-sl">ACTIVE</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--yel)">${p.pending}</div><div class="fpi-sl">PENDING</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--grn)">${p.closed}</div><div class="fpi-sl">CLOSED</div></div></div><div class="pbar"><div class="pfill" style="width:${Math.min(100,(p.active/5)*100)}%;background:${p.color}"></div></div><div>${mc.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<div class="fpi-cr"><span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${c.id}</span><span class="fp ${c.fp}" style="font-size:8.5px">${c.type}</span><span class="bdg ${s.c}" style="font-size:8px;padding:1px 5px">${s.l}</span></div>`;}).join("")}${!mc.length?"<div style='font-size:11px;color:var(--txt3);text-align:center;padding:6px'>No active cases</div>":""}</div></div>`;}).join("");
+  document.getElementById("fpi-tracker-grid").innerHTML=FPI.map(p=>{const pex=(p.email||"").toLowerCase().trim();const mc=cases.filter(c=>pex&&c.poc_email?c.poc_email===pex:c.poc===p.id).slice(0,3);return`<div class="fpicard"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div class="fpiav" style="background:${p.color}">${p.id}</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12.5px">${p.name}</div><div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">${p.pod}${p.lastCity?' · 📍'+p.lastCity:''}</div></div><span class="bdg ${p.active>2?"br":p.active>0?"by":"bg"}">${p.active}</span></div><div class="fpi-stats"><div style="text-align:center"><div class="fpi-sv" style="color:var(--blue)">${p.active}</div><div class="fpi-sl">ACTIVE</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--yel)">${p.pending}</div><div class="fpi-sl">PENDING</div></div><div style="text-align:center"><div class="fpi-sv" style="color:var(--grn)">${p.closed}</div><div class="fpi-sl">CLOSED</div></div></div><div class="pbar"><div class="pfill" style="width:${Math.min(100,(p.active/5)*100)}%;background:${p.color}"></div></div><div>${mc.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<div class="fpi-cr"><span style="font-family:var(--mono);font-size:9px;color:var(--txt3)">${c.id}</span><span class="fp ${c.fp}" style="font-size:8.5px">${c.type}</span><span class="bdg ${s.c}" style="font-size:8px;padding:1px 5px">${s.l}</span></div>`;}).join("")}${!mc.length?"<div style='font-size:11px;color:var(--txt3);text-align:center;padding:6px'>No active cases</div>":""}</div></div>`;}).join("");
 }
 
 // PERFORMANCE
@@ -1310,7 +1310,11 @@ function renderPerf(){
   }
   // Compute real metrics per agent from cases array
   grid.innerHTML=FPI.filter(function(p){return p.id&&p.name;}).map(function(p){
-    const myCases   = cases.filter(function(c){return c.poc===p.id;});
+    const pe=(p.email||"").toLowerCase().trim();
+    const myCases   = cases.filter(function(c){
+      if(pe&&c.poc_email) return c.poc_email===pe;
+      return c.poc===p.id;
+    });
     const closed    = myCases.filter(function(c){return c.st==="closed";}).length;
     const active    = myCases.filter(function(c){return c.st!=="closed"&&c.st!=="unassigned";}).length;
     const totalVal  = myCases.reduce(function(s,c){return s+(c.val||0);},0);
@@ -11053,7 +11057,7 @@ function submitBulk(){
 function downloadCaseSummaryCSV(){
   const rows=[["Case ID","Category","Fraud Type","Hub","City","State","AWBs Impacted","Impacted Value (INR)","Priority","Status","FPI POC","POD","Date Filed","Trend / Description","Riders Involved","Riders Terminated","Police Action","Recovery Done (INR)","UTR Number","FPI Updates Summary"]];
   cases.forEach(c=>{
-    const fpi=FPI.find(p=>p.id===c.poc)||{};
+    const fpi=FPI.find(p=>{const pe=(p.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:p.id===c.poc;})||{};
     const statusText=(SL[c.st]||{l:c.st}).l;
     const updSummary=(c.updates&&c.updates.length)?c.updates.map(u=>`[${u.date}] ${u.notes}`).join(' | '):'—';
     rows.push([
@@ -11142,7 +11146,7 @@ function onCaseClosed(caseId){
 }
 
 function syncCase(c, isRetry){
-  const fpiP = FPI.find(p=>p.id===c.poc)||{};
+  const fpiP = FPI.find(p=>{const pe=(p.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:p.id===c.poc;})||{};
   const cb   = "fpiSyncCb_"+Date.now();
   // Full name: prefer agent lookup, fallback to stored fields
   const pocFullName  = fpiP.name||c.pocName||c.pn||"";
@@ -11329,9 +11333,10 @@ function loadFPIFromSheet(){
         if(localCases.length>0 && cases.length===0){
           cases=localCases; filteredCases=[...cases];
           FPI.forEach(function(p){
-            p.active=cases.filter(function(c){return c.poc===p.id&&c.st!=="closed";}).length;
-            p.pending=cases.filter(function(c){return c.poc===p.id&&c.st==="pending_date";}).length;
-            p.closed=cases.filter(function(c){return c.poc===p.id&&c.st==="closed";}).length;
+            const pex2=(p.email||"").toLowerCase().trim();
+            p.active=cases.filter(function(c){return (pex2&&c.poc_email?c.poc_email===pex2:c.poc===p.id)&&c.st!=="closed";}).length;
+            p.pending=cases.filter(function(c){return (pex2&&c.poc_email?c.poc_email===pex2:c.poc===p.id)&&c.st==="pending_date";}).length;
+            p.closed=cases.filter(function(c){return (pex2&&c.poc_email?c.poc_email===pex2:c.poc===p.id)&&c.st==="closed";}).length;
           });
           showToast("✅ Restored "+localCases.length+" cases from local cache — re-syncing to Sheet…");
           var ri=0;
@@ -11417,10 +11422,19 @@ function loadCasesFromSheet(){
         cases         = newCases;
         filteredCases = [...cases];
 
-        // Recalc active counts per agent
+        // Recalc active counts per agent — match by email (unique) preferring over id (may clash)
         FPI.forEach(p=>{
-          p.active = cases.filter(c=>c.poc===p.id && c.st!=="closed").length;
-          p.closed = cases.filter(c=>c.poc===p.id && c.st==="closed").length;
+          const pe=(p.email||"").toLowerCase().trim();
+          p.active = cases.filter(c=>{
+            if(pe && c.poc_email) return c.poc_email===pe && c.st!=="closed";
+            const pee=(p.email||"").toLowerCase().trim();
+            return (pee&&c.poc_email?c.poc_email===pee:c.poc===p.id) && c.st!=="closed";
+          }).length;
+          p.closed = cases.filter(c=>{
+            if(pe && c.poc_email) return c.poc_email===pe && c.st==="closed";
+            const pef=(p.email||"").toLowerCase().trim();
+            return (pef&&c.poc_email?c.poc_email===pef:c.poc===p.id) && c.st==="closed";
+          }).length;
         });
 
         try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
