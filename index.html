@@ -336,7 +336,7 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="tbtitle" id="page-title">Dashboard</div>
     <div class="tbacts">
       <button class="btn btn-g btn-sm" onclick="showPage('tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>Live Tracker</button>
-      <button class="btn btn-p btn-sm" onclick="showPage('new-case')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Case</button>
+
     </div>
   </div>
   <div class="content">
@@ -409,6 +409,10 @@ textarea.fc{resize:vertical;min-height:66px;}
       </div></div>
     </div>
   </div>
+    <div class="g2" style="margin-top:16px">
+      <div class="card"><div class="ch"><div class="ct">Live: Loss Type Count</div></div><div class="cb" id="fraud-dist"></div></div>
+      <div class="card"><div class="ch"><div class="ct">Live: Cases by Category</div></div><div class="cb" id="live-cat-dist"></div></div>
+    </div>
 
   <!-- FILE NEW CASE -->
   <div class="page" id="page-new-case">
@@ -417,56 +421,91 @@ textarea.fc{resize:vertical;min-height:66px;}
       <div class="tbb" onclick="switchCaseTab('bulk',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>Bulk Upload<span style="background:var(--acc);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono);margin-left:4px">max 55,000</span></div>
     </div>
     <div class="tab-panel active" id="ct-single">
-      <div class="card" style="max-width:800px">
-        <div class="ch"><div class="ct">File New FPI Case</div><span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">T&S CT &middot; Single</span></div>
+      <div class="card" style="max-width:900px">
+        <div class="ch"><div class="ct">File New FPI Case</div><span style="font-family:var(--mono);font-size:10px;color:var(--txt3)">T&amp;S CT &middot; Single</span></div>
         <div class="cb">
           <div class="fsec">
-            <div class="fsec-t"><div class="sn">1</div>Case Category &amp; Type</div>
-            <div class="fg3" style="margin-bottom:10px">
-              <div class="fgrp"><label class="fl">Case Category <span class="fr">*</span></label>
-                <select class="fc" id="f-cat" onchange="toggleCatFields()"><option value="">Select category...</option><option value="Shipment Fraud">Shipment Fraud</option><option value="COD">COD Fraud</option><option value="BCP">BCP Case</option><option value="Other">Other</option></select>
+            <div class="fsec-t"><div class="sn">1</div>Case Identity</div>
+            <div class="fg3">
+              <div class="fgrp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="2" id="f-awbs"></textarea></div>
+              <div class="fgrp"><label class="fl">Category <span class="fr">*</span></label>
+                <select class="fc" id="f-cat">
+                  <option value="">Select category&hellip;</option>
+                  <option value="Shipment Fraud">Shipment Fraud</option>
+                  <option value="COD">COD</option>
+                  <option value="Shipment Fraud &amp; COD">Shipment Fraud &amp; COD</option>
+                  <option value="Miscellaneous">Miscellaneous</option>
+                </select>
               </div>
-              <div class="fgrp"><label class="fl">Fraud Type <span class="fr">*</span></label>
-                <select class="fc" id="f-type"><option value="">Select type...</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Threat to Franchise</option><option>Strike / Agitation</option><option>Other</option></select>
+              <div class="fgrp"><label class="fl">Loss Type <span class="fr">*</span></label>
+                <select class="fc" id="f-type">
+                  <option value="">Select type&hellip;</option>
+                  <option>X-Ray</option><option>PV</option><option>DBNU Nexus</option>
+                  <option>RTOD</option><option>QC</option><option>LH Theft</option>
+                  <option>Customer Fraud</option><option>Reverse Pickup</option>
+                  <option>COD Non-Remittance</option><option>COD Misappropriation</option>
+                  <option>Short</option><option>Pendency</option>
+                  <option>Other</option>
+                </select>
               </div>
-              <div class="fgrp"><label class="fl">Sub-type / Pattern</label>
-                <select class="fc" id="f-sub"><option value="">Sub-type...</option><option>Rider as Customer</option><option>Unattempted Shipments</option><option>Product Mismatch RP</option><option>GPS Spoofing</option><option>Fake OTP</option><option>Hub Insider Collusion</option><option>COD Shortfall</option><option>External Threat</option><option>Other</option></select>
-              </div>
-            </div>
-            <div class="fg2">
-              <div class="fgrp" id="awb-grp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="3" id="f-awbs"></textarea></div>
-              <div class="fgrp"><label class="fl">Impacted Value (&#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"><label class="fl" style="margin-top:7px">No. of Shipments</label><input type="number" class="fc" placeholder="e.g. 12" id="f-cnt"></div>
             </div>
           </div>
           <div class="fsec">
-            <div class="fsec-t"><div class="sn">2</div>Location</div>
+            <div class="fsec-t"><div class="sn">2</div>Product &amp; Status</div>
+            <div class="fg3">
+              <div class="fgrp"><label class="fl">SFX Status</label>
+                <select class="fc" id="f-sfx-status">
+                  <option value="">Select&hellip;</option>
+                  <option>Lost Not Accepted</option>
+                  <option>Lost Accepted</option>
+                  <option>High ageing</option>
+                  <option>Hold</option>
+                  <option>Others</option>
+                </select>
+              </div>
+              <div class="fgrp"><label class="fl">Product Value (&amp;#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"></div>
+              <div class="fgrp"><label class="fl">Product Description</label><input type="text" class="fc" placeholder="e.g. Mobile phone, clothing" id="f-desc"></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-t"><div class="sn">3</div>Location</div>
             <div class="fg3">
               <div class="fgrp" style="position:relative">
                 <label class="fl">Hub / Facility <span class="fr">*</span></label>
-                <input type="text" class="fc" placeholder="Type to search hub…" id="f-hub" autocomplete="off"
-                  oninput="cmHubSearch(this.value)"
-                  onfocus="cmHubSearch(this.value)"
+                <input type="text" class="fc" placeholder="Type to search hub&hellip;" id="f-hub" autocomplete="off"
+                  oninput="cmHubSearch(this.value)" onfocus="cmHubSearch(this.value)"
                   onblur="setTimeout(()=>{const d=document.getElementById('cm-hub-dd');if(d)d.style.display='none';},200)"
                   onkeydown="cmHubKey(event)">
                 <div id="cm-hub-dd" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--acc);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)"></div>
               </div>
               <div class="fgrp"><label class="fl">City <span class="fr">*</span></label><input type="text" class="fc" placeholder="City" id="f-city"></div>
-              <div class="fgrp"><label class="fl">State <span class="fr">*</span></label><select class="fc" id="f-state"><option value="">State...</option><option>Delhi</option><option>Haryana</option><option>Uttar Pradesh</option><option>Maharashtra</option><option>Karnataka</option><option>Tamil Nadu</option><option>Telangana</option><option>Gujarat</option><option>Rajasthan</option><option>West Bengal</option><option>Punjab</option><option>Madhya Pradesh</option><option>Himachal Pradesh</option><option>Bihar</option><option>Kerala</option><option>Other</option></select></div>
-              <div class="fgrp"><label class="fl">Zone</label><select class="fc" id="f-zone"><option value="">Zone...</option><option>North</option><option>South</option><option>East</option><option>West</option><option>Central</option></select></div>
-              <div class="fgrp" style="grid-column:span 2"><label class="fl">Proof Links</label><textarea class="fc" placeholder="Drive/CCTV/GPS links, one per line" rows="2" id="f-links"></textarea></div>
+              <div class="fgrp"><label class="fl">State <span class="fr">*</span></label>
+                <select class="fc" id="f-state"><option value="">State&hellip;</option>
+                  <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+                  <option>Chhattisgarh</option><option>Delhi</option><option>Gujarat</option>
+                  <option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option>
+                  <option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option>
+                  <option>Maharashtra</option><option>Odisha</option><option>Punjab</option>
+                  <option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option>
+                  <option>Uttar Pradesh</option><option>Uttarakhand</option>
+                  <option>West Bengal</option><option>Other</option>
+                </select>
+              </div>
             </div>
           </div>
           <div class="fsec">
-            <div class="fsec-t"><div class="sn">3</div>Description</div>
-            <div class="fgrp"><label class="fl">Short Description <span class="fr">*</span></label><textarea class="fc" placeholder="e.g. Rider creating fake deliveries at cluster addresses in Sector 14. GPS no movement. CCTV confirms." rows="3" id="f-desc"></textarea></div>
+            <div class="fsec-t"><div class="sn">4</div>Rider &amp; Customer</div>
+            <div class="fg3">
+              <div class="fgrp"><label class="fl">Cx as Rider &mdash; Rider ID</label><input type="text" class="fc" placeholder="Rider ID if cx posed as rider" id="f-cx-rider"></div>
+              <div class="fgrp"><label class="fl">Last Attempt LM Rider ID</label><input type="text" class="fc" placeholder="Last mile rider ID" id="f-lm-rider"></div>
+              <div class="fgrp"><label class="fl">Customer Name <span class="fr">*</span></label><input type="text" class="fc" placeholder="Customer full name" id="f-cx-name"></div>
+            </div>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:8px;border-top:1px solid var(--bd)">
-            <button class="btn btn-g" onclick="showPage('all-cases')">Cancel</button>
-            <button class="btn btn-p" onclick="submitSingle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Create &amp; Assign</button>
+            <button class="btn btn-p" onclick="submitSingle()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>File &amp; Auto-Assign</button>
           </div>
         </div>
       </div>
-    </div>
     <div class="tab-panel" id="ct-bulk">
       <div class="stepper">
         <div class="st-item"><div class="st-c act" id="s1c">1</div><div class="st-l act" id="s1l">Upload</div></div>
@@ -653,7 +692,7 @@ let FPI = [];
 
 
 const SL={unassigned:{l:"Unassigned",c:"by"},pending_date:{l:"Pending Date",c:"by"},rider_inv:{l:"Rider Investigation",c:"bb"},hi_tl_inv:{l:"HI/TL Investigation",c:"bb"},rider_abs_action:{l:"Absconded·FIR Filed",c:"br"},rider_abs_pending:{l:"Absconded·FIR Pend",c:"br"},hi_tl_abs:{l:"HI/TL Absconded",c:"br"},cx_fraud:{l:"Cx Fraud·Police",c:"bp"},other_pending:{l:"Other·Pending",c:"bgr"},closed:{l:"Closed",c:"bg"}};
-const CC={ship:"ct-ship",cod:"ct-cod",bcp:"ct-bcp",other:"ct-oth","Shipment Fraud":"ct-ship","COD":"ct-cod","BCP":"ct-bcp","Other":"ct-oth"};
+const CC={ship:"ct-ship",cod:"ct-cod",bcp:"ct-bcp",other:"ct-oth","Shipment Fraud":"ct-ship","COD":"ct-cod","Shipment Fraud & COD":"ct-bcp","Miscellaneous":"ct-oth","BCP":"ct-bcp","Other":"ct-oth"};
 let currentCaseId=null;
 
 let cases=[];
@@ -666,7 +705,7 @@ function showPage(id){
   document.getElementById("page-"+id).classList.add("active");
   document.getElementById("page-title").textContent=PT[id]||id;
   document.querySelectorAll(".ni").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+id+"'"))n.classList.add("active");});
-  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
+  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist();},trends:()=>{renderFraudDist();if(typeof renderTrends==="function")renderTrends();if(typeof renderLiveCatDist==="function")renderLiveCatDist();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
   if(R[id])R[id]();
 }
 function switchCaseTab(id,el){document.querySelectorAll("#page-new-case .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-new-case .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("ct-"+id).classList.add("active");}
@@ -748,6 +787,115 @@ function renderPodView(){
   const mx=Math.max(...pList.map(p=>p.active+p.closed),1);
   document.getElementById("pod-view").innerHTML=`<div style="display:flex;gap:10px;margin-bottom:10px"><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--red)"></div>Active</div><div style="display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--mono);color:var(--txt3)"><div style="width:9px;height:9px;border-radius:2px;background:var(--grn)"></div>Closed</div></div>`+pList.map(p=>`<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><div style="font-size:11px;font-weight:600">${p.pod}</div><div style="font-size:9.5px;font-family:var(--mono);color:var(--txt3)">${p.fpi.length} FPI · A:${p.active} C:${p.closed}</div></div>${p.fpi.map(f=>`<div class="pod-bar-row"><div class="pod-bar-lbl" title="${f.name}${f.lastCity?' · '+f.lastCity:''}">${f.name.split(" ")[0]} ${f.name.split(" ").slice(-1)[0]}${f.lastCity?' <span style="color:var(--grn);font-size:8px">📍</span>':''}</div><div class="pod-bar-track"><div class="pod-bar-a" style="width:${f.active>0?Math.max(8,Math.round((f.active/mx)*100))+"%":"0%"}">${f.active>0?f.active:""}</div><div class="pod-bar-c" style="width:${f.closed>0?Math.max(8,Math.round((f.closed/mx)*100))+"%":"0%"}">${f.closed>0?f.closed:""}</div></div></div>`).join("")}</div>`).join("");
 }
+function renderTrends(){
+  const el=document.getElementById("trends-content");
+  if(!el) return;
+  if(!cases||!cases.length){
+    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--txt3);font-size:13px">No case data available. Cases will appear here after uploading.</div>';
+    return;
+  }
+
+  // ── Count by loss type ─────────────────────────────────────
+  var typeMap={};
+  cases.forEach(function(c){
+    var t=(c.type||"Unknown").trim();
+    typeMap[t]=(typeMap[t]||0)+1;
+  });
+  var typeSorted=Object.entries(typeMap).sort(function(a,b){return b[1]-a[1];});
+  var maxType=typeSorted.length?typeSorted[0][1]:1;
+
+  // ── Count by category ──────────────────────────────────────
+  var catMap={};
+  cases.forEach(function(c){
+    var t=(c.cat||"Unknown").trim();
+    catMap[t]=(catMap[t]||0)+1;
+  });
+
+  // ── Count by state (top 5) ─────────────────────────────────
+  var stateMap={};
+  cases.forEach(function(c){
+    var s=(c.state||"Unknown").trim();
+    stateMap[s]=(stateMap[s]||0)+1;
+  });
+  var stateSorted=Object.entries(stateMap).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  var maxState=stateSorted.length?stateSorted[0][1]:1;
+
+  // ── Top type cards (max 6) ─────────────────────────────────
+  var TYPE_COLORS=["var(--red)","var(--grn)","var(--pur)","var(--org)","var(--yel)","var(--blue)"];
+  var topTypes=typeSorted.slice(0,6);
+  var cardsHtml=topTypes.map(function(e,i){
+    return '<div class="card" style="margin:0"><div class="cb">'+
+      '<div style="font-size:11.5px;font-weight:600;margin-bottom:3px">'+e[0]+'</div>'+
+      '<div style="font-family:var(--disp);font-size:22px;font-weight:800;color:'+TYPE_COLORS[i%TYPE_COLORS.length]+'">'+e[1]+'</div>'+
+      '<div style="font-size:9px;color:var(--txt3);font-family:var(--mono)">CASES</div>'+
+      '<div class="pbar" style="margin-top:7px"><div class="pfill" style="width:'+(maxType>0?(e[1]/maxType)*100:0)+'%;background:'+TYPE_COLORS[i%TYPE_COLORS.length]+'"></div></div>'+
+    '</div></div>';
+  }).join("");
+
+  // ── Loss type distribution bars ───────────────────────────
+  var distRows=typeSorted.slice(0,10).map(function(e,i){
+    return '<div style="display:flex;align-items:center;gap:8px">'+
+      '<div style="width:130px;font-size:11px;color:var(--txt2);text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+e[0]+'">'+e[0]+'</div>'+
+      '<div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)">'+
+        '<div style="height:100%;width:'+(maxType>0?(e[1]/maxType)*100:0)+'%;background:'+TYPE_COLORS[i%TYPE_COLORS.length]+';border-radius:3px;display:flex;align-items:center;padding:0 6px;min-width:24px">'+
+          '<span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">'+e[1]+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+
+  // ── State table ────────────────────────────────────────────
+  var stateRows=stateSorted.map(function(e){
+    var lvl=e[1]>=10?'<span class="bdg br">High</span>':e[1]>=5?'<span class="bdg by">Medium</span>':'<span class="bdg bb">Low</span>';
+    return '<tr><td>'+e[0]+'</td><td>'+e[1]+'</td><td>'+lvl+'</td></tr>';
+  }).join("");
+
+  // ── Category breakdown ─────────────────────────────────────
+  var catRows=Object.entries(catMap).sort(function(a,b){return b[1]-a[1];}).map(function(e){
+    return '<tr><td><span class="ct-tag '+(CC[e[0]]||"ct-oth")+'">'+e[0]+'</span></td><td style="font-family:var(--mono);font-weight:700">'+e[1]+'</td></tr>';
+  }).join("");
+
+  el.innerHTML=
+    '<div class="abanner blue" style="margin-bottom:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>'+
+    '<span>Showing live data from <strong>'+cases.length+' cases</strong> in Google Sheet.</span></div>'+
+    '<div class="g3" style="margin-bottom:16px">'+cardsHtml+'</div>'+
+    '<div class="g2">'+
+      '<div class="card"><div class="ch"><div class="ct">Loss Type Distribution</div></div><div class="cb">'+
+        '<div style="display:flex;flex-direction:column;gap:7px">'+distRows+'</div>'+
+        '<div style="margin-top:8px;font-size:9.5px;color:var(--txt3);text-align:right;font-family:var(--mono)">Based on '+cases.length+' cases</div>'+
+      '</div></div>'+
+      '<div class="card"><div class="ch"><div class="ct">By State (Top 5)</div></div><div class="cb">'+
+        '<table><thead><tr><th>State</th><th>Cases</th><th>Level</th></tr></thead><tbody>'+stateRows+'</tbody></table>'+
+      '</div></div>'+
+    '</div>'+
+    '<div class="card" style="margin-top:16px"><div class="ch"><div class="ct">Category Breakdown</div></div><div class="cb">'+
+      '<table><thead><tr><th>Category</th><th>Count</th></tr></thead><tbody>'+catRows+'</tbody></table>'+
+    '</div></div>';
+}
+
+function renderLiveCatDist(){
+  var el=document.getElementById("live-cat-dist");
+  if(!el) return;
+  if(!cases||!cases.length){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--txt3);font-size:12px">No case data loaded yet.</div>';return;}
+  var cm2={};
+  cases.forEach(function(c){var t=(c.cat||"Unknown").trim();cm2[t]=(cm2[t]||0)+1;});
+  var sorted=Object.entries(cm2).sort(function(a,b){return b[1]-a[1];});
+  var mx=sorted.length?sorted[0][1]:1;
+  var COLS=["var(--blue)","var(--grn)","var(--pur)","var(--org)","var(--yel)"];
+  el.innerHTML='<div style="display:flex;flex-direction:column;gap:7px">'+
+    sorted.map(function(e,i){
+      return '<div style="display:flex;align-items:center;gap:8px">'+
+        '<div style="width:130px;font-size:11px;color:var(--txt2);text-align:right;flex-shrink:0">'+e[0]+'</div>'+
+        '<div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)">'+
+          '<div style="height:100%;width:'+(mx>0?(e[1]/mx)*100:0)+'%;background:'+COLS[i%COLS.length]+';border-radius:3px;display:flex;align-items:center;padding:0 6px;min-width:24px">'+
+            '<span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">'+e[1]+'</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join("")+
+  '</div><div style="margin-top:8px;font-size:9.5px;color:var(--txt3);text-align:right;font-family:var(--mono)">'+cases.length+' cases total</div>';
+}
+
 function renderFraudDist(){
   const dist=document.getElementById("fraud-dist");if(!dist)return;
   // Build from ACTUAL cases data only — no hardcoded values
@@ -1227,7 +1375,7 @@ function renderPerf(){
 }
 
 // SINGLE SUBMIT
-function toggleCatFields(){const cat=document.getElementById("f-cat").value;document.getElementById("awb-grp").style.display=cat==="COD"||cat==="BCP"?"none":"";}
+function toggleCatFields(){/* All categories use AWBs — no field hiding needed */}
 const HUB_LIST = [
   "Guwahati Superstore",
   "FGSB_TaianaRK_SCC",
@@ -10550,59 +10698,65 @@ function cmAutoFillCity(hub){
 
 
 function submitSingle(){
-  const awbs =document.getElementById("f-awbs").value;
-  const type =document.getElementById("f-type").value;
-  const cat  =document.getElementById("f-cat").value;
-  const val  =document.getElementById("f-val").value;
-  const hub  =document.getElementById("f-hub").value;
-  const city =document.getElementById("f-city").value;
-  const state=document.getElementById("f-state").value;
-  const desc =document.getElementById("f-desc").value;
-  if(!cat||!type||!hub||!city||!state||!desc){showToast("Fill all required fields","warn");return;}
+  const awbs      = ((document.getElementById("f-awbs")||{}).value||"").trim();
+  const cat       = ((document.getElementById("f-cat")||{}).value||"").trim();
+  const type      = ((document.getElementById("f-type")||{}).value||"").trim();
+  const sfxStatus = ((document.getElementById("f-sfx-status")||{}).value||"").trim();
+  const val       = ((document.getElementById("f-val")||{}).value||"").trim();
+  const desc      = ((document.getElementById("f-desc")||{}).value||"").trim();
+  const hub       = ((document.getElementById("f-hub")||{}).value||"").trim();
+  const city      = ((document.getElementById("f-city")||{}).value||"").trim();
+  const state     = ((document.getElementById("f-state")||{}).value||"").trim();
+  const cxRider   = ((document.getElementById("f-cx-rider")||{}).value||"").trim();
+  const lmRider   = ((document.getElementById("f-lm-rider")||{}).value||"").trim();
+  const cxName    = ((document.getElementById("f-cx-name")||{}).value||"").trim();
 
-  // Generate a better unique ID using timestamp to avoid duplicate index collisions
+  // Validate mandatory fields
+  if(!awbs)   { showToast("AWB Numbers is required","warn"); return; }
+  if(!cat)    { showToast("Category is required","warn"); return; }
+  if(!type)   { showToast("Loss Type is required","warn"); return; }
+  if(!val)    { showToast("Product Value is required","warn"); return; }
+  if(!hub)    { showToast("Hub is required","warn"); return; }
+  if(!city)   { showToast("City is required","warn"); return; }
+  if(!state)  { showToast("State is required","warn"); return; }
+  if(!cxName) { showToast("Customer Name is required","warn"); return; }
+
   const id = "FPI-"+new Date().getFullYear()+"-"+String(Date.now()).slice(-5);
-
   const newCase = {
     id, cat,
-    awbs: awbs ? awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length : 0,
-    type, fp: fpFromType(type), trend: desc,
-    poc:"", pn:"", pc:"", val:parseInt(val)||0, pri:"",
+    awbs: awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length,
+    awbList: awbs,
+    type, fp: fpFromType(type),
+    sfxStatus, desc, cxRider, lmRider, cxName,
+    poc:"", pn:"", pocName:"", pc:"", poc_email:"", poc_pod:"",
+    val: parseFloat(val)||0, pri:"",
     st:"unassigned", hub, city, state,
     date: new Date().toISOString().split("T")[0],
     rh:[], riders:[], ridersTerminated:0,
     policeAction:"", recovery:0, utr:"", updates:[]
   };
   cases.unshift(newCase);
-  filteredCases = [...cases]; // immediately reflect in All Cases
-
-  // Auto-assign
+  filteredCases = [...cases];
   autoAssignCase(cases[0]);
   const ap = cases[0];
-
-  // Immediately update all views — no delay
   renderCasesTable(filteredCases);
   renderCaseTypeSummary();
   renderRecentCases();
   updateBadges();
   updateClosedBadge();
-
-  showToast("✓ "+id+" → assigned to "+ap.pn+" ("+ap.pri+")");
-
-  // Sync to sheet in background (fire-and-forget)
+  showToast("\u2713 "+id+" \u2192 assigned to "+ap.pn+" ("+ap.pri+")");
   syncCase(ap);
-  try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e){}
-
-  // Navigate to assignment tab to show result
-  // Reset all form fields for next entry
-  ["f-awbs","f-val","f-desc","f-hub","f-city","f-cx-rider","f-lm-rider","f-cx-name"].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.value="";
+  try{localStorage.setItem("fpi_cases",JSON.stringify(cases));}catch(e_){}
+  // Reset form fields
+  ["f-awbs","f-val","f-desc","f-hub","f-city","f-cx-rider","f-lm-rider","f-cx-name"].forEach(function(fid){
+    var el=document.getElementById(fid); if(el) el.value="";
   });
-  ["f-cat","f-type","f-sfx-status","f-state"].forEach(function(id){
-    var el=document.getElementById(id); if(el) el.selectedIndex=0;
+  ["f-cat","f-type","f-sfx-status","f-state"].forEach(function(fid){
+    var el=document.getElementById(fid); if(el) el.selectedIndex=0;
   });
   setTimeout(()=>{showPage("assignment");renderAssignTab();renderReassignTab();}, 400);
 }
+
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 
 // BULK
@@ -11395,8 +11549,12 @@ function autoAssignBestFPI(c){
 
   function eligibleAgents(){
     var all=FPI.filter(function(p){return p.email&&p.email.includes("@");});
-    var avail=all.filter(function(p){return(p.active||0)<MAX_CASES;});
-    return avail.length>0?avail:all;
+    // Only assign to agents who have logged in via Field Portal (have lastHub or lastLoginTs)
+    var loggedIn=all.filter(function(p){return p.lastHub||(p.lastLoginTs&&p.lastLoginTs>0);});
+    // If no logged-in agents at all, fall back to all agents (safety net)
+    var pool=loggedIn.length>0?loggedIn:all;
+    var avail=pool.filter(function(p){return(p.active||0)<MAX_CASES;});
+    return avail.length>0?avail:pool;
   }
   function best(list){
     return list.slice().sort(function(a,b){
