@@ -425,23 +425,10 @@ textarea.fc{resize:vertical;min-height:66px;}
             <div class="fg3">
               <div class="fgrp"><label class="fl">AWB Numbers <span class="fr">*</span></label><textarea class="fc" placeholder="Comma or newline separated AWBs" rows="2" id="f-awbs"></textarea></div>
               <div class="fgrp"><label class="fl">Category <span class="fr">*</span></label>
-                <select class="fc" id="f-cat">
-                  <option value="">Select category&hellip;</option>
-                  <option value="Shipment Fraud">Shipment Fraud</option>
-                  <option value="COD">COD</option>
-                  <option value="Shipment Fraud &amp; COD">Shipment Fraud &amp; COD</option>
-                  <option value="Miscellaneous">Miscellaneous</option>
-                </select>
+                <select class="fc" id="f-cat"><option value="">Select category&hellip;</option><option value="Shipment Fraud">Shipment Fraud</option><option value="COD">COD</option><option value="Shipment Fraud &amp; COD">Shipment Fraud &amp; COD</option><option value="Miscellaneous">Miscellaneous</option></select>
               </div>
               <div class="fgrp"><label class="fl">Loss Type <span class="fr">*</span></label>
-                <select class="fc" id="f-type">
-                  <option value="">Select type&hellip;</option>
-                  <option>X-Ray</option><option>PV</option><option>DBNU Nexus</option>
-                  <option>RTOD</option><option>QC</option><option>LH Theft</option>
-                  <option>Customer Fraud</option><option>Reverse Pickup</option>
-                  <option>COD Non-Remittance</option><option>COD Misappropriation</option>
-                  <option>Short</option><option>Pendency</option><option>Other</option>
-                </select>
+                <select class="fc" id="f-type"><option value="">Select type&hellip;</option><option>X-Ray</option><option>PV</option><option>DBNU Nexus</option><option>RTOD</option><option>QC</option><option>LH Theft</option><option>Customer Fraud</option><option>Reverse Pickup</option><option>COD Non-Remittance</option><option>COD Misappropriation</option><option>Short</option><option>Pendency</option><option>Other</option></select>
               </div>
             </div>
           </div>
@@ -449,14 +436,10 @@ textarea.fc{resize:vertical;min-height:66px;}
             <div class="fsec-t"><div class="sn">2</div>Product &amp; Status</div>
             <div class="fg3">
               <div class="fgrp"><label class="fl">SFX Status</label>
-                <select class="fc" id="f-sfx-status">
-                  <option value="">Select&hellip;</option>
-                  <option>Lost Not Accepted</option><option>Lost Accepted</option>
-                  <option>High ageing</option><option>Hold</option><option>Others</option>
-                </select>
+                <select class="fc" id="f-sfx-status"><option value="">Select&hellip;</option><option>Lost Not Accepted</option><option>Lost Accepted</option><option>High ageing</option><option>Hold</option><option>Others</option></select>
               </div>
               <div class="fgrp"><label class="fl">Product Value (&amp;#8377;) <span class="fr">*</span></label><input type="number" class="fc" placeholder="e.g. 25000" id="f-val"></div>
-              <div class="fgrp"><label class="fl">Product Description</label><input type="text" class="fc" placeholder="e.g. Mobile phone, clothing" id="f-desc"></div>
+              <div class="fgrp"><label class="fl">Product Description</label><input type="text" class="fc" placeholder="e.g. Mobile phone" id="f-desc"></div>
             </div>
           </div>
           <div class="fsec">
@@ -464,24 +447,12 @@ textarea.fc{resize:vertical;min-height:66px;}
             <div class="fg3">
               <div class="fgrp" style="position:relative">
                 <label class="fl">Hub / Facility <span class="fr">*</span></label>
-                <input type="text" class="fc" placeholder="Type to search hub&hellip;" id="f-hub" autocomplete="off"
-                  oninput="cmHubSearch(this.value)" onfocus="cmHubSearch(this.value)"
-                  onblur="setTimeout(()=>{const d=document.getElementById('cm-hub-dd');if(d)d.style.display='none';},200)"
-                  onkeydown="cmHubKey(event)">
+                <input type="text" class="fc" placeholder="Type to search hub&hellip;" id="f-hub" autocomplete="off" oninput="cmHubSearch(this.value)" onfocus="cmHubSearch(this.value)" onblur="setTimeout(()=>{const d=document.getElementById('cm-hub-dd');if(d)d.style.display='none';},200)" onkeydown="cmHubKey(event)">
                 <div id="cm-hub-dd" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:999;background:#fff;border:1.5px solid var(--acc);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)"></div>
               </div>
               <div class="fgrp"><label class="fl">City <span class="fr">*</span></label><input type="text" class="fc" placeholder="City" id="f-city"></div>
               <div class="fgrp"><label class="fl">State <span class="fr">*</span></label>
-                <select class="fc" id="f-state"><option value="">State&hellip;</option>
-                  <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
-                  <option>Chhattisgarh</option><option>Delhi</option><option>Gujarat</option>
-                  <option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option>
-                  <option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option>
-                  <option>Maharashtra</option><option>Odisha</option><option>Punjab</option>
-                  <option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option>
-                  <option>Uttar Pradesh</option><option>Uttarakhand</option>
-                  <option>West Bengal</option><option>Other</option>
-                </select>
+                <select class="fc" id="f-state"><option value="">State&hellip;</option><option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Delhi</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Other</option></select>
               </div>
             </div>
           </div>
@@ -498,6 +469,7 @@ textarea.fc{resize:vertical;min-height:66px;}
           </div>
         </div>
       </div>
+    </div>
     <div class="tab-panel" id="ct-bulk">
       <div class="stepper">
         <div class="st-item"><div class="st-c act" id="s1c">1</div><div class="st-l act" id="s1l">Upload</div></div>
@@ -786,15 +758,9 @@ function renderFraudDist(){
     return;
   }
   const countMap={};
-  cases.forEach(function(c){
-    var t=(c.type||"Unknown").trim();
-    countMap[t]=(countMap[t]||0)+1;
-  });
+  cases.forEach(function(c){var t=(c.type||"Unknown").trim();countMap[t]=(countMap[t]||0)+1;});
   const sorted=Object.entries(countMap).sort(function(a,b){return b[1]-a[1];});
-  if(!sorted.length){
-    dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No fraud type data in cases.</div>';
-    return;
-  }
+  if(!sorted.length){dist.innerHTML='<div style="padding:20px;text-align:center;color:var(--txt3);font-size:12px">No data.</div>';return;}
   const maxN=sorted[0][1];
   const COLORS=["var(--red)","var(--grn)","var(--pur)","var(--org)","var(--yel)","var(--blue)","var(--acc)","var(--txt2)"];
   const types=sorted.slice(0,10).map(function(e,i){return{l:e[0],n:e[1],c:COLORS[i%COLORS.length]};});
@@ -805,9 +771,7 @@ function renderFraudDist(){
         '<div style="flex:1;height:17px;background:var(--sf2);border-radius:3px;overflow:hidden;border:1px solid var(--bd)">'+
           '<div style="height:100%;width:'+(maxN>0?(t.n/maxN)*100:0)+'%;background:'+t.c+';border-radius:3px;display:flex;align-items:center;padding:0 6px;min-width:28px">'+
             '<span style="font-family:var(--mono);font-size:8.5px;color:#fff;font-weight:600">'+t.n+'</span>'+
-          '</div>'+
-        '</div>'+
-      '</div>';
+          '</div></div></div>';
     }).join("")+
   '</div><div style="margin-top:8px;font-size:9.5px;color:var(--txt3);text-align:right;font-family:var(--mono)">Based on '+cases.length+' cases in sheet</div>';
 }
@@ -844,12 +808,10 @@ function syncCasesToStorage(){
 function renderAssignTab(){
   // Only auto-assign cases that are truly unassigned (no POC set yet)
   // Cases already in sheet (have poc_email) keep their sheet assignment
-  try{
-    cases.filter(c=>c.st==="unassigned" && !c.poc && !c.poc_email)
-         .forEach(c=>autoAssignCase(c));
-  }catch(e_){console.warn("autoAssign:",e_);}
-  const _tcnt=document.getElementById("tab-u-cnt"); if(_tcnt) _tcnt.textContent="0";
-  const _nbu=document.getElementById("nb-u"); if(_nbu) _nbu.textContent="0";
+  cases.filter(c=>c.st==="unassigned" && !c.poc && !c.poc_email)
+       .forEach(c=>autoAssignCase(c));
+  document.getElementById("tab-u-cnt").textContent="0";
+  document.getElementById("nb-u").textContent="0";
   const el=document.getElementById("assign-list");
 
   // Show all cases that have been assigned (pending_date or active) with assignment details
@@ -935,8 +897,8 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
     stillUnassigned.forEach(function(c){
       var unReason='';
       if(c.val>30000) unReason='Value > \u20B930K but FPI has \u2265 2 active cases — check workload';
-      else if(c.val>15000) unReason='Value \u20B9'+(c.val||0).toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
-      else unReason='Value \u20B9'+(c.val||0).toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
+      else if(c.val>15000) unReason='Value \u20B9'+c.val.toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
+      else unReason='Value \u20B9'+c.val.toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
       html+='<div class="acard" style="border-left:3px solid var(--yel);opacity:.9;margin-bottom:10px">';
       html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
       html+='<div>';
@@ -964,7 +926,7 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
 function renderReassignTab(){
   const a=cases.filter(c=>c.poc&&c.st!=="closed");
   document.getElementById("reassign-list").innerHTML=a.map(c=>{const p=FPI.find(x=>x.id===c.poc)||{};const s=SL[c.st]||{l:c.st,c:"bgr"};const h=c.rh||[];
-    return`<div class="rcrd"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px"><div><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-family:var(--mono);font-size:11.5px;font-weight:600">${c.id}</span><span class="fp ${c.fp}">${c.type}</span><span class="bdg ${s.c}">${s.l}</span></div><div style="font-size:10px;color:var(--txt3)">${c.hub} · ${c.city}, ${c.state}</div></div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹${(c.val||0).toLocaleString()}</div></div>
+    return`<div class="rcrd"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px"><div><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-family:var(--mono);font-size:11.5px;font-weight:600">${c.id}</span><span class="fp ${c.fp}">${c.type}</span><span class="bdg ${s.c}">${s.l}</span></div><div style="font-size:10px;color:var(--txt3)">${c.hub} · ${c.city}, ${c.state}</div></div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)"><span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span><div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><span style="font-weight:600;font-size:12px">${p.name||c.pn}</span></div></div>
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">
       <div class="fgrp"><label class="fl">Reassign To</label><select class="fc" id="rp-${c.id}"><option value="">New POC...</option>${FPI.filter(p=>p.id!==c.poc).map(p=>`<option value="${p.id}">${p.name} — ${p.pod} · ${p.email||'no email'} (${p.active} active)</option>`).join("")}</select></div>
@@ -1116,7 +1078,7 @@ function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=
 function renderCasesTable(data){
   const tb=document.getElementById("cases-tbody");if(!data||!tb)return;
   if(!data.length){tb.innerHTML=`<tr><td colspan="9"><div style="text-align:center;padding:24px;color:var(--txt3)">No cases found</div></td></tr>`;return;}
-  tb.innerHTML=data.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<tr onclick="openModal('${c.id}')" style="cursor:pointer"><td><span style="font-family:var(--mono);font-size:10.5px">${c.id}</span></td><td><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span></td><td><span class="fp ${c.fp}">${c.type}</span></td><td><div style="font-size:11px"><div style="font-weight:600">${c.hub||"—"}</div><div style="color:var(--txt3);font-size:9.5px;font-family:var(--mono)">${c.city||"—"}, ${c.state||"—"}</div></div></td><td>${c.poc?`<div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><div style="font-size:11.5px">${c.pn}</div></div>`:`<span style="color:var(--yel);font-size:10px">⚠ Unassigned</span>`}</td><td style="font-family:var(--mono);font-size:11.5px">₹${(c.val||0).toLocaleString()}</td><td>${c.pri?`<span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}">${c.pri}</span>`:`<span style="color:var(--txt3)">—</span>`}</td><td><span class="bdg ${s.c}">${s.l}</span></td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();openModal('${c.id}')">View</button></td></tr>`;}).join("");
+  tb.innerHTML=data.map(c=>{const s=SL[c.st]||{l:c.st,c:"bgr"};return`<tr onclick="openModal('${c.id}')" style="cursor:pointer"><td><span style="font-family:var(--mono);font-size:10.5px">${c.id}</span></td><td><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span></td><td><span class="fp ${c.fp}">${c.type}</span></td><td><div style="font-size:11px"><div style="font-weight:600">${c.hub||"—"}</div><div style="color:var(--txt3);font-size:9.5px;font-family:var(--mono)">${c.city||"—"}, ${c.state||"—"}</div></div></td><td>${c.poc?`<div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><div style="font-size:11.5px">${c.pn}</div></div>`:`<span style="color:var(--yel);font-size:10px">⚠ Unassigned</span>`}</td><td style="font-family:var(--mono);font-size:11.5px">₹${c.val.toLocaleString()}</td><td>${c.pri?`<span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}">${c.pri}</span>`:`<span style="color:var(--txt3)">—</span>`}</td><td><span class="bdg ${s.c}">${s.l}</span></td><td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();openModal('${c.id}')">View</button></td></tr>`;}).join("");
 }
 function filterCases(f,el){document.querySelectorAll("#filter-chips .chip").forEach(c=>c.classList.remove("active"));el.classList.add("active");const catMap={"shipment":"Shipment Fraud","cod":"COD","bcp":"BCP","other":"Other"};const catKey=catMap[f]||f;const fullCats=["Shipment Fraud","COD","BCP","Other"];if(fullCats.includes(catKey))filteredCases=cases.filter(c=>c.cat===catKey);else if(f==="unassigned")filteredCases=cases.filter(c=>c.st==="unassigned");else if(f==="active")filteredCases=cases.filter(c=>["rider_inv","hi_tl_inv","cx_fraud","other_pending"].includes(c.st));else if(f==="closed")filteredCases=cases.filter(c=>c.st==="closed");else filteredCases=[...cases];renderCasesTable(filteredCases);}
 function searchCases(q){q=q.toLowerCase();filteredCases=cases.filter(c=>c.id.toLowerCase().includes(q)||c.type.toLowerCase().includes(q)||c.cat.toLowerCase().includes(q)||c.pn.toLowerCase().includes(q)||(c.city&&c.city.toLowerCase().includes(q))||(c.hub&&c.hub.toLowerCase().includes(q)));renderCasesTable(filteredCases);}
@@ -1132,7 +1094,7 @@ function openModal(cid){
   document.getElementById("mo-body").innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px">
       <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="ct-tag ${CC[c.cat]||"ct-oth"}">${c.cat}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">CATEGORY</div></div>
-      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><div style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--red)">₹${(c.val||0).toLocaleString()}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">VALUE</div></div>
+      <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><div style="font-family:var(--disp);font-size:18px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono)">VALUE</div></div>
       <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="bdg ${s.c}" style="font-size:9.5px">${s.l}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">STATUS</div></div>
       <div style="background:var(--sf2);border-radius:8px;padding:9px;border:1px solid var(--bd)"><span class="bdg ${c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr"}" style="font-size:9.5px">${c.pri||"—"}</span><div style="font-size:8.5px;color:var(--txt3);font-family:var(--mono);margin-top:4px">PRIORITY</div></div>
     </div>
@@ -1204,7 +1166,7 @@ function downloadCaseSummary(cid){
         <div class="info-box"><div class="ib-lbl">Fraud Type</div><div class="ib-val">${c.type}</div></div>
         <div class="info-box"><div class="ib-lbl">Hub / Facility</div><div class="ib-val">${c.hub}</div></div>
         <div class="info-box"><div class="ib-lbl">City &amp; State</div><div class="ib-val">${c.city}, ${c.state}</div></div>
-        <div class="info-box"><div class="ib-lbl">Impacted Value</div><div class="ib-val" style="color:#dc2626">₹${(c.val||0).toLocaleString()}</div></div>
+        <div class="info-box"><div class="ib-lbl">Impacted Value</div><div class="ib-val" style="color:#dc2626">₹${c.val.toLocaleString()}</div></div>
         <div class="info-box"><div class="ib-lbl">Date Filed</div><div class="ib-val">${c.date}</div></div>
         <div class="info-box"><div class="ib-lbl">FPI POC</div><div class="ib-val">${c.pn||c.pocName||p.name||"Unassigned"} ${c.poc_pod||p.pod?"("+(c.poc_pod||p.pod)+")":""}</div></div>
         <div class="info-box"><div class="ib-lbl">Current Status</div><div class="ib-val">${(SL[c.st]||{l:c.st}).l}</div></div>
@@ -10604,8 +10566,7 @@ function submitSingle(){
   const newCase = {
     id, cat,
     awbs: awbs.split(/[,\r\n]+/).filter(a=>a.trim()).length,
-    awbList: awbs,
-    type, fp: fpFromType(type),
+    awbList: awbs, type, fp: fpFromType(type),
     sfxStatus, desc, cxRider, lmRider, cxName,
     poc:"", pn:"", pocName:"", pc:"", poc_email:"", poc_pod:"",
     val: parseFloat(val)||0, pri:"",
@@ -11442,7 +11403,7 @@ function autoAssignBestFPI(c){
     return list.map(function(p){
       var d=(p.lat&&p.lng)?haversineKm(lat,lng,p.lat,p.lng):9999;
       return{p:p,d:d};
-    }).sort(function(a,b){return a.d-b.d||(a.p.active||0)-(b.p.active||0);})[0]?.p||best(list);
+    }).sort(function(a,b){return a.d-b.d||(a.p.active||0)-(b.p.active||0);})[0]?.p||null;
   }
 
   var agents = eligibleAgents();
