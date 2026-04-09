@@ -975,9 +975,14 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
     html+='<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--yel);margin:16px 0 9px;display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Unassigned — No rule matched ('+stillUnassigned.length+')</div>';
     stillUnassigned.forEach(function(c){
       var unReason='';
-      if(c.val>30000) unReason='Value > \u20B930K but FPI has \u2265 2 active cases — check workload';
-      else if(c.val>15000) unReason='Value \u20B9'+c.val.toLocaleString()+' in \u20B915K-30K range but no FPI has \u2265 3 active cases';
-      else unReason='Value \u20B9'+c.val.toLocaleString()+' \u2264 \u20B915K but no FPI has \u2265 5 active cases';
+      if(c.poc_email && c.st==="unassigned"){
+        unReason='POC email <strong>'+c.poc_email+'</strong> set but agent not yet loaded. '+
+          'Try clicking the Retry button on this case, or reload the page after agents are confirmed loaded.';
+      } else if(c._assignReason){
+        unReason=c._assignReason;
+      } else {
+        unReason='No matching logged-in FPI agent found. Use Reassign tab to assign manually.';
+      }
       html+='<div class="acard" style="border-left:3px solid var(--yel);opacity:.9;margin-bottom:10px">';
       html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">';
       html+='<div>';
@@ -992,8 +997,11 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
       html+='<div style="font-family:var(--disp);font-size:17px;font-weight:800;color:var(--red);flex-shrink:0">\u20B9'+(c.val||0).toLocaleString()+'</div>';
       html+='</div>';
       html+='<div style="padding:9px 12px;background:var(--yel-d);border:1.5px solid rgba(217,119,6,.2);border-radius:8px;font-size:11px;color:var(--txt2)">';
-      html+='<span style="font-family:var(--mono);font-size:9px;color:var(--yel);display:block;margin-bottom:3px">\u26A0 WHY UNASSIGNED</span>';
+      html+='<span style="font-family:var(--mono);font-size:9px;color:var(--yel);display:block;margin-bottom:3px">⚠ WHY UNASSIGNED</span>';
       html+=unReason;
+      if(c.poc_email){
+        html+='<div style="margin-top:8px"><button class="btn btn-g btn-sm" style="font-size:10px" onclick="window._retryId=\''+c.id+'\';retryPocAssign(window._retryId)">↻ Retry POC Assignment</button></div>';
+      }
       html+='</div>';
       html+='</div>';
     });
@@ -1368,6 +1376,54 @@ function renderPerf(){
 
 // SINGLE SUBMIT
 function toggleCatFields(){/* all categories use AWBs */}
+
+// Retry POC email assignment for a single unassigned case
+function retryPocAssign(cid){
+  var c=cases.find(function(x){return x.id===cid;});
+  if(!c) return;
+  var pocEmail=(c.poc_email||"").toLowerCase().trim();
+  if(!pocEmail){showToast("No POC email set on this case","warn");return;}
+
+  // Try FPI array + localStorage
+  var pocAgent=null;
+  for(var pi=0;pi<FPI.length;pi++){
+    if((FPI[pi].email||"").toLowerCase().trim()===pocEmail){pocAgent=FPI[pi];break;}
+  }
+  if(!pocAgent){
+    try{
+      var ca=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
+      for(var ci=0;ci<ca.length;ci++){
+        if((ca[ci].email||"").toLowerCase().trim()===pocEmail){pocAgent=ca[ci];break;}
+      }
+    }catch(e_){}
+  }
+  if(!pocAgent){
+    // Try loading fresh from sheet then retry
+    showToast("Loading agents from sheet…","warn");
+    loadFPIFromSheet().then(function(){
+      retryPocAssign(cid); // recursive call after load
+    });
+    return;
+  }
+  // Assign directly
+  c.poc          = pocAgent.id;
+  c.pn           = pocAgent.name||"";
+  c.pocName      = pocAgent.name||"";
+  c.pc           = pocAgent.color||"#3b8ef8";
+  c.poc_email    = pocEmail;
+  c.poc_pod      = pocAgent.pod||"";
+  c.pri          = c.pri||calcPriority(c.type,c.val);
+  c.st           = "pending_date";
+  c._assignReason= "POC direct (retry): "+pocEmail;
+  pocAgent.active  = (pocAgent.active||0)+1;
+  pocAgent.pending = (pocAgent.pending||0)+1;
+  updateBadges();
+  syncNewCase(c);
+  renderAssignTab();
+  renderReassignTab();
+  renderCasesTable(filteredCases);
+  showToast("✓ "+cid+" assigned to "+pocAgent.name);
+}
 
 // Fraud Type options per category
 var FRAUD_TYPES_BY_CAT={
@@ -10964,6 +11020,12 @@ function goStep3(){
 function goStep2(){showBulkStep(2);}
 function resetBulk(){bulkRows=[];document.getElementById("bfile").value="";showBulkStep(1);}
 function submitBulk(){
+  // ── Guard: FPI agents must be loaded before we can assign ──────
+  if(!FPI||!FPI.length){
+    showToast("Loading FPI agents… please wait and try again","warn");
+    loadFPIFromSheet().then(function(){ submitBulk(); });
+    return;
+  }
   var valid=bulkRows.filter(function(r){return r.ok;});
   if(!valid.length){showToast("No valid rows to submit","warn");return;}
 
@@ -10990,12 +11052,30 @@ function submitBulk(){
     var id="FPI-"+year+"-"+String(Date.now()+Math.floor(Math.random()*9999)).slice(-6);
     var pocEmail=(r.pocEmail||"").toLowerCase().trim();
 
-    // ── POC EMAIL: resolve agent NOW, directly, before anything else ──
+    // ── POC EMAIL: resolve agent NOW — check FPI array + localStorage cache ──
     var pocAgent=null;
     if(pocEmail){
+      // Primary: live FPI array
       for(var pi=0;pi<FPI.length;pi++){
         var agEmail=(FPI[pi].email||"").toLowerCase().trim();
         if(agEmail && agEmail===pocEmail){pocAgent=FPI[pi];break;}
+      }
+      // Fallback: localStorage fpi_agents cache (in case live array not yet populated)
+      if(!pocAgent){
+        try{
+          var cachedAgents=JSON.parse(localStorage.getItem("fpi_agents")||"[]");
+          for(var ci=0;ci<cachedAgents.length;ci++){
+            var caEmail=(cachedAgents[ci].email||"").toLowerCase().trim();
+            if(caEmail && caEmail===pocEmail){
+              pocAgent=cachedAgents[ci];
+              // Also add to FPI array so future lookups work
+              if(!FPI.find(function(p){return(p.email||"").toLowerCase()===pocEmail;})){
+                FPI.push(pocAgent);
+              }
+              break;
+            }
+          }
+        }catch(e_){}
       }
     }
 
