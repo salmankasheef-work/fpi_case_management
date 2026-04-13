@@ -344,11 +344,11 @@ textarea.fc{resize:vertical;min-height:66px;}
   <!-- DASHBOARD -->
   <div class="page active" id="page-dashboard">
     <div class="mrow5">
-      <div class="mc b"><div class="ml">Total Cases</div><div class="mv">27</div><div class="md">All types</div></div>
-      <div class="mc r"><div class="ml">Active</div><div class="mv">12</div><div class="md"><span>+3</span> this week</div></div>
-      <div class="mc y"><div class="ml">Unassigned</div><div class="mv">3</div><div class="md">Need POC</div></div>
-      <div class="mc g"><div class="ml">Closed/Month</div><div class="mv">8</div><div class="md"><span>67%</span> recovery</div></div>
-      <div class="mc p"><div class="ml">Value at Risk</div><div class="mv">&#8377;2.4L</div><div class="md">Open cases</div></div>
+      <div class="mc b"><div class="ml">Total Cases</div><div class="mv" id="dash-total">—</div><div class="md">All types</div></div>
+      <div class="mc r"><div class="ml">Active</div><div class="mv" id="dash-active">—</div><div class="md">In progress</div></div>
+      <div class="mc y"><div class="ml">Unassigned</div><div class="mv" id="dash-unassigned">—</div><div class="md">Need POC</div></div>
+      <div class="mc g"><div class="ml">Closed</div><div class="mv" id="dash-closed">—</div><div class="md">All time</div></div>
+      <div class="mc p"><div class="ml">Value at Risk</div><div class="mv" id="dash-value">—</div><div class="md">Open cases</div></div>
     </div>
     <div style="font-family:var(--disp);font-weight:700;font-size:13.5px;color:var(--navy);margin-bottom:11px;display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Case Type Summary</div>
     <div class="ctgrid" id="ct-summary-cards"></div>
@@ -541,6 +541,7 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="tab-bar">
       <div class="tbb active" onclick="switchAssignTab('assign',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Auto-Assignments<span style="margin-left:5px;background:var(--grn);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono)" id="tab-u-cnt">✓</span></div>
       <div class="tbb" onclick="switchAssignTab('reassign',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg>Reassign Cases</div>
+      <div class="tbb" onclick="switchAssignTab('unassigned',this)" id="tab-unassigned-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Unassigned<span style="margin-left:5px;background:var(--yel);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono)" id="tab-ua-cnt">0</span></div>
       <div class="tbb" onclick="switchAssignTab('closed',this)" id="tab-closed-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Closed Cases<span style="margin-left:5px;background:#6366f1;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono)" id="tab-cl-cnt">0</span></div>
     </div>
     <div class="tab-panel active" id="tab-assign"><div class="abanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span>Unassigned cases. Select POC and priority, then click Assign &amp; Alert.</span></div><div id="assign-list"></div></div>
@@ -554,12 +555,31 @@ textarea.fc{resize:vertical;min-height:66px;}
       <div id="reassign-count" style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:10px;display:none"></div>
       <div id="reassign-list"></div>
     </div>
+    <div class="tab-panel" id="tab-unassigned">
+      <div class="abanner" style="background:rgba(217,119,6,.07);border-color:rgba(217,119,6,.25)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--yel)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        <span style="color:var(--txt2)">Cases with no FPI agent assigned. Search and assign manually.</span>
+      </div>
+      <div style="position:relative;margin-bottom:10px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--txt3);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="unassigned-search" class="fc" placeholder="Search by customer name or hub…" oninput="filterUnassignedList()" style="padding-left:34px;background:var(--sf2)">
+        <button onclick="document.getElementById('unassigned-search').value='';filterUnassignedList()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;display:none" id="unassigned-search-clear" title="Clear">×</button>
+      </div>
+      <div id="unassigned-count" style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:10px;display:none"></div>
+      <div id="unassigned-list"></div>
+    </div>
     <div class="tab-panel" id="tab-closed">
       <div class="abanner" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.2)">
         <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         <span style="color:var(--txt2)">Cases closed by FPI agents. Auto-updated when agents close in Field Portal.</span>
         <button onclick="refreshClosedCases()" style="margin-left:auto;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:6px;color:#a5b4fc;font-size:11px;padding:3px 10px;cursor:pointer;font-family:var(--sans)">↻ Refresh</button>
       </div>
+      <div style="position:relative;margin-bottom:10px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--txt3);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="closed-search" class="fc" placeholder="Search by hub name or FPI agent…" oninput="filterClosedList()" style="padding-left:34px;background:var(--sf2)">
+        <button onclick="document.getElementById('closed-search').value='';filterClosedList()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;display:none" id="closed-search-clear" title="Clear">×</button>
+      </div>
+      <div id="closed-count" style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:10px;display:none"></div>
       <div id="closed-list"></div>
     </div>
   </div>
@@ -654,7 +674,7 @@ function showPage(id){
   document.getElementById("page-"+id).classList.add("active");
   document.getElementById("page-title").textContent=PT[id]||id;
   document.querySelectorAll(".ni").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+id+"'"))n.classList.add("active");});
-  const R={dashboard:()=>{renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist("fraud-dist");},trends:()=>{renderTrendsPage();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
+  const R={dashboard:()=>{renderDashboardMetrics();renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();renderPodView();renderFraudDist("fraud-dist");},trends:()=>{renderTrendsPage();},"all-cases":()=>renderCasesTable(filteredCases),tracker:renderTracker,performance:renderPerf,assignment:()=>{renderAssignTab();renderReassignTab();updateClosedBadge();}};
   if(R[id])R[id]();
 }
 function switchCaseTab(id,el){document.querySelectorAll("#page-new-case .tbb").forEach(b=>b.classList.remove("active"));el.classList.add("active");document.querySelectorAll("#page-new-case .tab-panel").forEach(p=>p.classList.remove("active"));document.getElementById("ct-"+id).classList.add("active");}
@@ -665,9 +685,31 @@ function switchAssignTab(id,el){
   document.getElementById("tab-"+id).classList.add("active");
   // Render closed tab fresh whenever it's opened (gets latest from Apps Script)
   if(id==="closed") renderClosedTab();
+  if(id==="unassigned") renderUnassignedTab();
 }
 
 // CASE TYPE SUMMARY
+function renderDashboardMetrics(){
+  const total      = cases.length;
+  const active     = cases.filter(c=>c.st!=="closed"&&c.st!=="unassigned").length;
+  const unassigned = cases.filter(c=>c.st==="unassigned").length;
+  const closed     = cases.filter(c=>c.st==="closed").length;
+  const valueAtRisk= cases.filter(c=>c.st!=="closed").reduce(function(s,c){return s+(c.val||0);},0);
+  const valFmt     = valueAtRisk>=100000 ? "₹"+(valueAtRisk/100000).toFixed(1)+"L"
+                   : valueAtRisk>=1000   ? "₹"+(valueAtRisk/1000).toFixed(0)+"K"
+                   : "₹"+valueAtRisk.toLocaleString("en-IN");
+  function set(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  set("dash-total",      total);
+  set("dash-active",     active);
+  set("dash-unassigned", unassigned);
+  set("dash-closed",     closed);
+  set("dash-value",      valFmt);
+  // Also keep nav badges in sync
+  document.getElementById("nb-all").textContent = total;
+  var nb = document.getElementById("nb-u");
+  if(nb){ nb.textContent = unassigned; nb.style.display = unassigned>0?"inline":"none"; }
+}
+
 function renderCaseTypeSummary(){
   const cats=[
     {key:"Shipment Fraud",icon:"📦",col:"var(--blue)",bg:"rgba(29,78,216,.07)",label:"Shipment Fraud",sub:"Fraud on shipments"},
@@ -1036,7 +1078,7 @@ function renderReassignCard(c){
         '</div>'+
         '<div style="font-size:10px;color:var(--txt3)">'+c.hub+' · '+c.city+', '+c.state+'</div>'+
       '</div>'+
-      '<div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹'+c.val.toLocaleString()+'</div>'+
+      '<div style="font-size:13px;font-weight:600;color:var(--txt2);white-space:nowrap">₹'+c.val.toLocaleString("en-IN")+'</div>'+
     '</div>'+
     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)">'+
       '<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span>'+
@@ -1116,6 +1158,118 @@ function filterReassignList(){
   }
 }
 
+function renderUnassignedTab(){
+  var badge = document.getElementById("tab-ua-cnt");
+  var unassigned = cases.filter(function(c){return c.st==="unassigned";});
+  if(badge) badge.textContent = unassigned.length;
+
+  window._unassignedCards = unassigned.map(function(c){
+    var priClr = c.pri==="High"?"var(--red)":c.pri==="Medium"?"var(--yel)":"var(--grn)";
+    var html =
+      '<div class="rcrd" style="border-left:3px solid var(--yel)">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">'+
+          '<div>'+
+            '<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;flex-wrap:wrap">'+
+              '<span style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+c.id+'</span>'+
+              '<span class="fp '+c.fp+'">'+c.type+'</span>'+
+              '<span class="ct-tag '+(CC[c.cat]||"ct-oth")+'">'+c.cat+'</span>'+
+              '<span class="bdg by" style="font-size:9px">⚠ Unassigned</span>'+
+            '</div>'+
+            '<div style="font-size:10px;color:var(--txt3)">'+c.hub+' · '+c.city+', '+c.state+'</div>'+
+            (c.cxName?'<div style="font-size:10.5px;color:var(--txt2);margin-top:2px">👤 '+c.cxName+'</div>':'')+
+          '</div>'+
+          '<div style="text-align:right;flex-shrink:0">'+
+            '<div style="font-size:13px;font-weight:600;color:var(--txt2)">₹'+c.val.toLocaleString("en-IN")+'</div>'+
+            (c.pri?'<div style="font-size:10px;font-weight:600;color:'+priClr+'">'+(c.pri||"")+'</div>':'')+
+          '</div>'+
+        '</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">'+
+          '<div class="fgrp"><label class="fl">Assign To</label>'+
+            '<select class="fc" id="ua-rp-'+c.id+'"><option value="">Select FPI agent...</option>'+
+            FPI.filter(function(p){return p.id&&p.name;}).map(function(p){
+              return '<option value="'+p.id+'">'+p.name+' — '+(p.pod||"")+(p.email?" · "+p.email:"")+'</option>';
+            }).join("")+
+          '</select></div>'+
+          '<div class="fgrp"><label class="fl">Reason</label>'+
+            '<select class="fc" id="ua-rr-'+c.id+'"><option value="">Reason...</option>'+
+            '<option>Manual assignment</option><option>POC override</option>'+
+            '<option>Zone expertise</option><option>Escalation</option><option>Other</option>'+
+          '</select></div>'+
+          '<button class="btn btn-p btn-sm" onclick="manualAssignUnassigned(this.dataset.cid)" data-cid="'+c.id+'">Assign</button>'+
+        '</div>'+
+        (c._assignReason?'<div style="margin-top:7px;padding:6px 9px;background:var(--yel-d);border-radius:6px;font-size:10.5px;color:var(--txt2)">'+
+          '<span style="font-family:var(--mono);font-size:9px;color:var(--yel)">WHY UNASSIGNED</span><br>'+c._assignReason+'</div>':'')+
+      '</div>';
+    return {
+      hub     : (c.hub||"").toLowerCase(),
+      cxName  : (c.cxName||"").toLowerCase(),
+      html    : html
+    };
+  });
+  filterUnassignedList();
+}
+
+function filterUnassignedList(){
+  var searchEl  = document.getElementById("unassigned-search");
+  var query     = (searchEl ? searchEl.value : "").toLowerCase().trim();
+  var clearBtn  = document.getElementById("unassigned-search-clear");
+  var countEl   = document.getElementById("unassigned-count");
+  var listEl    = document.getElementById("unassigned-list");
+  if(!listEl) return;
+
+  if(clearBtn) clearBtn.style.display = query ? "block" : "none";
+
+  var cards = window._unassignedCards || [];
+  var matched = query
+    ? cards.filter(function(r){ return r.hub.includes(query) || r.cxName.includes(query); })
+    : cards;
+
+  if(countEl){
+    if(query){ countEl.style.display="block"; countEl.textContent=matched.length+" of "+cards.length+" unassigned cases matching \u201c"+query+"\u201d"; }
+    else      { countEl.style.display="none"; }
+  }
+
+  if(!matched.length){
+    listEl.innerHTML = '<div style="padding:32px 0;text-align:center;color:var(--txt3);font-size:12.5px">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 8px;display:block;opacity:.35"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+      (query ? 'No unassigned cases matching <strong>\u201c'+query+'\u201d</strong>' : '<div style="font-size:13px;font-weight:600;color:var(--grn)">\u2713 All cases are assigned</div>')+
+    '</div>';
+  } else {
+    listEl.innerHTML = matched.map(function(r){ return r.html; }).join("");
+  }
+}
+
+function manualAssignUnassigned(cid){
+  var c    = cases.find(function(x){return x.id===cid;});
+  var agId = (document.getElementById("ua-rp-"+cid)||{}).value;
+  var reason=(document.getElementById("ua-rr-"+cid)||{}).value;
+  if(!c){ showToast("Case not found","warn"); return; }
+  if(!agId){ showToast("Select an FPI agent first","warn"); return; }
+  if(!reason){ showToast("Select a reason","warn"); return; }
+  var newP = FPI.find(function(p){return p.id===agId;});
+  if(!newP){ showToast("Agent not found","warn"); return; }
+  if(!c.rh) c.rh = [];
+  c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:"Unassigned",to:newP.name,reason:reason});
+  c.poc      = newP.id;
+  c.pn       = newP.name;
+  c.pocName  = newP.name;
+  c.pc       = newP.color||"#3b8ef8";
+  c.poc_email= (newP.email||"").toLowerCase();
+  c.poc_pod  = newP.pod||"";
+  c.st       = "pending_date";
+  c.pri      = c.pri||calcPriority(c.type,c.val);
+  c._assignReason = "Manual: "+reason;
+  newP.active  = (newP.active||0)+1;
+  newP.pending = (newP.pending||0)+1;
+  updateBadges();
+  renderDashboardMetrics();
+  syncNewCase(c);
+  syncCasesToStorage();
+  renderUnassignedTab();
+  renderReassignTab();
+  showToast("\u2713 "+cid+" assigned to "+newP.name);
+}
+
 function renderClosedTab(){
   const el = document.getElementById("closed-list");
   if(!el) return;
@@ -1179,20 +1333,21 @@ function renderClosedTab(){
     // Update count badge
     const badge = document.getElementById("tab-cl-cnt");
     if(badge) badge.textContent = merged.length;
+    // Store for search filtering
+    window._closedMerged = merged;
 
     if(!merged.length){
       el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--txt3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin-bottom:8px;opacity:.4"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div>No closed cases yet</div></div>';
       return;
     }
 
-    el.innerHTML = merged.map(c => {
+    window._closedCards = merged.map(c => {
       const agentName  = c.pn || c.poc_email || "—";
       const agentEmail = c.poc_email || "";
       const recovery   = c.recovery || c.val * 0 || 0;
       const utr        = c.utr || "—";
       const fpiAgent   = FPI.find(p => p.email && p.email.toLowerCase() === agentEmail.toLowerCase()) || {};
-
-      return `<div class="rcrd" style="border-left:3px solid var(--grn);opacity:0.95">
+      const cardHtml   = `<div class="rcrd" style="border-left:3px solid var(--grn);opacity:0.95">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
@@ -1204,8 +1359,8 @@ function renderClosedTab(){
             <div style="font-size:10px;color:var(--txt3)">${c.hub||"—"} · ${c.city||"—"}, ${c.state||"—"}</div>
           </div>
           <div style="text-align:right">
-            <div style="font-family:var(--disp);font-size:14px;font-weight:800;color:var(--red)">₹${(c.val||0).toLocaleString()}</div>
-            ${recovery>0?`<div style="font-size:10px;color:var(--grn);font-weight:600">↳ ₹${recovery.toLocaleString()} recovered</div>`:''}
+            <div style="font-size:13px;font-weight:600;color:var(--txt2)">₹${(c.val||0).toLocaleString("en-IN")}</div>
+            ${recovery>0?`<div style="font-size:10px;color:var(--grn);font-weight:600">↳ ₹${recovery.toLocaleString("en-IN")} recovered</div>`:''}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd);margin-bottom:8px">
@@ -1220,7 +1375,9 @@ function renderClosedTab(){
           </div>
         </div>
       </div>`;
-    }).join("");
+      return { hub: (c.hub||"").toLowerCase(), agentName: agentName.toLowerCase(), html: cardHtml };
+    });
+    filterClosedList();
   };
 
   const s = document.createElement("script");
@@ -1248,8 +1405,39 @@ function renderClosedTab(){
 }
 
 function refreshClosedCases(){
+  document.getElementById("closed-search").value="";
   renderClosedTab();
   showToast("↻ Refreshing closed cases…");
+}
+
+function filterClosedList(){
+  var searchEl = document.getElementById("closed-search");
+  var query    = (searchEl ? searchEl.value : "").toLowerCase().trim();
+  var clearBtn = document.getElementById("closed-search-clear");
+  var countEl  = document.getElementById("closed-count");
+  var listEl   = document.getElementById("closed-list");
+  if(!listEl) return;
+
+  if(clearBtn) clearBtn.style.display = query ? "block" : "none";
+
+  var cards   = window._closedCards || [];
+  var matched = query
+    ? cards.filter(function(r){ return r.hub.includes(query) || r.agentName.includes(query); })
+    : cards;
+
+  if(countEl){
+    if(query){ countEl.style.display="block"; countEl.textContent=matched.length+" of "+cards.length+" closed cases matching “"+query+"”"; }
+    else      { countEl.style.display="none"; }
+  }
+
+  if(!matched.length){
+    listEl.innerHTML = '<div style="padding:32px 0;text-align:center;color:var(--txt3);font-size:12.5px">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 8px;display:block;opacity:.35"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+      (query ? 'No closed cases matching <strong>“'+query+'”</strong>' : 'No closed cases yet.')+
+    '</div>';
+  } else {
+    listEl.innerHTML = matched.map(function(r){ return r.html; }).join("");
+  }
 }
 function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=document.getElementById("rr-"+cid).value;if(!np||!rr){showToast("Select new POC and reason","warn");return;}const c=cases.find(x=>x.id===cid),newP=FPI.find(p=>p.id===np);if(!c.rh)c.rh=[];c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});c.poc=newP.id;c.pn=newP.name;c.pocName=newP.name;c.pc=newP.color;c.poc_pod=newP.pod||"";c.poc_email=(newP.email||"").toLowerCase();renderReassignTab();syncCasesToStorage();showToast(`✓ ${cid} reassigned to ${newP.name}`);}
 
@@ -11325,7 +11513,7 @@ function downloadTemplate(){
   showToast("Template downloaded — fill and upload");
 }
 
-function updateBadges(){const u=cases.filter(c=>c.st==="unassigned").length;document.getElementById("nb-u").textContent=u;document.getElementById("nb-all").textContent=cases.length;const tc=document.getElementById("tab-u-cnt");if(tc)tc.textContent=u;}
+function updateBadges(){const u=cases.filter(c=>c.st==="unassigned").length;document.getElementById("nb-u").textContent=u;document.getElementById("nb-all").textContent=cases.length;const tc=document.getElementById("tab-u-cnt");if(tc)tc.textContent=u;const ua=document.getElementById("tab-ua-cnt");if(ua)ua.textContent=u;}
 // GOOGLE SHEETS SYNC
 // Replace SHEET_URL with your deployed Apps Script Web App URL
 let SHEET_URL = localStorage.getItem("fpi_sheet_url") || "";
@@ -11937,7 +12125,7 @@ function cmLoginSuccess(email, name){
   cmSetUserDisplay(name||email);
   loadFPIFromSheet().then(()=>{
     renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
-    renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
+    renderDashboardMetrics();renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
     renderAssignTab();renderReassignTab();updateBadges();
   });
 }
@@ -12008,7 +12196,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     // Always load fresh from sheet on login — localStorage is only a backup
     loadFPIFromSheet().then(()=>{
       renderCaseTypeSummary();renderShipmentDrill();renderRecentCases();
-      renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
+      renderDashboardMetrics();renderPodView();renderFraudDist("fraud-dist");renderCasesTable(filteredCases);
       renderAssignTab();renderReassignTab();updateBadges();updateClosedBadge();
       // If sheet returned 0 cases, show a helpful message
       if(cases.length===0){
