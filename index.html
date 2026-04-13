@@ -266,6 +266,16 @@ textarea.fc{resize:vertical;min-height:66px;}
 .cm-login-btn:disabled{opacity:.5;cursor:not-allowed;}
 .cm-login-err{color:var(--red);font-size:12px;margin-top:10px;padding:9px 12px;background:var(--red-d);border-radius:7px;display:none;text-align:left;}
 .cm-login-loading{color:var(--txt3);font-size:12px;margin-top:8px;display:none;font-family:var(--mono);}
+/* DOWNLOAD PICKER */
+.dl-wrap{position:relative;display:inline-block;}
+.dl-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--sf2);border:1.5px solid var(--bd);border-radius:9px;box-shadow:0 8px 24px rgba(15,23,42,.13);min-width:234px;z-index:500;overflow:hidden;}
+.dl-menu.open{display:block;}
+.dl-opt{display:flex;align-items:flex-start;gap:11px;padding:12px 14px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--bd);}
+.dl-opt:last-child{border-bottom:none;}
+.dl-opt:hover{background:#f1f5f9;}
+.dl-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dl-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px;}
+.dl-sub{font-size:10px;color:var(--txt3);line-height:1.4;}
 </style>
 </head>
 <body>
@@ -315,7 +325,19 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="ni" onclick="showPage('tracker')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>FPI Tracker</div>
     <div class="ni" onclick="showPage('performance')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Performance</div>
     <div class="ns">Tools</div>
-    <div class="ni" onclick="downloadCaseSummaryCSV()" style="color:rgba(255,255,255,.6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary</div>
+    <div class="ni" onclick="toggleDownloadMenu(event,'nav-dl-menu')" style="color:rgba(255,255,255,.6);position:relative">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary
+      <div class="dl-menu" id="nav-dl-menu" style="right:auto;left:0">
+        <div class="dl-opt" onclick="event.stopPropagation();closeAllDownloadMenus();downloadCaseSummaryCSV()">
+          <div class="dl-icon" style="background:rgba(29,78,216,.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+          <div><div class="dl-title">Hub-wise Summary</div><div class="dl-sub">One row per hub — aggregated case data with FPI POC, value, recovery</div></div>
+        </div>
+        <div class="dl-opt" onclick="event.stopPropagation();closeAllDownloadMenus();downloadAWBLevelCSV()">
+          <div class="dl-icon" style="background:rgba(22,163,74,.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+          <div><div class="dl-title">AWB-level Detail</div><div class="dl-sub">Same columns as bulk upload template — one row per hub with all AWBs</div></div>
+        </div>
+      </div>
+    </div>
     <div class="ni" onclick="window.open('field-portal.html','_blank')" style="color:rgba(255,255,255,.6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>FPI Field Portal ↗</div>
   </div>
   <div class="sbft">
@@ -356,7 +378,21 @@ textarea.fc{resize:vertical;min-height:66px;}
     <div class="card" id="shipment-drilldown">
       <div class="ch">
         <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Shipment Fraud &mdash; Detailed View</div>
-        <button class="btn btn-dk btn-sm" onclick="downloadCaseSummaryCSV()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary</button>
+        <div class="dl-wrap">
+          <button class="btn btn-dk btn-sm" onclick="toggleDownloadMenu(event,'dash-dl-menu')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Summary ▾
+          </button>
+          <div class="dl-menu" id="dash-dl-menu">
+            <div class="dl-opt" onclick="closeAllDownloadMenus();downloadCaseSummaryCSV()">
+              <div class="dl-icon" style="background:rgba(29,78,216,.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+              <div><div class="dl-title">Hub-wise Summary</div><div class="dl-sub">One row per hub — aggregated case data with FPI POC, value, recovery</div></div>
+            </div>
+            <div class="dl-opt" onclick="closeAllDownloadMenus();downloadAWBLevelCSV()">
+              <div class="dl-icon" style="background:rgba(22,163,74,.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+              <div><div class="dl-title">AWB-level Detail</div><div class="dl-sub">Same columns as bulk upload template — one row per hub with all AWBs</div></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="cb">
         <div class="g4" id="ship-drill"></div>
@@ -11490,6 +11526,80 @@ function downloadCaseSummaryCSV(){
   a.download='FPI_Case_Summary_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
   showToast('Case summary downloaded — '+cases.length+' cases');
 }
+function toggleDownloadMenu(e, menuId){
+  e.stopPropagation();
+  var menu = document.getElementById(menuId);
+  if(!menu) return;
+  var isOpen = menu.classList.contains('open');
+  closeAllDownloadMenus();
+  if(!isOpen) menu.classList.add('open');
+}
+function closeAllDownloadMenus(){
+  document.querySelectorAll('.dl-menu').forEach(function(m){ m.classList.remove('open'); });
+}
+// Close on outside click
+document.addEventListener('click', closeAllDownloadMenus);
+
+// AWB-level download — same columns as bulk upload template
+// AWB_Numbers | Category | Loss_Type | SFX_Status | Product_Value | Product_Description
+// Hub | City | State | Cx_Rider_Id | LM_Rider_Id | Customer_Name | POC_Email
+function downloadAWBLevelCSV(){
+  var headers = [
+    "AWB_Numbers","Category","Loss_Type","SFX_Status","Product_Value",
+    "Product_Description","Hub","City","State",
+    "Cx_Rider_Id","LM_Rider_Id","Customer_Name","POC_Email",
+    // Extra informational columns (read-only, not in upload template)
+    "Case_ID","Priority","Status","FPI_POC","POC_POD","Recovery_INR","UTR","Date_Filed"
+  ];
+
+  var rows = [headers];
+
+  cases.forEach(function(c){
+    var fpi = FPI.find(function(p){
+      var pe=(p.email||"").toLowerCase().trim();
+      return pe&&c.poc_email?pe===c.poc_email:p.id===c.poc;
+    })||{};
+    var statusText = (SL[c.st]||{l:c.st}).l;
+
+    rows.push([
+      // ── Bulk-upload columns (same order as template) ──
+      c.awbList||"",                          // AWB_Numbers
+      c.cat||"",                              // Category
+      c.type||"",                             // Loss_Type
+      c.sfxStatus||"",                        // SFX_Status
+      c.val||0,                               // Product_Value
+      c.desc||"",                             // Product_Description
+      c.hub||"",                              // Hub
+      c.city||"",                             // City
+      c.state||"",                            // State
+      c.cxRider||"",                          // Cx_Rider_Id
+      c.lmRider||"",                          // LM_Rider_Id
+      c.cxName||"",                           // Customer_Name
+      c.poc_email||"",                        // POC_Email
+      // ── Extra informational columns ──
+      c.id||"",                               // Case_ID
+      c.pri||"",                              // Priority
+      statusText,                             // Status
+      fpi.name||c.pn||"Unassigned",           // FPI_POC
+      fpi.pod||c.poc_pod||"",                 // POC_POD
+      c.recovery||0,                          // Recovery_INR
+      c.utr||"",                              // UTR
+      c.date||""                              // Date_Filed
+    ]);
+  });
+
+  var csv = rows.map(function(r){
+    return r.map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\n');
+
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'FPI_AWB_Level_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('AWB-level download — '+cases.length+' cases');
+}
+
 function downloadTemplate(){
   // Generate CSV template with correct columns
   const headers = [
