@@ -544,7 +544,16 @@ textarea.fc{resize:vertical;min-height:66px;}
       <div class="tbb" onclick="switchAssignTab('closed',this)" id="tab-closed-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Closed Cases<span style="margin-left:5px;background:#6366f1;color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:var(--mono)" id="tab-cl-cnt">0</span></div>
     </div>
     <div class="tab-panel active" id="tab-assign"><div class="abanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span>Unassigned cases. Select POC and priority, then click Assign &amp; Alert.</span></div><div id="assign-list"></div></div>
-    <div class="tab-panel" id="tab-reassign"><div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>Reassign active cases. All history logged.</span></div><div id="reassign-list"></div></div>
+    <div class="tab-panel" id="tab-reassign">
+      <div class="abanner blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg><span>Reassign active cases. All history logged.</span></div>
+      <div style="position:relative;margin-bottom:14px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--txt3);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="reassign-search" class="fc" placeholder="Search by FPI agent name or hub…" oninput="filterReassignList()" style="padding-left:34px;background:var(--sf2)">
+        <button onclick="document.getElementById('reassign-search').value='';filterReassignList()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--txt3);font-size:16px;line-height:1;display:none" id="reassign-search-clear" title="Clear search">×</button>
+      </div>
+      <div id="reassign-count" style="font-size:10.5px;color:var(--txt3);font-family:var(--mono);margin-bottom:10px;display:none"></div>
+      <div id="reassign-list"></div>
+    </div>
     <div class="tab-panel" id="tab-closed">
       <div class="abanner" style="background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.2)">
         <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -1010,18 +1019,101 @@ html+='<div style="font-size:9px;color:var(--acc);font-family:var(--mono)">'+(fp
   el.innerHTML=html;
 }
 
+// ── Reassign Tab ────────────────────────────────────────────────
+// _reassignCards caches each card's searchable fields + HTML
+var _reassignCards = [];
+
+function renderReassignCard(c){
+  var p=FPI.find(function(x){var pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
+  var s2=SL[c.st]||{l:c.st,c:"bgr"};var h=c.rh||[];
+  return '<div class="rcrd">'+
+    '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px">'+
+      '<div>'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">'+
+          '<span style="font-family:var(--mono);font-size:11.5px;font-weight:600">'+c.id+'</span>'+
+          '<span class="fp '+c.fp+'">'+c.type+'</span>'+
+          '<span class="bdg '+s2.c+'">'+s2.l+'</span>'+
+        '</div>'+
+        '<div style="font-size:10px;color:var(--txt3)">'+c.hub+' · '+c.city+', '+c.state+'</div>'+
+      '</div>'+
+      '<div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹'+c.val.toLocaleString()+'</div>'+
+    '</div>'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)">'+
+      '<span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span>'+
+      '<div class="av-row"><div class="av" style="background:'+c.pc+'">'+c.poc+'</div>'+
+      '<span style="font-weight:600;font-size:12px">'+(p.name||c.pn)+'</span></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">'+
+      '<div class="fgrp"><label class="fl">Reassign To</label>'+
+        '<select class="fc" id="rp-'+c.id+'"><option value="">New POC...</option>'+
+        FPI.filter(function(pp){return pp.id!==c.poc;}).map(function(pp){
+          return '<option value="'+pp.id+'">'+pp.name+' — '+pp.pod+' · '+(pp.email||'no email')+' ('+pp.active+' active)</option>';
+        }).join("")+
+        '</select></div>'+
+      '<div class="fgrp"><label class="fl">Reason</label>'+
+        '<select class="fc" id="rr-'+c.id+'"><option value="">Reason...</option>'+
+        '<option>Workload balancing</option><option>Zone transfer</option><option>FPI on leave</option>'+
+        '<option>Expertise required</option><option>Escalation</option><option>Other</option>'+
+        '</select></div>'+
+      '<button class="btn btn-p btn-sm" onclick="reassignCase(this.dataset.cid)" data-cid="'+c.id+'">Reassign</button>'+
+    '</div>'+
+    (h.length?
+      '<div style="border-top:1px solid var(--bd);padding-top:8px;margin-top:8px">'+
+        '<div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:5px">HISTORY</div>'+
+        h.map(function(x){
+          return '<div class="re-entry"><span style="color:var(--txt3)">'+x.date+'</span><span>→</span>'+
+            '<span>'+x.from+'</span><span>→</span><span style="font-weight:600">'+x.to+'</span>'+
+            '<span style="color:var(--txt3)">('+x.reason+')</span></div>';
+        }).join("")+
+      '</div>'
+    :"")+
+  '</div>';
+}
+
 function renderReassignTab(){
-  const a=cases.filter(c=>c.poc&&c.st!=="closed");
-  document.getElementById("reassign-list").innerHTML=a.map(c=>{const p=FPI.find(x=>{const pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};const s=SL[c.st]||{l:c.st,c:"bgr"};const h=c.rh||[];
-    return`<div class="rcrd"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px"><div><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-family:var(--mono);font-size:11.5px;font-weight:600">${c.id}</span><span class="fp ${c.fp}">${c.type}</span><span class="bdg ${s.c}">${s.l}</span></div><div style="font-size:10px;color:var(--txt3)">${c.hub} · ${c.city}, ${c.state}</div></div><div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--red)">₹${c.val.toLocaleString()}</div></div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:7px 10px;background:var(--sf2);border-radius:7px;border:1px solid var(--bd)"><span style="font-size:10px;color:var(--txt3);font-family:var(--mono)">CURRENT:</span><div class="av-row"><div class="av" style="background:${c.pc}">${c.poc}</div><span style="font-weight:600;font-size:12px">${p.name||c.pn}</span></div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end">
-      <div class="fgrp"><label class="fl">Reassign To</label><select class="fc" id="rp-${c.id}"><option value="">New POC...</option>${FPI.filter(p=>p.id!==c.poc).map(p=>`<option value="${p.id}">${p.name} — ${p.pod} · ${p.email||'no email'} (${p.active} active)</option>`).join("")}</select></div>
-      <div class="fgrp"><label class="fl">Reason</label><select class="fc" id="rr-${c.id}"><option value="">Reason...</option><option>Workload balancing</option><option>Zone transfer</option><option>FPI on leave</option><option>Expertise required</option><option>Escalation</option><option>Other</option></select></div>
-      <button class="btn btn-p btn-sm" onclick="reassignCase('${c.id}')">Reassign</button>
-    </div>
-    ${h.length?`<div style="border-top:1px solid var(--bd);padding-top:8px;margin-top:8px"><div style="font-family:var(--mono);font-size:9px;color:var(--txt3);margin-bottom:5px">HISTORY</div>${h.map(x=>`<div class="re-entry"><span style="color:var(--txt3)">${x.date}</span><span>→</span><span>${x.from}</span><span>→</span><span style="font-weight:600">${x.to}</span><span style="color:var(--txt3)">(${x.reason})</span></div>`).join("")}</div>`:""}
-    </div>`;}).join("");
+  var a=cases.filter(function(c){return c.poc&&c.st!=="closed";});
+  _reassignCards=a.map(function(c){
+    var p=FPI.find(function(x){var pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
+    return{
+      hub      :(c.hub||"").toLowerCase(),
+      agentName:(p.name||c.pn||"").toLowerCase(),
+      html     :renderReassignCard(c)
+    };
+  });
+  filterReassignList();
+}
+
+function filterReassignList(){
+  var searchEl=document.getElementById("reassign-search");
+  var query=(searchEl?searchEl.value:"").toLowerCase().trim();
+  var clearBtn=document.getElementById("reassign-search-clear");
+  var countEl =document.getElementById("reassign-count");
+  var listEl  =document.getElementById("reassign-list");
+  if(!listEl) return;
+
+  if(clearBtn) clearBtn.style.display=query?"block":"none";
+
+  var matched=query
+    ?_reassignCards.filter(function(r){return r.agentName.includes(query)||r.hub.includes(query);})
+    :_reassignCards;
+
+  if(countEl){
+    if(query){
+      countEl.style.display="block";
+      countEl.textContent=matched.length+" of "+_reassignCards.length+" cases matching “"+query+"”";
+    }else{
+      countEl.style.display="none";
+    }
+  }
+
+  if(!matched.length){
+    listEl.innerHTML='<div style="padding:32px 0;text-align:center;color:var(--txt3);font-size:12.5px">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 8px;display:block;opacity:.35"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
+      (query?'No cases found for <strong>“'+query+'”</strong><br><span style="font-size:11px">Try agent name or hub</span>':'No active cases to reassign.')+
+    '</div>';
+  }else{
+    listEl.innerHTML=matched.map(function(r){return r.html;}).join("");
+  }
 }
 
 function renderClosedTab(){
