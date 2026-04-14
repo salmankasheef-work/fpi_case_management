@@ -1475,7 +1475,28 @@ function filterClosedList(){
     listEl.innerHTML = matched.map(function(r){ return r.html; }).join("");
   }
 }
-function reassignCase(cid){const np=document.getElementById("rp-"+cid).value,rr=document.getElementById("rr-"+cid).value;if(!np||!rr){showToast("Select new POC and reason","warn");return;}const c=cases.find(x=>x.id===cid),newP=FPI.find(p=>p.id===np);if(!c.rh)c.rh=[];c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});c.poc=newP.id;c.pn=newP.name;c.pocName=newP.name;c.pc=newP.color;c.poc_pod=newP.pod||"";c.poc_email=(newP.email||"").toLowerCase();renderReassignTab();syncCasesToStorage();showToast(`✓ ${cid} reassigned to ${newP.name}`);}
+function reassignCase(cid){
+  const np=document.getElementById("rp-"+cid).value;
+  const rr=document.getElementById("rr-"+cid).value;
+  if(!np||!rr){showToast("Select new POC and reason","warn");return;}
+  const c=cases.find(x=>x.id===cid);
+  const newP=FPI.find(p=>p.id===np);
+  if(!c||!newP){showToast("Case or agent not found","warn");return;}
+  if(!c.rh)c.rh=[];
+  c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});
+  c.poc      = newP.id;
+  c.pn       = newP.name;
+  c.pocName  = newP.name;
+  c.pc       = newP.color;
+  c.poc_pod  = newP.pod||"";
+  c.poc_email= (newP.email||"").toLowerCase().trim();
+  // Sync to Google Sheet so Field Portal sees the new assignment immediately
+  syncCase(c);
+  syncCasesToStorage();
+  renderReassignTab();
+  renderDashboardMetrics();
+  showToast("✓ "+cid+" reassigned to "+newP.name+" — syncing to sheet…");
+}
 
 // ALL CASES TABLE
 function renderCasesTable(data){
