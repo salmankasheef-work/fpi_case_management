@@ -11229,7 +11229,7 @@ function processBulkFile(file){
             rows.push(cells);
           }
           if(rows.length>1){
-            if(rows.length>5001) rows.splice(5001);
+            if(rows.length>55001) rows.splice(55001); // 55000 data rows + 1 header
             const headerRow=rows[0];
             const dataRows=rows.slice(1).filter(function(r){return r.some(function(v){return v&&String(v).trim();});});
             if(!dataRows.length){showToast("No data rows in XLSX","warn");}
@@ -11496,28 +11496,31 @@ function submitBulk(){
   }
   showToast("\u2705 "+n+" case"+(n!==1?"s":"")+" created & assigned"+skipMsg);
 
-  // ── Batch sync to Google Sheet — 8 per batch, 600ms gap ──────
-  // Prevents browser overload and Apps Script cold-start timeout
-  var BATCH=8, DELAY=600, synced=0;
-  function syncBatch(i){
-    if(i>=newCases.length){
-      showToast("\u2705 All "+n+" cases saved to Google Sheet");
+  // ── Sequential sync to Google Sheet — one case at a time, 800ms apart ──
+  // Sequential (not parallel) prevents sheet write race conditions where
+  // multiple upsertCase calls fire simultaneously and some get lost.
+  var DELAY=800, synced=0;
+  var totalToSync=newCases.length;
+  function syncNext(i){
+    if(i>=totalToSync){
+      showToast("\u2705 All "+totalToSync+" cases saved to Google Sheet");
+      // Reset form only AFTER all syncs complete
+      bulkRows=[];
+      var bf=document.getElementById("bfile"); if(bf) bf.value="";
+      var bpt=document.getElementById("bulk-preview-table");
+      if(bpt) bpt.innerHTML='<div style="padding:24px;text-align:center;color:var(--txt3);font-size:12px;font-family:var(--mono)">Upload a file to see preview here</div>';
+      showBulkStep(1);
+      showPage("assignment");
       return;
     }
-    newCases.slice(i,i+BATCH).forEach(function(c){syncCase(c);synced++;});
-    setTimeout(function(){syncBatch(i+BATCH);},DELAY);
+    syncCase(newCases[i]); synced++;
+    // Show progress for large batches
+    if(totalToSync>5){
+      showToast("Syncing case "+(i+1)+" of "+totalToSync+"\u2026");
+    }
+    setTimeout(function(){syncNext(i+1);},DELAY);
   }
-  syncBatch(0);
-
-  // ── Reset form after 2.5s and navigate to Assignment tab ─────
-  setTimeout(function(){
-    bulkRows=[];
-    var bf=document.getElementById("bfile"); if(bf) bf.value="";
-    var bpt=document.getElementById("bulk-preview-table");
-    if(bpt) bpt.innerHTML='<div style="padding:24px;text-align:center;color:var(--txt3);font-size:12px;font-family:var(--mono)">Upload a file to see preview here</div>';
-    showBulkStep(1);
-    showPage("assignment");
-  }, 2500);
+  syncNext(0);
 }
 // DOWNLOAD FULL CASE SUMMARY (CSV)
 function downloadCaseSummaryCSV(){
