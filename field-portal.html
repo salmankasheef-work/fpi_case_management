@@ -662,7 +662,6 @@ function openUpdate(caseId,sub){
   document.getElementById("cl-box").style.display="none";
   document.getElementById("ev-gal").innerHTML="";
   document.getElementById("ev-prev").innerHTML="";
-  // Reset slip upload
   const slipImg = document.getElementById("slip-preview");
   const slipPh  = document.getElementById("slip-placeholder");
   const slipDone= document.getElementById("slip-done");
@@ -671,8 +670,22 @@ function openUpdate(caseId,sub){
   if(slipDone) slipDone.style.display="none";
   window._slipBase64 = null;
   document.getElementById("cl-utr").value="";
-  // Show "Start Working" banner if case hasn't been started yet
+
   const c = myCases.find(x=>x.id===caseId);
+
+  // ── Inform agent if case was previously closed (can still update — new row added) ──
+  var alreadyClosed = c && c.st === "closed";
+  var existingBanner = document.getElementById("already-closed-banner");
+  if(!existingBanner){
+    existingBanner = document.createElement("div");
+    existingBanner.id = "already-closed-banner";
+    existingBanner.style.cssText = "background:rgba(217,119,6,.08);border:1.5px solid rgba(217,119,6,.3);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--yel);font-weight:600;margin-bottom:12px;display:none";
+    existingBanner.innerHTML = "⚠ This case was previously closed. Submitting will add a new row in the sheet for this re-opened update.";
+    var shBody = document.querySelector("#sh-update .sbody");
+    if(shBody) shBody.insertBefore(existingBanner, shBody.firstChild);
+  }
+  existingBanner.style.display = alreadyClosed ? "block" : "none";
+
   const isFeatured = c && caseStatusCategory(c.st)==="featured";
   document.getElementById("start-working-banner").style.display = isFeatured ? "block" : "none";
   document.getElementById("sh-update").classList.add("open");
@@ -765,11 +778,7 @@ function submitUpdate(){
   const caseId = document.getElementById("us-id").textContent.trim();
   const c      = myCases.find(x=>x.id===caseId);
 
-  // ── GUARD 1: Duplicate closure prevention ───────────────────────
-  if(status==="closed" && c && c.st==="closed"){
-    showToast("⚠ Case already closed — cannot close again","warn");
-    return;
-  }
+  // Case was previously closed — sheet will add new row (handled server-side)
 
   const notes  = document.getElementById("us-notes").value.trim();
   const utr    = document.getElementById("cl-utr").value.trim();
@@ -10590,44 +10599,50 @@ function triggerClosureEmail(caseData){
 }
 
 function _sendClosureEmailPost(caseData, slipB64, driveUrl){
-  var body = {
-    action        : "close_case_email",
-    case_id       : caseData.id       || "",
-    category      : caseData.cat      || "",
-    fraud_type    : caseData.type     || "",
-    hub           : caseData.hub      || "",
-    city          : caseData.city     || "",
-    state         : caseData.state    || "",
-    value         : caseData.val      || 0,
-    recovery      : caseData.recovery || 0,
-    utr           : caseData.utr      || "",
-    poc_name      : caseData.pn       || "",
-    poc_email     : caseData.poc_email|| "",
-    police_action : caseData.policeAction || "",
-    closure_notes : caseData.closureNotes || "",
-    slip_base64   : slipB64,
-    utr_slip_url  : driveUrl
-  };
-  fetch(APPS_SCRIPT_URL, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(body)
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
+  // JSONP GET — the only reliable cross-origin method for Apps Script web apps.
+  // Evidence images + slip are passed as Drive URLs (already uploaded).
+  // slip_base64 NOT sent in URL (too large) — Apps Script attaches from Drive URL instead.
+  var cb = "fpEmailCb_"+Date.now();
+  var params = new URLSearchParams({
+    action         : "close_case_email",
+    case_id        : caseData.id            || "",
+    category       : caseData.cat           || "",
+    fraud_type     : caseData.type          || "",
+    hub            : caseData.hub           || "",
+    city           : caseData.city          || "",
+    state          : caseData.state         || "",
+    value          : caseData.val           || 0,
+    recovery       : caseData.recovery      || 0,
+    utr            : caseData.utr           || "",
+    poc_name       : caseData.pn            || "",
+    poc_email      : caseData.poc_email     || "",
+    police_action  : caseData.policeAction  || "",
+    closure_notes  : caseData.closureNotes  || "",
+    utr_slip_url   : driveUrl               || "",
+    evidence_urls  : caseData.evidenceUrls  || "",
+    closed_date    : caseData.closedDate    || "",
+    callback       : cb
+  });
+  window[cb] = function(data){
+    try{ delete window[cb]; }catch(e){}
     if(data && data.ok){
       showToast("📧 Closure email sent to manager");
-      console.log("[Email] Sent OK for", caseData.id, driveUrl?"(with slip)":"(no slip)");
+      console.log("[Email] Sent OK for", caseData.id);
     } else {
-      var msg=(data&&data.error)?data.error:"Unknown error";
-      showToast("⚠ Email: "+msg.substring(0,60));
+      var msg = data ? (data.error||data.msg||"Unknown error") : "No response";
+      showToast("⚠ Email: "+String(msg).substring(0,60));
       console.error("[Email] Failed:", data);
     }
-  })
-  .catch(function(err){
-    console.error("[Email] POST failed:", err);
-    showToast("Case closed ✓ (email status unknown)");
-  });
+  };
+  var s = document.createElement("script");
+  s.src = APPS_SCRIPT_URL + "?" + params.toString();
+  s.onerror = function(){
+    try{ delete window[cb]; }catch(e){}
+    console.error("[Email] JSONP load failed");
+    showToast("Case closed ✓ (email delivery unknown)");
+  };
+  document.head.appendChild(s);
+  setTimeout(function(){ try{ s.remove(); delete window[cb]; }catch(e){} }, 15000);
 }
 
 // ── OCR — extract UTR from uploaded image using regex on canvas ──
