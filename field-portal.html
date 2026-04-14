@@ -838,7 +838,8 @@ function submitUpdate(){
       closureNotes: (document.getElementById("us-notes")||{}).value||notes||"",
       pn          : currentUser.name  || (c ? c.pn  : "") || "",
       poc_email   : currentUser.email || (c ? c.poc_email : "") || "",
-      slipBase64  : window._slipBase64 || ""
+      slipBase64  : window._slipBase64 || "",
+      utrSlipUrl  : window._utrSlipUrl || ""   // Drive URL if slip already uploaded
     };
     console.log("[Close] Sending closure email with payload:", JSON.stringify(emailPayload).substring(0,200));
     triggerClosureEmail(emailPayload);
@@ -884,6 +885,7 @@ function uploadSlipToDrive(caseId, base64DataUrl, syncCbName){
         s2.src=APPS_SCRIPT_URL+"?"+p2.toString();
         document.head.appendChild(s2);
         setTimeout(function(){try{s2.remove();delete window[cb2];}catch(e){}},8000);
+        window._utrSlipUrl = data.url; // store for inclusion in closure email
         console.log("[Slip] Uploaded to Drive:", data.url);
       }
     })
@@ -10466,58 +10468,91 @@ function getSelfieForSheet(){
 
 // ── Case closure email trigger ────────────────────────────
 function triggerClosureEmail(caseData){
-  // JSONP GET — no-cors POST body is silently dropped by Apps Script
-  console.log("[Email] triggerClosureEmail CALLED", caseData);
-  try{
-    var ts = Date.now();
-    var cb = "fpEmailCb_" + ts;
-    // Slip image too large for JSONP URL — send via separate POST if available
-    // Store slip globally so Apps Script email can reference it if needed
-    var hasSlip = !!(caseData.slipBase64);
-    var params = "action=close_case_email" +
-      "&case_id="       + encodeURIComponent(caseData.id||"") +
-      "&category="      + encodeURIComponent(caseData.cat||"") +
-      "&fraud_type="    + encodeURIComponent(caseData.type||"") +
-      "&hub="           + encodeURIComponent(caseData.hub||"") +
-      "&city="          + encodeURIComponent(caseData.city||"") +
-      "&state="         + encodeURIComponent(caseData.state||"") +
-      "&value="         + encodeURIComponent(caseData.val||0) +
-      "&recovery="      + encodeURIComponent(caseData.recovery||0) +
-      "&utr="           + encodeURIComponent(caseData.utr||"") +
-      "&poc_name="      + encodeURIComponent(caseData.pn||"") +
-      "&poc_email="     + encodeURIComponent(caseData.poc_email||"") +
-      "&police_action=" + encodeURIComponent(caseData.policeAction||"") +
-      "&closure_notes=" + encodeURIComponent(caseData.closureNotes||"") +
-      "&has_slip="      + (hasSlip ? "1" : "0") +
-      "&callback="      + cb;
-    // Clear the global slip reference now
-    window._slipBase64 = null;
-    window[cb] = function(r){
-      try{delete window[cb];}catch(ex){}
-      if(r && r.ok){
-        showToast("📧 Closure email sent to manager");
-        console.log("[Email] Success:", r.msg, r.debug);
-      } else if(r){
-        // Show the actual error so we can debug
-        var errMsg = r.msg || "Unknown error";
-        showToast("⚠ Email error: " + errMsg.substring(0,60));
-        console.error("[Email] Failed:", r.msg, r.debug);
-      } else {
-        showToast("Case closed ✓ (email status unknown)");
-        console.warn("[Email] No response from Apps Script");
+  console.log("[Email] triggerClosureEmail CALLED", caseData.id);
+  var slipB64 = caseData.slipBase64 || "";
+  window._slipBase64 = null; // clear global
+
+  // If slip image present, upload to Drive first → get URL → then send email with both
+  // This ensures the email always has the attachment AND the Drive link
+  if(slipB64){
+    var rawB64   = slipB64.replace(/^data:[^;]+;base64,/,"");
+    var mimeType = (slipB64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+    fetch(APPS_SCRIPT_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        action:"upload_slip",
+        case_id: caseData.id||"",
+        base64: rawB64,
+        mime_type: mimeType,
+        agent_email: caseData.poc_email||""
+      })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(driveData){
+      var driveUrl = (driveData && driveData.url) ? driveData.url : "";
+      window._utrSlipUrl = driveUrl;
+      // Store Drive URL in sheet column
+      if(driveUrl){
+        var cb3="fpiSlipSh_"+Date.now();
+        var p3=new URLSearchParams({action:"update_case_status",case_id:caseData.id||"",utr_slip_url:driveUrl,callback:cb3});
+        window[cb3]=function(){try{delete window[cb3];}catch(e){}};
+        var s3=document.createElement("script");s3.src=APPS_SCRIPT_URL+"?"+p3.toString();
+        document.head.appendChild(s3);
+        setTimeout(function(){try{s3.remove();delete window[cb3];}catch(e){}},8000);
       }
-    };
-    var fullUrl = APPS_SCRIPT_URL + "?" + params;
-    console.log("[Email] JSONP URL:", fullUrl.substring(0,120)+"...");
-    var s = document.createElement("script");
-    s.src = fullUrl;
-    s.onerror = function(){
-      console.error("[Email] JSONP script load FAILED — network/CORS error");
-      try{delete window[cb];}catch(ex){}
-    };
-    document.head.appendChild(s);
-    setTimeout(function(){ try{s.remove(); delete window[cb];}catch(ex){} }, 12000);
-  }catch(e){}
+      // Now send closure email — with both base64 attachment AND Drive URL
+      _sendClosureEmailPost(caseData, slipB64, driveUrl);
+    })
+    .catch(function(err){
+      console.warn("[Email] Slip upload failed, sending email without attachment:", err);
+      _sendClosureEmailPost(caseData, slipB64, "");
+    });
+  } else {
+    // No slip — send email immediately
+    _sendClosureEmailPost(caseData, "", caseData.utrSlipUrl||"");
+  }
+}
+
+function _sendClosureEmailPost(caseData, slipB64, driveUrl){
+  var body = {
+    action        : "close_case_email",
+    case_id       : caseData.id       || "",
+    category      : caseData.cat      || "",
+    fraud_type    : caseData.type     || "",
+    hub           : caseData.hub      || "",
+    city          : caseData.city     || "",
+    state         : caseData.state    || "",
+    value         : caseData.val      || 0,
+    recovery      : caseData.recovery || 0,
+    utr           : caseData.utr      || "",
+    poc_name      : caseData.pn       || "",
+    poc_email     : caseData.poc_email|| "",
+    police_action : caseData.policeAction || "",
+    closure_notes : caseData.closureNotes || "",
+    slip_base64   : slipB64,
+    utr_slip_url  : driveUrl
+  };
+  fetch(APPS_SCRIPT_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data && data.ok){
+      showToast("📧 Closure email sent to manager");
+      console.log("[Email] Sent OK for", caseData.id, driveUrl?"(with slip)":"(no slip)");
+    } else {
+      var msg=(data&&data.error)?data.error:"Unknown error";
+      showToast("⚠ Email: "+msg.substring(0,60));
+      console.error("[Email] Failed:", data);
+    }
+  })
+  .catch(function(err){
+    console.error("[Email] POST failed:", err);
+    showToast("Case closed ✓ (email status unknown)");
+  });
 }
 
 // ── OCR — extract UTR from uploaded image using regex on canvas ──
