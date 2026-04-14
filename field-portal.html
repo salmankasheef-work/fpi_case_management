@@ -217,19 +217,10 @@ textarea.fc{resize:none;min-height:76px;}
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
-    <div class="login-logo" style="flex-direction:column;gap:6px">
-      <!-- Shadowfax brand on login screen -->
-      <div style="display:flex;align-items:center;gap:9px;justify-content:center">
-        <div style="width:36px;height:36px;background:#FF6B00;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(255,107,0,.3)">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-        </div>
-        <div>
-          <div style="font-family:'Syne','DM Sans',sans-serif;font-weight:800;font-size:18px;color:var(--navy);line-height:1.1">Shadowfax</div>
-          <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);letter-spacing:.16em;text-transform:uppercase">FPI Field Portal</div>
-        </div>
-      </div>
+    <div class="login-logo" style="flex-direction:column;align-items:center;gap:4px">
+      <img src="data:image/png;base64,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" alt="Shadowfax" style="width:64px;height:64px;border-radius:14px;object-fit:contain;display:block;">
+      <div style="font-family:'Syne','DM Sans',sans-serif;font-weight:800;font-size:15px;color:var(--navy);margin-top:4px">Shadowfax</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);letter-spacing:.16em;text-transform:uppercase">FPI Field Portal</div>
     </div>
     <div class="login-title">Sign In</div>
     <div class="login-sub">Enter your @shadowfax.in email</div>
@@ -487,7 +478,7 @@ textarea.fc{resize:none;min-height:76px;}
           <option value="FIR Filed">FIR Filed</option>
         </select>
       </div>
-      <div class="fgrp"><label class="fl">Update Notes</label><textarea class="fc" placeholder="Describe today's ground activity, findings, next steps..." id="us-notes"></textarea></div>
+      <div class="fgrp"><label class="fl">Remarks</label><textarea class="fc" placeholder="Describe today's ground activity, findings, next steps..." id="us-notes"></textarea></div>
 
       <!-- EVIDENCE UPLOAD -->
       <div style="margin-bottom:13px">
@@ -691,16 +682,30 @@ function markStartWorking(){
   const caseId = document.getElementById("us-id").textContent;
   const c = myCases.find(x=>x.id===caseId);
   if(!c) return;
-  // Move to "rider_inv" (actively working)
   c.st = "rider_inv";
-  // Persist to shared cases
+  // Persist to localStorage
   try{
     const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
     const idx = all.findIndex(x=>x.id===caseId);
-    if(idx>=0){all[idx].st="rider_inv";localStorage.setItem("fpi_cases",JSON.stringify(all));}
+    if(idx>=0){all[idx].st="rider_inv";}
+    else{all.push(Object.assign({},c,{st:"rider_inv"}));}
+    localStorage.setItem("fpi_cases",JSON.stringify(all));
+  }catch(e){}
+  // Sync to sheet so it persists after reload
+  try{
+    const swCb="fpiSwCb_"+Date.now();
+    const swParams=new URLSearchParams({
+      action:"update_case_status", case_id:caseId,
+      status:"Rider Investigation", callback:swCb
+    });
+    window[swCb]=function(r){try{delete window[swCb];}catch(e){}};
+    const swS=document.createElement("script");
+    swS.src=APPS_SCRIPT_URL+"?"+swParams.toString();
+    swS.onerror=()=>{try{delete window[swCb];}catch(e){}};
+    document.head.appendChild(swS);
+    setTimeout(()=>{try{swS.remove();delete window[swCb];}catch(e){}},8000);
   }catch(e){}
   document.getElementById("start-working-banner").style.display="none";
-  // Pre-select status
   document.getElementById("us-status").value="rider_inv";
   showToast("✅ Case marked as In Progress");
   renderOpenCases(); renderFeaturedCases();
@@ -776,9 +781,18 @@ function submitUpdate(){
     // Sync status update to Apps Script via JSONP GET (reliable cross-origin)
     try{
       const syncCb="fpiUpdCb_"+Date.now();
+      // Collect any attached photo data-URLs (store as count + links in sheet)
+      var photosAttached = window._attachedPhotos ? window._attachedPhotos.length : 0;
+      var photoLinks = ""; // Drive links if any; for now store count signal
+      if(window._attachedPhotos && window._attachedPhotos.length){
+        photoLinks = window._attachedPhotos.map(function(_,i){return "Photo"+(i+1);}).join(", ");
+      }
       const syncParams=new URLSearchParams({
         action:"update_case_status",
         case_id:caseId, status, recovery:amt, utr, police,
+        remarks:notes,
+        photo_count:photosAttached,
+        photo_links:photoLinks,
         callback:syncCb
       });
       window[syncCb]=function(r){try{delete window[syncCb];}catch(e){}};
