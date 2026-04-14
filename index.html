@@ -11652,13 +11652,24 @@ function closeDateReport(){
 function updateDateReportCount(){
   var from=document.getElementById("dr-from")?.value;
   var to  =document.getElementById("dr-to")?.value;
+  var filterCol=document.getElementById("dr-filter-col")?.value||"date_filed";
   var el  =document.getElementById("dr-count");
   if(!el)return;
   if(!from||!to){el.textContent="";return;}
   var f=new Date(from), t=new Date(to); t.setHours(23,59,59);
   var matched=cases.filter(function(c){
-    if(!c.date)return false;
-    var cd=new Date(c.date); return cd>=f&&cd<=t;
+    var dateToCheck;
+    if(filterCol==="updated_at"){
+      if(c.updates&&c.updates.length){
+        var last=c.updates[c.updates.length-1];
+        dateToCheck=last.date?new Date(last.date.split("/").reverse().join("-")):null;
+      }
+      if(!dateToCheck&&c.date) dateToCheck=new Date(c.date);
+    } else {
+      dateToCheck=c.date?new Date(c.date):null;
+    }
+    if(!dateToCheck||isNaN(dateToCheck.getTime()))return false;
+    return dateToCheck>=f&&dateToCheck<=t;
   });
   el.textContent=matched.length+" case"+(matched.length!==1?"s":"")+" in this range";
   el.style.color=matched.length>0?"var(--grn)":"var(--yel)";
@@ -11669,27 +11680,60 @@ document.addEventListener("change",function(e){
 function downloadDateReport(){
   var from=document.getElementById("dr-from")?.value;
   var to  =document.getElementById("dr-to")?.value;
+  var filterCol=document.getElementById("dr-filter-col")?.value||"date_filed";
   if(!from||!to){showToast("Select both from and to dates","warn");return;}
   var f=new Date(from), t=new Date(to); t.setHours(23,59,59);
+
   var filtered=cases.filter(function(c){
-    if(!c.date)return false;
-    var cd=new Date(c.date); return cd>=f&&cd<=t;
+    var dateToCheck;
+    if(filterCol==="updated_at"){
+      // Use last update date from updates array, fallback to date filed
+      if(c.updates&&c.updates.length){
+        var last=c.updates[c.updates.length-1];
+        dateToCheck=last.date?new Date(last.date.split("/").reverse().join("-")):null;
+      }
+      if(!dateToCheck&&c.date) dateToCheck=new Date(c.date);
+    } else {
+      dateToCheck=c.date?new Date(c.date):null;
+    }
+    if(!dateToCheck||isNaN(dateToCheck.getTime()))return false;
+    return dateToCheck>=f&&dateToCheck<=t;
   });
+
   if(!filtered.length){showToast("No cases in selected date range","warn");return;}
-  var headers=["Case ID","Date Filed","Category","Fraud Type","Hub","City","State",
+
+  var headers=[
+    "Case ID","Date Filed","Category","Fraud Type","Hub","City","State",
     "AWBs","Value (INR)","Priority","Status","FPI POC","POC Email",
-    "Recovery (INR)","UTR","Police Action","Customer Name","Updated At"];
+    "Recovery (INR)","UTR","Police Action","Customer Name",
+    "Remarks","Case Start Date","Case Closed Date","Case Ageing (Days)",
+    "UTR Slip Image","Last Updated"
+  ];
   var rows=[headers];
   filtered.forEach(function(c){
     var fpi=FPI.find(function(p){var pe=(p.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:p.id===c.poc;})||{};
     var statusText=(SL[c.st]||{l:c.st}).l;
+    // Last update date from updates array
+    var lastUpdated="";
+    if(c.updates&&c.updates.length) lastUpdated=c.updates[c.updates.length-1].date||"";
+    // Remarks — concatenate all update notes
+    var remarks="";
+    if(c.updates&&c.updates.length){
+      remarks=c.updates.filter(function(u){return u.notes;}).map(function(u){return "["+u.date+"] "+u.notes;}).join(" | ");
+    }
     rows.push([
       c.id||"", c.date||"", c.cat||"", c.type||"",
       c.hub||"", c.city||"", c.state||"",
       c.awbs||0, c.val||0, c.pri||"", statusText,
       fpi.name||c.pn||"Unassigned", c.poc_email||"",
       c.recovery||0, c.utr||"", c.policeAction||"",
-      c.cxName||"", c.date||""
+      c.cxName||"",
+      remarks,
+      c.startDate||"",
+      c.closedDate||"",
+      c.caseAgeing||"",
+      c.utrSlipUrl||"",
+      lastUpdated||c.date||""
     ]);
   });
   var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(",");}).join("\n");
@@ -12589,7 +12633,14 @@ document.addEventListener("DOMContentLoaded",()=>{
 <div id="date-report-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.55);align-items:center;justify-content:center" onclick="if(event.target===this)closeDateReport()">
   <div style="background:#fff;border-radius:14px;padding:24px;width:340px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2)">
     <div style="font-family:var(--disp);font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">Date-wise Report</div>
-    <div style="font-size:11px;color:var(--txt3);margin-bottom:18px">Download cases filed within a date range. Only essential columns included.</div>
+    <div style="font-size:11px;color:var(--txt3);margin-bottom:14px">Download cases within a date range.</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:10px;font-weight:600;color:var(--txt2);display:block;margin-bottom:5px">FILTER BY</label>
+      <select id="dr-filter-col" class="fc" style="font-size:13px" onchange="updateDateReportCount()">
+        <option value="date_filed">Date Filed</option>
+        <option value="updated_at">Last Updated</option>
+      </select>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
       <div><label style="font-size:10px;font-weight:600;color:var(--txt2);display:block;margin-bottom:4px">FROM DATE</label>
         <input type="date" id="dr-from" class="fc" style="font-size:13px"></div>
