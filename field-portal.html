@@ -759,96 +759,171 @@ function handlePhotos(inputId,galleryId,previewId){
   showToast(`${files.length} file${files.length>1?"s":""} attached ✓`);
 }
 function submitUpdate(){
-  const status=document.getElementById("us-status").value;
-  if(!status){showToast("Select a status first");return;}
-  const caseId=document.getElementById("us-id").textContent;
-  const notes =document.getElementById("us-notes").value.trim();
-  const utr   =document.getElementById("cl-utr").value.trim();
-  const amt   =parseInt(document.getElementById("cl-amt")?.value||"0")||0;
-  const police=document.getElementById("us-police").value;
-  // Update local case
-  const c=myCases.find(x=>x.id===caseId);
+  const status = document.getElementById("us-status").value;
+  if(!status){ showToast("Select a status first","warn"); return; }
+
+  const caseId = document.getElementById("us-id").textContent.trim();
+  const c      = myCases.find(x=>x.id===caseId);
+
+  // ── GUARD 1: Duplicate closure prevention ───────────────────────
+  if(status==="closed" && c && c.st==="closed"){
+    showToast("⚠ Case already closed — cannot close again","warn");
+    return;
+  }
+
+  const notes  = document.getElementById("us-notes").value.trim();
+  const utr    = document.getElementById("cl-utr").value.trim();
+  const amt    = parseInt(document.getElementById("cl-amt")?.value||"0")||0;
+  const police = document.getElementById("us-police").value;
+  const closureNotes = (document.getElementById("cl-notes")||{}).value||notes||"";
+  const closedDate   = (status==="closed") ? new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
+
+  // ── Collect evidence images from es-ph input ─────────────────────
+  var evidenceBase64List = [];
+  var esInput = document.getElementById("es-ph");
+  if(esInput && esInput.files && esInput.files.length){
+    var esFiles = Array.from(esInput.files);
+    esFiles.forEach(function(f){
+      var reader2 = new FileReader();
+      reader2.onload = function(ev){
+        evidenceBase64List.push({base64: ev.target.result, name: f.name, type: f.type});
+      };
+      reader2.readAsDataURL(f);
+    });
+  }
+
+  // ── Update local state immediately ──────────────────────────────
   if(c){
-    c.st=status;
-    if(police)c.policeAction=police;
-    if(amt>0)c.recovery=amt;
-    if(utr)c.utr=utr;
-    if(!c.updates)c.updates=[];
-    c.updates.push({date:new Date().toLocaleDateString("en-IN"),status,notes,police,recovery:amt,utr,photos:0});
-    // Refresh history tab immediately so update shows
-    renderHistory();
-    // Persist locally
+    c.st = status;
+    if(police)   c.policeAction = police;
+    if(amt > 0)  c.recovery     = amt;
+    if(utr)      c.utr          = utr;
+    if(closedDate) c.closedDate = closedDate;
+    if(!c.updates) c.updates    = [];
+    c.updates.push({date:new Date().toLocaleDateString("en-IN"),status,notes,police,recovery:amt,utr,photos:evidenceBase64List.length});
+    // Save to localStorage
     try{
-      const all=JSON.parse(localStorage.getItem("fpi_cases")||"[]");
-      const idx=all.findIndex(x=>x.id===caseId);
-      if(idx>=0){all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||""});}
+      const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+      const idx = all.findIndex(x=>x.id===caseId);
+      if(idx>=0){ all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||"",closedDate:c.closedDate||""}); }
       localStorage.setItem("fpi_cases",JSON.stringify(all));
     }catch(e){}
-    // Sync status update to Apps Script via JSONP GET (reliable cross-origin)
-    try{
-      const syncCb="fpiUpdCb_"+Date.now();
-      // Collect any attached photo data-URLs (store as count + links in sheet)
-      var photosAttached = window._attachedPhotos ? window._attachedPhotos.length : 0;
-      var photoLinks = ""; // Drive links if any; for now store count signal
-      if(window._attachedPhotos && window._attachedPhotos.length){
-        photoLinks = window._attachedPhotos.map(function(_,i){return "Photo"+(i+1);}).join(", ");
-      }
-      const closedDate = (status==="closed") ? new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
-      // If slip image uploaded, include it (base64) — Apps Script saves to Drive and returns link
-      const slipForSheet = (status==="closed" && window._slipBase64) ? window._slipBase64 : "";
-      const syncParams=new URLSearchParams({
-        action:"update_case_status",
-        case_id:caseId, status, recovery:amt, utr, police,
-        remarks:notes,
-        photo_count:photosAttached,
-        photo_links:photoLinks,
-        case_closed_date: closedDate,
-        utr_slip_image: slipForSheet ? "1" : "",
-        callback:syncCb
-      });
-      // Store slip separately for POST upload (base64 too large for URL)
-      if(slipForSheet){
-        uploadSlipToDrive(caseId, slipForSheet, syncCb);
-      }
-      window[syncCb]=function(r){try{delete window[syncCb];}catch(e){}};
-      const syncS=document.createElement("script");
-      syncS.src=APPS_SCRIPT_URL+"?"+syncParams.toString();
-      syncS.onerror=()=>{try{delete window[syncCb];}catch(e){}};
-      document.head.appendChild(syncS);
-      setTimeout(()=>{try{syncS.remove();delete window[syncCb];}catch(e){}},8000);
-    }catch(e){}
+    renderHistory();
   }
-  // Attach slip reference if uploaded
-  // _slipBase64 cleared by triggerClosureEmail after use
-  // If case closed, trigger email notification
+
+  // ── SHEET UPDATE FIRST — then email + UI ─────────────────────────
+  // Step 1: Sync base status fields via JSONP GET
+  const syncCb = "fpiUpdCb_"+Date.now();
+  const syncParams = new URLSearchParams({
+    action         : "update_case_status",
+    case_id        : caseId,
+    status         : status,
+    recovery       : amt,
+    utr            : utr,
+    police         : police,
+    remarks        : notes,
+    case_closed_date: closedDate,
+    callback       : syncCb
+  });
+
+  window[syncCb] = function(sheetResult){
+    try{ delete window[syncCb]; }catch(e){}
+
+    // Step 2: If closure — upload evidence images + slip, then trigger email
+    if(status==="closed"){
+      var slipB64   = window._slipBase64 || "";
+      var evidImgs  = evidenceBase64List.slice(); // snapshot
+
+      // Upload evidence images to Drive (fire-and-forget, store URLs in sheet)
+      if(evidImgs.length > 0){
+        _uploadEvidenceImages(caseId, evidImgs, function(evidUrls){
+          // Save evidence links to sheet
+          if(evidUrls.length){
+            var ecb = "fpiEvCb_"+Date.now();
+            var ep  = new URLSearchParams({action:"update_case_status",case_id:caseId,evidence_images:evidUrls.join(", "),callback:ecb});
+            window[ecb]=function(){try{delete window[ecb];}catch(e){}};
+            var es3=document.createElement("script");es3.src=APPS_SCRIPT_URL+"?"+ep.toString();document.head.appendChild(es3);
+            setTimeout(function(){try{es3.remove();delete window[ecb];}catch(e){}},8000);
+          }
+          // Now trigger email with first evidence image as attachment
+          _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evidUrls, closedDate);
+        });
+      } else {
+        _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, [], closedDate);
+      }
+    }
+  };
+
+  const syncS = document.createElement("script");
+  syncS.src   = APPS_SCRIPT_URL+"?"+syncParams.toString();
+  syncS.onerror = function(){ try{delete window[syncCb];}catch(e){} if(status==="closed") _doClosureEmail(caseId,c,amt,utr,police,closureNotes,window._slipBase64||"",[],closedDate); };
+  document.head.appendChild(syncS);
+  setTimeout(function(){ try{syncS.remove();delete window[syncCb];}catch(e){}},10000);
+
+  closeSheet("sh-update");
+
+  // ── UI update ────────────────────────────────────────────────────
   if(status==="closed"){
-    // Always use currentUser.email as the agent email — this is guaranteed to be set
-    // because the agent is logged in. c.poc_email may be empty if the case came from sheet.
-    var emailPayload = {
-      id          : caseId,
-      cat         : c ? (c.cat||""  ) : "",
-      type        : c ? (c.type||"" ) : "",
-      hub         : c ? (c.hub||""  ) : "",
-      city        : c ? (c.city||"" ) : "",
-      state       : c ? (c.state||"") : "",
-      val         : c ? (c.val||0   ) : 0,
-      recovery    : amt,
-      utr         : utr,
-      policeAction: police,
-      closureNotes: (document.getElementById("us-notes")||{}).value||notes||"",
-      pn          : currentUser.name  || (c ? c.pn  : "") || "",
-      poc_email   : currentUser.email || (c ? c.poc_email : "") || "",
-      slipBase64  : window._slipBase64 || "",
-      utrSlipUrl  : window._utrSlipUrl || ""   // Drive URL if slip already uploaded
-    };
-    console.log("[Close] Sending closure email with payload:", JSON.stringify(emailPayload).substring(0,200));
-    triggerClosureEmail(emailPayload);
-    showToast("✓ Case closed — sending notification…");
+    showToast("✓ Case closed — updating sheet & sending email…");
+    // Move to Closed tab after short delay so sheet write completes
+    setTimeout(function(){
+      renderPortalCases();
+      // Auto-navigate to closed tab
+      var closedBtn=document.querySelector(".nb[onclick*=\"closed-cases\"]");
+      if(closedBtn) closedBtn.click();
+    }, 800);
   } else {
     showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
+    renderPortalCases();
   }
-  closeSheet("sh-update");
-  renderPortalCases();
+}
+
+// ── Upload evidence images to Drive (parallel) ────────────────────
+function _uploadEvidenceImages(caseId, imgList, callback){
+  var urls   = [];
+  var pending = imgList.length;
+  if(!pending){ callback([]); return; }
+  imgList.forEach(function(img){
+    var rawB64   = img.base64.replace(/^data:[^;]+;base64,/,"");
+    var mimeType = (img.base64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+    fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({action:"upload_slip",case_id:caseId,base64:rawB64,mime_type:mimeType,agent_email:currentUser.email||""})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data && data.url) urls.push(data.url);
+      pending--;
+      if(pending===0) callback(urls);
+    })
+    .catch(function(){ pending--; if(pending===0) callback(urls); });
+  });
+}
+
+// ── Fire closure email after sheet is updated ─────────────────────
+function _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evidUrls, closedDate){
+  var emailPayload = {
+    id          : caseId,
+    cat         : c ? (c.cat ||"") : "",
+    type        : c ? (c.type||"") : "",
+    hub         : c ? (c.hub ||"") : "",
+    city        : c ? (c.city||"") : "",
+    state       : c ? (c.state||"") : "",
+    val         : c ? (c.val ||0)  : 0,
+    recovery    : amt,
+    utr         : utr,
+    policeAction: police,
+    closureNotes: closureNotes,
+    pn          : currentUser.name  || (c ? c.pn        : "") || "",
+    poc_email   : currentUser.email || (c ? c.poc_email : "") || "",
+    slipBase64  : slipB64,
+    utrSlipUrl  : window._utrSlipUrl || "",
+    evidenceUrls: evidUrls.join(", "),
+    closedDate  : closedDate
+  };
+  console.log("[Close] Triggering closure email for", caseId);
+  triggerClosureEmail(emailPayload);
 }
 
 // ── OCR: extract UTR from payment slip image ──────────────
@@ -11144,8 +11219,43 @@ function submitRecovery(){
   renderPortalCases();
 }
 function submitEvidence(){
+  // Collect base64 images from the evidence sheet
+  var esInput = document.getElementById("es-ph");
+  var caption  = (document.getElementById("es-caption")||{}).value||"";
+  var caseId   = (document.getElementById("es-id")||{}).textContent||"";
+
+  if(esInput && esInput.files && esInput.files.length > 0){
+    var files = Array.from(esInput.files);
+    var loaded = 0;
+    var evidList = [];
+    files.forEach(function(f){
+      var reader3 = new FileReader();
+      reader3.onload = function(ev){
+        evidList.push({base64:ev.target.result, name:f.name, type:f.type});
+        loaded++;
+        if(loaded === files.length){
+          // Upload all to Drive and write URLs to sheet
+          _uploadEvidenceImages(caseId, evidList, function(urls){
+            if(urls.length && caseId){
+              var ecb2 = "fpiEvCb2_"+Date.now();
+              var note  = caption ? caption+" | " : "";
+              var ep2   = new URLSearchParams({action:"update_case_status",case_id:caseId,evidence_images:note+urls.join(", "),callback:ecb2});
+              window[ecb2]=function(){try{delete window[ecb2];}catch(e){}};
+              var es4=document.createElement("script");es4.src=APPS_SCRIPT_URL+"?"+ep2.toString();document.head.appendChild(es4);
+              setTimeout(function(){try{es4.remove();delete window[ecb2];}catch(e){}},8000);
+              showToast("✓ "+urls.length+" evidence image"+(urls.length>1?"s":"")+" uploaded to Drive");
+            } else {
+              showToast("✓ Evidence submitted");
+            }
+          });
+        }
+      };
+      reader3.readAsDataURL(f);
+    });
+  } else {
+    showToast("✓ Evidence submitted");
+  }
   closeSheet("sh-evidence");
-  showToast("✓ Evidence submitted");
 }
 
 // ── Case status categories ────────────────────────────────
@@ -11329,7 +11439,7 @@ function renderProfile(){
   const total=myCases.length;
   const totalVal=myCases.reduce((s,c)=>s+(c.val||0),0);
   const recoveredVal=myCases.reduce((s,c)=>s+(c.recovery||0),0);
-  const recRate=totalVal>0?Math.round((recoveredVal/totalVal)*100):0;
+  const recRate=totalVal>0?Math.min(100,Math.round((recoveredVal/totalVal)*100)):0;
   const catCounts={};
   myCases.forEach(c=>{catCounts[c.cat]=(catCounts[c.cat]||0)+1;});
   const maxCat=Math.max(...Object.values(catCounts),1);
@@ -11342,7 +11452,7 @@ function renderProfile(){
     <div class="psgrid">
       <div class="ps"><div class="psv" style="color:var(--red)">${active}</div><div class="psl">Active Cases</div></div>
       <div class="ps"><div class="psv" style="color:var(--grn)">${closed}</div><div class="psl">Closed</div></div>
-      <div class="ps"><div class="psv" style="color:var(--yel)">${recRate}%</div><div class="psl">Recovery Rate</div></div>
+      <div class="ps"><div class="psv" style="color:var(--yel);font-size:${recRate===100?'18px':'22px'}">${recRate}%</div><div class="psl">Recovery Rate</div></div>
       <div class="ps"><div class="psv" style="color:var(--acc)">${total}</div><div class="psl">Total Cases</div></div>
     </div>
     ${Object.keys(catCounts).length?`
