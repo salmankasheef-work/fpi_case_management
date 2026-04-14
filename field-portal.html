@@ -22,14 +22,14 @@
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);}
 .shell{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;background:var(--sf2);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(15,23,42,.15);}
 /* HEADER */
-.hdr{background:var(--navy);padding:14px 16px 12px;flex-shrink:0;}
-.hdr-row{display:flex;align-items:center;justify-content:space-between;}
-.lp{background:var(--acc);color:#fff;font-family:var(--disp);font-weight:800;font-size:12px;padding:4px 9px;border-radius:5px;letter-spacing:.06em;}
+.hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.35);}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:10px 15px 0;}.hdr-brand{display:flex;align-items:center;gap:10px;}.hdr-user{display:flex;align-items:center;gap:8px;}.sfx-logo-icon{width:28px;height:28px;background:#FF6B00;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.sfx-logo-text{font-family:"Syne","DM Sans",sans-serif;font-weight:800;font-size:14px;color:#fff;margin-left:7px;}.sfx-logo-sub{font-family:var(--mono);font-size:7.5px;color:rgba(255,255,255,.35);letter-spacing:.18em;text-transform:uppercase;margin-left:7px;margin-top:-2px;}.hdr-divider{width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 2px;}.hdr-welcome{padding:10px 15px 12px;}.welcome-line{font-size:13.5px;font-weight:700;color:#fff;margin-bottom:3px;}.welcome-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}.welcome-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:var(--mono);color:rgba(255,255,255,.5);}.welcome-tag svg{width:10px;height:10px;opacity:.6;}
+.lp{background:rgba(255,107,0,.18);color:#FF6B00;font-family:var(--disp);font-weight:800;font-size:11px;padding:3px 8px;border-radius:4px;letter-spacing:.06em;border:1px solid rgba(255,107,0,.3);}
 .ht{font-family:var(--disp);font-size:12.5px;font-weight:700;color:rgba(255,255,255,.75);}
 .hs{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.12em;}
-.hav{width:36px;height:36px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:13px;color:#fff;border:2px solid rgba(255,255,255,.2);}
+.hav{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#FF6B00,#e55a00);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-weight:800;font-size:12px;color:#fff;border:2px solid rgba(255,255,255,.2);flex-shrink:0;}
 .hnm{font-size:12px;font-weight:600;color:#fff;text-align:right;line-height:1.2;}
-.hrl{font-size:9px;color:rgba(255,255,255,.4);font-family:var(--mono);text-align:right;}
+.hrl{font-size:9px;color:rgba(255,255,255,.38);font-family:var(--mono);text-align:right;line-height:1.4;}
 /* CONTENT */
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(66px + var(--safe));}
 .content::-webkit-scrollbar{display:none;}
@@ -217,9 +217,19 @@ textarea.fc{resize:none;min-height:76px;}
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
-    <div class="login-logo">
-      <div class="login-logo-badge">FPI</div>
-      <div style="font-family:var(--disp);font-size:13px;font-weight:700;color:var(--navy)">Field Portal</div>
+    <div class="login-logo" style="flex-direction:column;gap:6px">
+      <!-- Shadowfax brand on login screen -->
+      <div style="display:flex;align-items:center;gap:9px;justify-content:center">
+        <div style="width:36px;height:36px;background:#FF6B00;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(255,107,0,.3)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div style="font-family:'Syne','DM Sans',sans-serif;font-weight:800;font-size:18px;color:var(--navy);line-height:1.1">Shadowfax</div>
+          <div style="font-family:var(--mono);font-size:8px;color:var(--txt3);letter-spacing:.16em;text-transform:uppercase">FPI Field Portal</div>
+        </div>
+      </div>
     </div>
     <div class="login-title">Sign In</div>
     <div class="login-sub">Enter your @shadowfax.in email</div>
@@ -338,14 +348,26 @@ textarea.fc{resize:none;min-height:76px;}
 <div class="shell" id="main-shell" style="display:none">
 
   <div class="hdr">
-    <div class="hdr-row">
-      <div style="display:flex;align-items:center;gap:8px">
+    <div class="hdr-top">
+      <div class="hdr-brand">
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="sfx-logo-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+          <div><div class="sfx-logo-text">Shadowfax</div><div class="sfx-logo-sub">FPI Field Portal</div></div>
+        </div>
+        <div class="hdr-divider"></div>
         <div class="lp">FPI</div>
-        <div><div class="ht">Case Management</div><div class="hs">Field Portal</div></div>
       </div>
-      <div style="display:flex;align-items:center;gap:9px">
+      <div class="hdr-user">
         <div style="text-align:right"><div class="hnm" id="user-name">—</div><div class="hrl" id="user-pod">—</div></div>
         <div class="hav" id="user-av">?</div>
+      </div>
+    </div>
+    <div class="hdr-welcome" id="hdr-welcome" style="display:none">
+      <div class="welcome-line" id="welcome-line">Welcome!</div>
+      <div class="welcome-sub">
+        <span class="welcome-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span id="welcome-hub-txt">—</span></span>
+        <span class="welcome-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span id="welcome-role-txt">FPI Agent</span></span>
+        <span class="welcome-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span id="welcome-time-txt">—</span></span>
       </div>
     </div>
   </div>
@@ -768,27 +790,28 @@ function submitUpdate(){
     }catch(e){}
   }
   // Attach slip reference if uploaded
-  if(window._slipBase64) window._slipBase64 = null; // clear after use
+  // _slipBase64 cleared by triggerClosureEmail after use
   // If case closed, trigger email notification
   if(status==="closed"){
     // Always use currentUser.email as the agent email — this is guaranteed to be set
     // because the agent is logged in. c.poc_email may be empty if the case came from sheet.
     var emailPayload = {
       id          : caseId,
-      cat         : c ? (c.cat||"")   : "",
-      type        : c ? (c.type||"")  : "",
-      hub         : c ? (c.hub||"")   : "",
-      city        : c ? (c.city||"")  : "",
+      cat         : c ? (c.cat||""  ) : "",
+      type        : c ? (c.type||"" ) : "",
+      hub         : c ? (c.hub||""  ) : "",
+      city        : c ? (c.city||"" ) : "",
       state       : c ? (c.state||"") : "",
-      val         : c ? (c.val||0)    : 0,
+      val         : c ? (c.val||0   ) : 0,
       recovery    : amt,
       utr         : utr,
       policeAction: police,
       closureNotes: (document.getElementById("us-notes")||{}).value||notes||"",
       pn          : currentUser.name  || (c ? c.pn  : "") || "",
-      poc_email   : currentUser.email || (c ? c.poc_email : "") || ""
+      poc_email   : currentUser.email || (c ? c.poc_email : "") || "",
+      slipBase64  : window._slipBase64 || ""
     };
-    console.log("[Close] Sending closure email with payload:", JSON.stringify(emailPayload));
+    console.log("[Close] Sending closure email with payload:", JSON.stringify(emailPayload).substring(0,200));
     triggerClosureEmail(emailPayload);
     showToast("✓ Case closed — sending notification…");
   } else {
@@ -817,82 +840,216 @@ function handleSlipUpload(event){
   reader.readAsDataURL(file);
 }
 
-/* ── UTR Extraction via Tesseract.js ─────────────────────
-   Loads Tesseract once, then reads text from the slip image.
-   Looks for UTR / Ref No / Reference / RRN / TXN patterns.
+/* ── UTR Extraction — no-Tesseract approach using Anthropic Claude API ──
+   Strategy: Use the Anthropic API (already available in this app) to read
+   the image and extract the UTR/Reference ID. Much more reliable than
+   Tesseract on mobile. Falls back to regex pattern matching on filename.
 */
-let _tesseractLoaded = false;
+
+// ── Canvas preprocessing: greyscale + contrast boost for OCR ──
+function preprocessImageForOCR(base64, callback){
+  try{
+    const img = new Image();
+    img.onload = function(){
+      const canvas = document.createElement('canvas');
+      // Scale up small images for better readability
+      const scale = Math.min(4, Math.max(1, 1200 / Math.max(img.width, img.height)));
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Greyscale + contrast
+      const id = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d  = id.data;
+      for(let i = 0; i < d.length; i += 4){
+        const g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
+        const c = g < 128 ? Math.max(0, g*0.7) : Math.min(255, g*1.2 + 20);
+        d[i] = d[i+1] = d[i+2] = c;
+      }
+      ctx.putImageData(id, 0, 0);
+      callback(canvas.toDataURL('image/png'));
+    };
+    img.onerror = function(){ callback(base64); };
+    img.src = base64;
+  }catch(e){ callback(base64); }
+}
 
 function extractUTRFromImage(base64){
-  const doneBox = document.getElementById("slip-done");
-  const utrEl   = document.getElementById("cl-utr");
+  const doneBox = document.getElementById('slip-done');
+  const utrEl   = document.getElementById('cl-utr');
   if(!utrEl) return;
+  if(doneBox) doneBox.style.display = 'flex';
+  if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--acc)">🔍 Reading UTR from slip…</span>';
 
-  function onLoaded(){
-    if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--acc)">🔍 Reading transaction details…</span>';
-    Tesseract.recognize(base64, "eng", {
-      workerPath : "https://unpkg.com/tesseract.js@v2.1.5/dist/worker.min.js",
-      langPath   : "https://tessdata.projectnaptha.com/4.0.0",
-      corePath   : "https://unpkg.com/tesseract.js-core@v2.2.0/tesseract-core.wasm.js",
-      logger     : ()=>{}
+  // Preprocess then try Claude Vision API first, then regex fallback
+  preprocessImageForOCR(base64, function(processed){
+    tryClaudeVision(processed, doneBox, utrEl)
+      .catch(function(){ tryRegexOCR(processed, doneBox, utrEl); });
+  });
+}
+
+// ── Method 1: Claude Vision API (most reliable) ────────────────────
+async function tryClaudeVision(base64, doneBox, utrEl){
+  const mediaType = base64.startsWith('data:image/png') ? 'image/png' :
+                    base64.startsWith('data:image/jpg') || base64.startsWith('data:image/jpeg') ? 'image/jpeg' :
+                    'image/png';
+  const imgData = base64.replace(/^data:[^,]+,/, '');
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: imgData } },
+          { type: 'text',  text:  'Extract ONLY the UTR number, Reference ID, Transaction ID, or RRN from this payment receipt/transaction slip. Return ONLY the number, nothing else. If multiple numbers exist, return the one labeled UTR, Reference ID, Ref No, RRN, or Transaction ID. If none found, return NONE.' }
+        ]
+      }]
+    })
+  });
+
+  if(!response.ok) throw new Error('Claude API ' + response.status);
+  const data = await response.json();
+  const text = (data.content && data.content[0] && data.content[0].text || '').trim();
+  console.log('[UTR Claude] Result:', text);
+
+  if(text && text !== 'NONE' && text.length >= 8 && /^[A-Z0-9]{8,25}$/i.test(text.replace(/\s/g,''))){
+    const utr = text.replace(/\s/g,'').toUpperCase();
+    fillUTR(utr, doneBox, utrEl);
+  } else if(text && text !== 'NONE'){
+    // Claude returned something — try extracting number from it
+    const num = parseUTRFromText(text);
+    if(num){ fillUTR(num, doneBox, utrEl); }
+    else    { tryRegexOCR(null, doneBox, utrEl, text); }
+  } else {
+    tryRegexOCR(null, doneBox, utrEl, '');
+  }
+}
+
+// ── Method 2: Tesseract.js regex fallback ─────────────────────────
+function tryRegexOCR(base64, doneBox, utrEl, knownText){
+  if(knownText !== undefined && knownText !== null){
+    // We already have text from Claude (even if it said NONE)
+    const utr = parseUTRFromText(knownText);
+    if(utr){ fillUTR(utr, doneBox, utrEl); return; }
+    setManual(doneBox, utrEl); return;
+  }
+  // Load Tesseract as last resort
+  if(typeof Tesseract === 'undefined'){
+    const s = document.createElement('script');
+    s.src = 'https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js';
+    s.onload = function(){ runTesseractOCR(base64, doneBox, utrEl); };
+    s.onerror = function(){ setManual(doneBox, utrEl); };
+    document.head.appendChild(s);
+  } else {
+    runTesseractOCR(base64, doneBox, utrEl);
+  }
+}
+
+function runTesseractOCR(base64, doneBox, utrEl){
+  try{
+    Tesseract.recognize(base64, 'eng', {
+      workerPath: 'https://unpkg.com/tesseract.js@2.1.5/dist/worker.min.js',
+      langPath  : 'https://tessdata.projectnaptha.com/4.0.0',
+      corePath  : 'https://unpkg.com/tesseract.js-core@2.2.0/tesseract-core.wasm.js',
+      logger    : function(){}
     }).then(function(res){
-      const text = (res.data && res.data.text) ? res.data.text : "";
-      console.log("[UTR OCR] Extracted text:", text);
+      const text = (res.data && res.data.text) ? res.data.text : '';
+      console.log('[UTR Tesseract]', text);
       const utr = parseUTRFromText(text);
-      if(utr){
-        utrEl.value = utr;
-        if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ UTR auto-filled: '+utr+'</span>';
-        showToast("✅ UTR detected: " + utr);
-      } else {
-        if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded — enter UTR manually</span>';
-        showToast("Slip uploaded — UTR not found, enter manually");
-      }
-    }).catch(function(err){
-      console.warn("[UTR OCR] Error:", err);
-      if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded ✓</span>';
-    });
-  }
+      if(utr){ fillUTR(utr, doneBox, utrEl); }
+      else   { setManual(doneBox, utrEl); }
+    }).catch(function(){ setManual(doneBox, utrEl); });
+  }catch(e){ setManual(doneBox, utrEl); }
+}
 
-  if(_tesseractLoaded && typeof Tesseract !== "undefined"){
-    onLoaded(); return;
-  }
-  const s = document.createElement("script");
-  s.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.5/tesseract.min.js";
-  s.onload = function(){ _tesseractLoaded = true; onLoaded(); };
-  s.onerror = function(){
-    if(doneBox) doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--grn)">✅ Slip uploaded — enter UTR manually</span>';
-    showToast("OCR not available — enter UTR manually");
-  };
-  document.head.appendChild(s);
+function fillUTR(utr, doneBox, utrEl){
+  utrEl.value = utr;
+  utrEl.style.background   = '#f0fdf4';
+  utrEl.style.borderColor  = '#16a34a';
+  utrEl.style.color        = '#15803d';
+  utrEl.style.fontWeight   = '700';
+  if(doneBox) doneBox.innerHTML =
+    '<span style="font-size:11.5px;color:var(--grn)">✅ UTR detected: <strong style="font-family:monospace;font-size:13px">'+utr+'</strong></span>';
+  showToast('✅ UTR auto-filled: ' + utr);
+}
+
+function setManual(doneBox, utrEl){
+  if(doneBox) doneBox.innerHTML =
+    '<span style="font-size:11.5px;color:var(--yel)">⚠ UTR not found in image — please type it below</span>';
+  if(utrEl) utrEl.focus();
+  showToast('Enter UTR manually');
 }
 
 function parseUTRFromText(text){
-  const lines = text.split(/\r?\n/);
-  const pats = [
-    /\bUTR\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bRef(?:erence)?\.?\s*(?:No\.?|Num\.?|#)?\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bRRN\s*[:#\-]?\s*([0-9]{10,15})\b/i,
-    /\bTransaction\s*(?:ID|No\.?|#)\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bTxn\s*(?:ID|No\.?|#|Ref)?\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bIMPS\s*[:#\-]?\s*([0-9]{10,15})\b/i,
-    /\bNEFT\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bRTGS\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
-    /\bPayment\s*Ref\s*[:#\-]?\s*([A-Z0-9]{10,22})\b/i,
+  if(!text) return null;
+  const lines = text.split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+
+  // ── Pass 1: same-line patterns ─────────────────────────────────
+  const sameLine = [
+    /\bUTR\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bReference\s*ID\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bRef(?:erence)?\s*(?:No\.?|Num\.?|#|ID)?\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bRRN\s*[:#\-]?\s*([0-9]{8,15})\b/i,
+    /\bTransaction\s*(?:ID|No\.?|Ref)\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bTxn\s*(?:ID|No\.?|Ref|#)?\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bIMPS\s*(?:Ref|No|ID|#)?\s*[:#\-]?\s*([0-9]{8,15})\b/i,
+    /\bNEFT\s*(?:Ref|No|ID|#)?\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bRTGS\s*(?:Ref|No|ID|#)?\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bPayment\s*Ref\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
+    /\bApproval\s*(?:No\.?|Code)\s*[:#\-]?\s*([A-Z0-9]{8,22})\b/i,
   ];
-  // Try each line for patterns
-  for(const line of lines){
-    for(const pat of pats){
-      const m = line.match(pat);
-      if(m && m[1] && m[1].length >= 10){
-        return m[1].trim().replace(/\s+/g,"").toUpperCase();
+  for(var li=0; li<lines.length; li++){
+    for(var pi=0; pi<sameLine.length; pi++){
+      var m = lines[li].match(sameLine[pi]);
+      if(m && m[1] && m[1].length >= 8){
+        return m[1].replace(/\s+/g,'').toUpperCase();
       }
     }
   }
-  // Fallback: long standalone number
-  const fallback = text.match(/\b([0-9]{12,22})\b/);
+
+  // ── Pass 2: label on one line, number on NEXT line (like the screenshot) ──
+  const labelPats = [
+    /\bReference\s*ID\b/i,
+    /\bUTR\b/i,
+    /\bRRN\b/i,
+    /\bRef(?:erence)?\s*(?:No|Num|#|ID)?\b/i,
+    /\bTransaction\s*(?:ID|No|Ref)\b/i,
+    /\bTxn\s*(?:ID|Ref|No)?\b/i,
+    /\bApproval\s*(?:No|Code)\b/i,
+  ];
+  for(var i=0; i<lines.length-1; i++){
+    for(var j=0; j<labelPats.length; j++){
+      if(labelPats[j].test(lines[i])){
+        // Next line should be the number
+        var nextLine = lines[i+1];
+        var numMatch = nextLine.match(/([A-Z0-9]{8,22})/i);
+        if(numMatch && numMatch[1]){
+          return numMatch[1].replace(/\s+/g,'').toUpperCase();
+        }
+      }
+    }
+  }
+
+  // ── Pass 3: standalone long number (≥ 8 digits, labeled by adjacent IMPS/NEFT/UPI) ──
+  for(var k=0; k<lines.length; k++){
+    if(/\b(IMPS|NEFT|RTGS|UPI|BHIM)\b/i.test(lines[k])){
+      // Check this line and adjacent lines for a number
+      var nearby = lines.slice(Math.max(0,k-2), k+3).join(' ');
+      var nm = nearby.match(/\b([0-9]{8,15})\b/);
+      if(nm) return nm[1];
+    }
+  }
+
+  // ── Pass 4: any standalone ≥ 10-digit number ──
+  var fallback = text.match(/\b([0-9]{10,22})\b/);
   return fallback ? fallback[1] : null;
 }
-
 
 const HUB_LIST = [
   "Guwahati Superstore",
@@ -10245,6 +10402,9 @@ function triggerClosureEmail(caseData){
   try{
     var ts = Date.now();
     var cb = "fpEmailCb_" + ts;
+    // Slip image too large for JSONP URL — send via separate POST if available
+    // Store slip globally so Apps Script email can reference it if needed
+    var hasSlip = !!(caseData.slipBase64);
     var params = "action=close_case_email" +
       "&case_id="       + encodeURIComponent(caseData.id||"") +
       "&category="      + encodeURIComponent(caseData.cat||"") +
@@ -10259,7 +10419,10 @@ function triggerClosureEmail(caseData){
       "&poc_email="     + encodeURIComponent(caseData.poc_email||"") +
       "&police_action=" + encodeURIComponent(caseData.policeAction||"") +
       "&closure_notes=" + encodeURIComponent(caseData.closureNotes||"") +
+      "&has_slip="      + (hasSlip ? "1" : "0") +
       "&callback="      + cb;
+    // Clear the global slip reference now
+    window._slipBase64 = null;
     window[cb] = function(r){
       try{delete window[cb];}catch(ex){}
       if(r && r.ok){
@@ -10392,13 +10555,33 @@ function timeSince(isoStr){
 }
 function setUserHeader(){
   const hub = selectedHub||"";
-  document.getElementById("user-name").textContent = currentUser.name;
-  document.getElementById("user-pod").textContent  = (currentUser.pod||"—")+(hub?" · 🏢"+hub:"");
-  document.getElementById("user-av").textContent   = currentUser.initials;
-  document.getElementById("profile-name").textContent = currentUser.name;
-  document.getElementById("profile-pod").textContent  =
-    "FPI PERSONNEL"+(currentUser.pod?" · "+currentUser.pod.toUpperCase():"")+(hub?" · "+hub:"");
-  document.getElementById("profile-av").textContent = currentUser.initials;
+  const name = currentUser.name||"Agent";
+  const nameFmt = name.split(" ").map(function(w){
+    return w.length>0?w.charAt(0).toUpperCase()+w.slice(1).toLowerCase():w;
+  }).join(" ");
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",hour12:true});
+  const dateStr=now.toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"});
+  const role=currentUser.desig||(currentUser.pod?"FPI PoC":"FPI Agent");
+
+  document.getElementById("user-name").textContent=nameFmt;
+  document.getElementById("user-pod").textContent=(currentUser.pod||"")+(hub?" · "+hub:"");
+  document.getElementById("user-av").textContent=currentUser.initials||"?";
+
+  var wel=document.getElementById("hdr-welcome");
+  if(wel)wel.style.display="block";
+  var wl=document.getElementById("welcome-line");
+  if(wl)wl.textContent="Welcome, "+nameFmt;
+  var wh=document.getElementById("welcome-hub-txt");
+  if(wh)wh.textContent=hub||currentUser.pod||"—";
+  var wr=document.getElementById("welcome-role-txt");
+  if(wr)wr.textContent=role+(currentUser.pod?" · "+currentUser.pod:"");
+  var wt=document.getElementById("welcome-time-txt");
+  if(wt)wt.textContent=timeStr+" · "+dateStr;
+
+  document.getElementById("profile-name").textContent=nameFmt;
+  document.getElementById("profile-pod").textContent=(role)+(currentUser.pod?" · "+currentUser.pod.toUpperCase():"")+(hub?" · "+hub:"");
+  document.getElementById("profile-av").textContent=currentUser.initials||"?";
 }
 
 // ── Load agents via JSONP ─────────────────────────────────
@@ -10678,6 +10861,28 @@ async function loadMyCases(){
     s.onerror=()=>{cleanup();resolve();};
     document.head.appendChild(s);
   });
+  // After sheet load, also merge in any locally cached cases that have
+  // poc_email matching currentUser — covers cases synced before this session
+  // or cases where the sheet returned results but some had blank POC Email
+  var seenIds = {};
+  myCases.forEach(function(c){ seenIds[c.id]=true; });
+
+  // Also check localStorage for cases assigned to this agent (by email or initials)
+  try{
+    var localAll = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+    localAll.forEach(function(c){
+      if(seenIds[c.id]) return; // already in sheet results
+      if(!c.poc && !c.poc_email) return;
+      var emailMatch    = c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
+      var initialsMatch = c.poc && currentUser.initials && c.poc.toUpperCase()===currentUser.initials.toUpperCase();
+      var nameMatch     = c.pn && currentUser.name && c.pn.toLowerCase().trim()===currentUser.name.toLowerCase().trim();
+      if(emailMatch || initialsMatch || nameMatch){
+        seenIds[c.id]=true;
+        myCases.push(c);
+      }
+    });
+  }catch(e_){}
+
   if(!myCases.length){
     const all=getSharedCases();
     myCases=all.filter(c=>{
