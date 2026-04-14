@@ -23,7 +23,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--sa
 .shell{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:430px;margin:0 auto;background:var(--sf2);position:relative;overflow:hidden;box-shadow:0 0 40px rgba(15,23,42,.15);}
 /* HEADER */
 .hdr{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.35);}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:10px 15px 0;}.hdr-brand{display:flex;align-items:center;gap:10px;}.hdr-user{display:flex;align-items:center;gap:8px;}.sfx-logo-icon{width:28px;height:28px;background:#FF6B00;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.sfx-logo-text{font-family:"Syne","DM Sans",sans-serif;font-weight:800;font-size:14px;color:#fff;margin-left:7px;}.sfx-logo-sub{font-family:var(--mono);font-size:7.5px;color:rgba(255,255,255,.35);letter-spacing:.18em;text-transform:uppercase;margin-left:7px;margin-top:-2px;}.hdr-divider{width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 2px;}.hdr-welcome{padding:10px 15px 12px;}.welcome-line{font-size:13.5px;font-weight:700;color:#fff;margin-bottom:3px;}.welcome-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}.welcome-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:var(--mono);color:rgba(255,255,255,.5);}.welcome-tag svg{width:10px;height:10px;opacity:.6;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:10px 15px 0;}.hdr-brand{display:flex;align-items:center;gap:10px;}.hdr-user{display:flex;align-items:center;gap:8px;}.sfx-logo-icon{width:28px;height:28px;background:#16a34a;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}.sfx-logo-text{font-family:"Syne","DM Sans",sans-serif;font-weight:800;font-size:14px;color:#fff;margin-left:7px;}.sfx-logo-sub{font-family:var(--mono);font-size:7.5px;color:rgba(255,255,255,.35);letter-spacing:.18em;text-transform:uppercase;margin-left:7px;margin-top:-2px;}.hdr-divider{width:1px;height:24px;background:rgba(255,255,255,.15);margin:0 2px;}.hdr-welcome{padding:10px 15px 12px;}.welcome-line{font-size:13.5px;font-weight:700;color:#fff;margin-bottom:3px;}.welcome-sub{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}.welcome-tag{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;font-family:var(--mono);color:rgba(255,255,255,.5);}.welcome-tag svg{width:10px;height:10px;opacity:.6;}
 .lp{background:rgba(255,107,0,.18);color:#FF6B00;font-family:var(--disp);font-weight:800;font-size:11px;padding:3px 8px;border-radius:4px;letter-spacing:.06em;border:1px solid rgba(255,107,0,.3);}
 .ht{font-family:var(--disp);font-size:12.5px;font-weight:700;color:rgba(255,255,255,.75);}
 .hs{font-family:var(--mono);font-size:8px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.12em;}
@@ -682,21 +682,25 @@ function markStartWorking(){
   const caseId = document.getElementById("us-id").textContent;
   const c = myCases.find(x=>x.id===caseId);
   if(!c) return;
+  const startDate = new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
   c.st = "rider_inv";
+  c.startDate = startDate;
   // Persist to localStorage
   try{
     const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
     const idx = all.findIndex(x=>x.id===caseId);
-    if(idx>=0){all[idx].st="rider_inv";}
-    else{all.push(Object.assign({},c,{st:"rider_inv"}));}
+    if(idx>=0){all[idx].st="rider_inv"; all[idx].startDate=startDate;}
+    else{all.push(Object.assign({},c,{st:"rider_inv",startDate}));}
     localStorage.setItem("fpi_cases",JSON.stringify(all));
   }catch(e){}
-  // Sync to sheet so it persists after reload
+  // Sync to sheet — status + Case Start Date
   try{
     const swCb="fpiSwCb_"+Date.now();
     const swParams=new URLSearchParams({
       action:"update_case_status", case_id:caseId,
-      status:"Rider Investigation", callback:swCb
+      status:"Rider Investigation",
+      case_start_date:startDate,
+      callback:swCb
     });
     window[swCb]=function(r){try{delete window[swCb];}catch(e){}};
     const swS=document.createElement("script");
@@ -707,7 +711,7 @@ function markStartWorking(){
   }catch(e){}
   document.getElementById("start-working-banner").style.display="none";
   document.getElementById("us-status").value="rider_inv";
-  showToast("✅ Case marked as In Progress");
+  showToast("✅ Case marked as In Progress — "+startDate);
   renderOpenCases(); renderFeaturedCases();
 }
 function openRecovery(caseId){
@@ -771,11 +775,13 @@ function submitUpdate(){
     if(utr)c.utr=utr;
     if(!c.updates)c.updates=[];
     c.updates.push({date:new Date().toLocaleDateString("en-IN"),status,notes,police,recovery:amt,utr,photos:0});
+    // Refresh history tab immediately so update shows
+    renderHistory();
     // Persist locally
     try{
       const all=JSON.parse(localStorage.getItem("fpi_cases")||"[]");
       const idx=all.findIndex(x=>x.id===caseId);
-      if(idx>=0){all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates});}
+      if(idx>=0){all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||""});}
       localStorage.setItem("fpi_cases",JSON.stringify(all));
     }catch(e){}
     // Sync status update to Apps Script via JSONP GET (reliable cross-origin)
@@ -787,12 +793,14 @@ function submitUpdate(){
       if(window._attachedPhotos && window._attachedPhotos.length){
         photoLinks = window._attachedPhotos.map(function(_,i){return "Photo"+(i+1);}).join(", ");
       }
+      const closedDate = (status==="closed") ? new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
       const syncParams=new URLSearchParams({
         action:"update_case_status",
         case_id:caseId, status, recovery:amt, utr, police,
         remarks:notes,
         photo_count:photosAttached,
         photo_links:photoLinks,
+        case_closed_date: closedDate,
         callback:syncCb
       });
       window[syncCb]=function(r){try{delete window[syncCb];}catch(e){}};
