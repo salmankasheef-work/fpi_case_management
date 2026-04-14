@@ -794,6 +794,8 @@ function submitUpdate(){
         photoLinks = window._attachedPhotos.map(function(_,i){return "Photo"+(i+1);}).join(", ");
       }
       const closedDate = (status==="closed") ? new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
+      // If slip image uploaded, include it (base64) — Apps Script saves to Drive and returns link
+      const slipForSheet = (status==="closed" && window._slipBase64) ? window._slipBase64 : "";
       const syncParams=new URLSearchParams({
         action:"update_case_status",
         case_id:caseId, status, recovery:amt, utr, police,
@@ -801,8 +803,13 @@ function submitUpdate(){
         photo_count:photosAttached,
         photo_links:photoLinks,
         case_closed_date: closedDate,
+        utr_slip_image: slipForSheet ? "1" : "",
         callback:syncCb
       });
+      // Store slip separately for POST upload (base64 too large for URL)
+      if(slipForSheet){
+        uploadSlipToDrive(caseId, slipForSheet, syncCb);
+      }
       window[syncCb]=function(r){try{delete window[syncCb];}catch(e){}};
       const syncS=document.createElement("script");
       syncS.src=APPS_SCRIPT_URL+"?"+syncParams.toString();
@@ -844,6 +851,46 @@ function submitUpdate(){
 }
 
 // ── OCR: extract UTR from payment slip image ──────────────
+// Upload slip image to Google Drive via Apps Script doPost, store URL in sheet
+function uploadSlipToDrive(caseId, base64DataUrl, syncCbName){
+  try{
+    // Remove data URL prefix to get raw base64
+    var base64 = base64DataUrl.replace(/^data:[^;]+;base64,/, "");
+    var mimeType = (base64DataUrl.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+    fetch(APPS_SCRIPT_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        action: "upload_slip",
+        case_id: caseId,
+        base64: base64,
+        mime_type: mimeType,
+        agent_email: currentUser.email||""
+      })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data && data.url){
+        // Now store the Drive URL in the sheet column
+        var cb2 = "fpiSlipCb_"+Date.now();
+        var p2 = new URLSearchParams({
+          action:"update_case_status",
+          case_id: caseId,
+          utr_slip_url: data.url,
+          callback: cb2
+        });
+        window[cb2]=function(r2){try{delete window[cb2];}catch(e){}};
+        var s2=document.createElement("script");
+        s2.src=APPS_SCRIPT_URL+"?"+p2.toString();
+        document.head.appendChild(s2);
+        setTimeout(function(){try{s2.remove();delete window[cb2];}catch(e){}},8000);
+        console.log("[Slip] Uploaded to Drive:", data.url);
+      }
+    })
+    .catch(function(err){ console.warn("[Slip] Upload failed:", err); });
+  }catch(e){ console.warn("[Slip] Upload error:", e); }
+}
+
 function handleSlipUpload(event){
   const file = event.target.files[0];
   if(!file) return;
