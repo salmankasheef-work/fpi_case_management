@@ -11039,11 +11039,17 @@ async function loadMyCases(){
             var mergedClosedDate = String(row["Case Closed Date"]||"");
 
             if(local){
-              if(sheetSt === "closed"){
-                mergedSt = "closed"; // sheet wins for closure
+              if(sheetSt === "closed" && local.st === "closed"){
+                // Both sheet and local agree: case is closed → stay closed
+                mergedSt = "closed";
+              } else if(sheetSt === "closed" && local.st && local.st !== "closed"){
+                // Sheet says closed but local has a newer re-open → local wins
+                mergedSt = local.st;
               } else if(local.st && local.st !== "pending_date" && local.st !== sheetSt){
-                mergedSt = local.st; // agent's local change wins
+                // Agent has updated locally to a non-default status → keep it
+                mergedSt = local.st;
               }
+              // else: keep sheetSt (default)
               if(local.updates && local.updates.length)    mergedUpdates    = local.updates;
               if(local.startDate  && !mergedStartDate)     mergedStartDate  = local.startDate;
               if(local.closedDate && !mergedClosedDate)    mergedClosedDate = local.closedDate;
