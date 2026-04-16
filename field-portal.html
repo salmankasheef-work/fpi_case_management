@@ -772,7 +772,7 @@ function handlePhotos(inputId,galleryId,previewId){
   }
   showToast(`${files.length} file${files.length>1?"s":""} attached ✓`);
 }
-function submitUpdate(){
+async function submitUpdate(){
   const status = document.getElementById("us-status").value;
   if(!status){ showToast("Select a status first","warn"); return; }
 
@@ -788,19 +788,31 @@ function submitUpdate(){
   const closureNotes = (document.getElementById("cl-notes")||{}).value||notes||"";
   const closedDate   = (status==="closed") ? new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : "";
 
-  // ── Collect evidence images from es-ph input ─────────────────────
-  var evidenceBase64List = [];
-  var esInput = document.getElementById("es-ph");
-  if(esInput && esInput.files && esInput.files.length){
-    var esFiles = Array.from(esInput.files);
-    esFiles.forEach(function(f){
-      var reader2 = new FileReader();
-      reader2.onload = function(ev){
-        evidenceBase64List.push({base64: ev.target.result, name: f.name, type: f.type});
-      };
-      reader2.readAsDataURL(f);
+  // ── Collect evidence images — AWAIT all FileReader reads before continuing ──
+  // BUG FIX: FileReader.readAsDataURL is ASYNC. Old code fired forEach then
+  // immediately used evidenceBase64List which was always [] (race condition).
+  var evidenceBase64List = await (function(){
+    return new Promise(function(resolve){
+      var esInput = document.getElementById("ev-up"); // ev-up is the file input inside sh-update
+      if(!esInput || !esInput.files || !esInput.files.length){ resolve([]); return; }
+      var esFiles = Array.from(esInput.files);
+      var results = new Array(esFiles.length);
+      var done = 0;
+      esFiles.forEach(function(f, fi){
+        var reader2 = new FileReader();
+        reader2.onload = function(ev){
+          results[fi] = {base64: ev.target.result, name: f.name, type: f.type};
+          done++;
+          if(done === esFiles.length) resolve(results.filter(Boolean));
+        };
+        reader2.onerror = function(){
+          done++;
+          if(done === esFiles.length) resolve(results.filter(Boolean));
+        };
+        reader2.readAsDataURL(f);
+      });
     });
-  }
+  })();
 
   // ── Update local state immediately ──────────────────────────────
   if(c){
@@ -809,16 +821,34 @@ function submitUpdate(){
     if(amt > 0)  c.recovery     = amt;
     if(utr)      c.utr          = utr;
     if(closedDate) c.closedDate = closedDate;
-    if(!c.updates) c.updates    = [];
-    c.updates.push({date:new Date().toLocaleDateString("en-IN"),status,notes,police,recovery:amt,utr,photos:evidenceBase64List.length});
-    // Save to localStorage
+    if(!c.updates) c.updates = [];
+    const _updateEntry = {
+      caseId   : caseId,
+      caseType : c.cat||"",
+      date     : new Date().toLocaleDateString("en-IN"),
+      status, notes, police, recovery:amt, utr,
+      photos   : evidenceBase64List.length
+    };
+    c.updates.push(_updateEntry);
+
+    // ── Save to fpi_cases (case state) ──
     try{
-      var _su = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
-      const all = JSON.parse(localStorage.getItem(_su)||"[]");
+      const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
       const idx = all.findIndex(x=>x.id===caseId);
       if(idx>=0){ all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||"",closedDate:c.closedDate||""}); }
-      localStorage.setItem(_su,JSON.stringify(all));
+      localStorage.setItem("fpi_cases",JSON.stringify(all));
     }catch(e){}
+
+    // ── ALSO save to dedicated fpi_updates key (survives sheet sync & logout) ──
+    try{
+      const _updKey = "fpi_updates_"+(currentUser.email||"guest");
+      const _allUpd = JSON.parse(localStorage.getItem(_updKey)||"[]");
+      _allUpd.unshift(_updateEntry); // newest first
+      // Keep last 500 entries max
+      if(_allUpd.length > 500) _allUpd.length = 500;
+      localStorage.setItem(_updKey, JSON.stringify(_allUpd));
+    }catch(e){}
+
     renderHistory();
   }
 
@@ -840,28 +870,22 @@ function submitUpdate(){
   window[syncCb] = function(sheetResult){
     try{ delete window[syncCb]; }catch(e){}
 
-    // Step 2: If closure — upload evidence images + slip, then trigger email
-    if(status==="closed"){
-      var slipB64   = window._slipBase64 || "";
-      var evidImgs  = evidenceBase64List.slice(); // snapshot
+    var evidImgs = evidenceBase64List.slice();
 
-      // Upload evidence images to Drive (fire-and-forget, store URLs in sheet)
-      if(evidImgs.length > 0){
-        _uploadEvidenceImages(caseId, evidImgs, function(evidUrls){
-          // Save evidence links to sheet
-          if(evidUrls.length){
-            var ecb = "fpiEvCb_"+Date.now();
-            var ep  = new URLSearchParams({action:"update_case_status",case_id:caseId,evidence_images:evidUrls.join(", "),callback:ecb});
-            window[ecb]=function(){try{delete window[ecb];}catch(e){}};
-            var es3=document.createElement("script");es3.src=APPS_SCRIPT_URL+"?"+ep.toString();document.head.appendChild(es3);
-            setTimeout(function(){try{es3.remove();delete window[ecb];}catch(e){}},8000);
-          }
-          // Now trigger email with first evidence image as attachment
+    // Upload evidence images for ALL updates (not just closure)
+    // uploadFileToDrive writes URLs directly to "Evidence Image Link" column server-side
+    if(evidImgs.length > 0){
+      _uploadEvidenceImages(caseId, evidImgs, function(evidUrls){
+        if(status==="closed"){
+          var slipB64 = window._slipBase64 || "";
           _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evidUrls, closedDate);
-        });
-      } else {
-        _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, [], closedDate);
-      }
+        } else {
+          if(evidUrls.length) showToast("✅ "+evidUrls.length+" photo(s) saved to sheet");
+        }
+      });
+    } else if(status==="closed"){
+      var slipB64 = window._slipBase64 || "";
+      _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, [], closedDate);
     }
   };
 
@@ -889,26 +913,89 @@ function submitUpdate(){
   }
 }
 
+// ── DEBUG HELPER ─────────────────────────────────────────────────────
+// Open browser console (F12 → Console) to see these logs.
+// They tell you exactly where image upload succeeds or fails.
+function _debugLog(tag, msg, data){
+  const ts = new Date().toLocaleTimeString("en-IN");
+  if(data !== undefined){
+    console.log("[FPI "+ts+"] "+tag+": "+msg, data);
+  } else {
+    console.log("[FPI "+ts+"] "+tag+": "+msg);
+  }
+}
+
 // ── Upload evidence images to Drive (parallel) ────────────────────
 function _uploadEvidenceImages(caseId, imgList, callback){
-  var urls   = [];
+  // Uses JSONP: POST body contains a callback name.
+  // Apps Script doPost wraps the JSON response as callbackName({...})
+  // which we inject as a <script> tag — bypasses CORS completely.
+  var urls    = [];
   var pending = imgList.length;
   if(!pending){ callback([]); return; }
-  imgList.forEach(function(img){
+
+  imgList.forEach(function(img, idx){
     var rawB64   = img.base64.replace(/^data:[^;]+;base64,/,"");
     var mimeType = (img.base64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
-    fetch(APPS_SCRIPT_URL,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({action:"upload_slip",case_id:caseId,base64:rawB64,mime_type:mimeType,agent_email:currentUser.email||""})
-    })
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(data && data.url) urls.push(data.url);
+    var cbName   = "fpiUploadCb_" + Date.now() + "_" + idx;
+
+    _debugLog("IMG", "Uploading "+(idx+1)+"/"+imgList.length+" case:"+caseId+" size:"+rawB64.length);
+
+    // Register the JSONP callback
+    window[cbName] = function(data){
+      try{ delete window[cbName]; }catch(e){}
+      if(data && data.ok && data.url){
+        _debugLog("IMG", "✅ Got Drive URL: " + data.url);
+        urls.push(data.url);
+      } else {
+        _debugLog("IMG", "⚠ No URL in response", data);
+      }
+      pending--;
+      if(pending === 0) callback(urls);
+    };
+
+    // Build a form and POST it — Apps Script receives JSON body + callback param
+    // We use XMLHttpRequest instead of fetch so we can read the response
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", APPS_SCRIPT_URL, true);
+    xhr.setRequestHeader("Content-Type", "text/plain"); // avoids CORS preflight
+    xhr.onload = function(){
+      _debugLog("IMG", "XHR status: " + xhr.status + " response: " + xhr.responseText.substring(0,120));
+      try{
+        var text = xhr.responseText;
+        // Try JSONP unwrap first: cbName({...})
+        var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+        var data = JSON.parse(m ? m[1] : text);
+        window[cbName] && window[cbName](data);
+      }catch(ex){
+        _debugLog("IMG", "⚠ Parse error: "+ex.message+" raw:"+xhr.responseText.substring(0,80));
+        if(window[cbName]){
+          try{ delete window[cbName]; }catch(e){}
+          pending--;
+          if(pending===0) callback(urls);
+        }
+      }
+    };
+    xhr.onerror = function(){
+      _debugLog("IMG", "❌ XHR network error");
+      try{ delete window[cbName]; }catch(e){}
       pending--;
       if(pending===0) callback(urls);
-    })
-    .catch(function(){ pending--; if(pending===0) callback(urls); });
+    };
+    xhr.ontimeout = function(){
+      _debugLog("IMG", "❌ XHR timeout");
+      try{ delete window[cbName]; }catch(e){}
+      pending--;
+      if(pending===0) callback(urls);
+    };
+    xhr.timeout = 30000;
+    xhr.send(JSON.stringify({
+      action   : "upload_slip",
+      case_id  : caseId,
+      base64   : rawB64,
+      mime_type: mimeType,
+      callback : cbName
+    }));
   });
 }
 
@@ -941,41 +1028,48 @@ function _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evi
 // Upload slip image to Google Drive via Apps Script doPost, store URL in sheet
 function uploadSlipToDrive(caseId, base64DataUrl, syncCbName){
   try{
-    // Remove data URL prefix to get raw base64
-    var base64 = base64DataUrl.replace(/^data:[^;]+;base64,/, "");
+    var base64   = base64DataUrl.replace(/^data:[^;]+;base64,/, "");
     var mimeType = (base64DataUrl.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
-    fetch(APPS_SCRIPT_URL, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        action: "upload_slip",
-        case_id: caseId,
-        base64: base64,
-        mime_type: mimeType,
-        agent_email: currentUser.email||""
-      })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(data){
+    var cbName   = "fpiSlipDrive_" + Date.now();
+
+    window[cbName] = function(data){
+      try{ delete window[cbName]; }catch(e){}
       if(data && data.url){
-        // Now store the Drive URL in the sheet column
-        var cb2 = "fpiSlipCb_"+Date.now();
-        var p2 = new URLSearchParams({
-          action:"update_case_status",
-          case_id: caseId,
-          utr_slip_url: data.url,
-          callback: cb2
-        });
-        window[cb2]=function(r2){try{delete window[cb2];}catch(e){}};
-        var s2=document.createElement("script");
-        s2.src=APPS_SCRIPT_URL+"?"+p2.toString();
-        document.head.appendChild(s2);
+        // Write URL to sheet
+        var cb2 = "fpiSlipSheet_"+Date.now();
+        var p2  = new URLSearchParams({action:"update_case_status",case_id:caseId,utr_slip_url:data.url,callback:cb2});
+        window[cb2]=function(){try{delete window[cb2];}catch(e){}};
+        var s2=document.createElement("script");s2.src=APPS_SCRIPT_URL+"?"+p2.toString();document.head.appendChild(s2);
         setTimeout(function(){try{s2.remove();delete window[cb2];}catch(e){}},8000);
-        window._utrSlipUrl = data.url; // store for inclusion in closure email
-        console.log("[Slip] Uploaded to Drive:", data.url);
+        window._utrSlipUrl = data.url;
+        console.log("[Slip] Drive URL saved:", data.url);
       }
-    })
-    .catch(function(err){ console.warn("[Slip] Upload failed:", err); });
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", APPS_SCRIPT_URL, true);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.onload = function(){
+      try{
+        var text = xhr.responseText;
+        var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+        var data = JSON.parse(m ? m[1] : text);
+        window[cbName] && window[cbName](data);
+      }catch(ex){
+        console.warn("[Slip] Parse error:", ex.message);
+        try{ delete window[cbName]; }catch(e){}
+      }
+    };
+    xhr.onerror  = function(){ try{ delete window[cbName]; }catch(e){} };
+    xhr.timeout  = 30000;
+    xhr.ontimeout = function(){ try{ delete window[cbName]; }catch(e){} };
+    xhr.send(JSON.stringify({
+      action   : "upload_slip",
+      case_id  : caseId,
+      base64   : base64,
+      mime_type: mimeType,
+      callback : cbName
+    }));
   }catch(e){ console.warn("[Slip] Upload error:", e); }
 }
 
@@ -10556,46 +10650,63 @@ function getSelfieForSheet(){
 function triggerClosureEmail(caseData){
   console.log("[Email] triggerClosureEmail CALLED", caseData.id);
   var slipB64 = caseData.slipBase64 || "";
-  window._slipBase64 = null; // clear global
+  window._slipBase64 = null;
 
-  // If slip image present, upload to Drive first → get URL → then send email with both
-  // This ensures the email always has the attachment AND the Drive link
   if(slipB64){
+    // Upload slip via XHR, get Drive URL, then send email
     var rawB64   = slipB64.replace(/^data:[^;]+;base64,/,"");
     var mimeType = (slipB64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
-    fetch(APPS_SCRIPT_URL, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        action:"upload_slip",
-        case_id: caseData.id||"",
-        base64: rawB64,
-        mime_type: mimeType,
-        agent_email: caseData.poc_email||""
-      })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(driveData){
-      var driveUrl = (driveData && driveData.url) ? driveData.url : "";
-      window._utrSlipUrl = driveUrl;
-      // Store Drive URL in sheet column
+    var cbName   = "fpiSlipCb_" + Date.now();
+
+    window[cbName] = function(data){
+      try{ delete window[cbName]; }catch(e){}
+      var driveUrl = (data && data.url) ? data.url : "";
       if(driveUrl){
-        var cb3="fpiSlipSh_"+Date.now();
-        var p3=new URLSearchParams({action:"update_case_status",case_id:caseData.id||"",utr_slip_url:driveUrl,callback:cb3});
-        window[cb3]=function(){try{delete window[cb3];}catch(e){}};
-        var s3=document.createElement("script");s3.src=APPS_SCRIPT_URL+"?"+p3.toString();
-        document.head.appendChild(s3);
-        setTimeout(function(){try{s3.remove();delete window[cb3];}catch(e){}},8000);
+        // Write Drive URL to sheet
+        var sb = "fpiSlipSh_"+Date.now();
+        var sp = new URLSearchParams({action:"update_case_status",case_id:caseData.id||"",utr_slip_url:driveUrl,callback:sb});
+        window[sb]=function(){try{delete window[sb];}catch(e){}};
+        var ss=document.createElement("script");ss.src=APPS_SCRIPT_URL+"?"+sp.toString();document.head.appendChild(ss);
+        setTimeout(function(){try{ss.remove();delete window[sb];}catch(e){}},8000);
+        window._utrSlipUrl = driveUrl;
+        console.log("[Email] Slip Drive URL:", driveUrl);
       }
-      // Now send closure email — with both base64 attachment AND Drive URL
       _sendClosureEmailPost(caseData, slipB64, driveUrl);
-    })
-    .catch(function(err){
-      console.warn("[Email] Slip upload failed, sending email without attachment:", err);
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", APPS_SCRIPT_URL, true);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.onload = function(){
+      try{
+        var text = xhr.responseText;
+        var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+        var data = JSON.parse(m ? m[1] : text);
+        window[cbName] && window[cbName](data);
+      }catch(ex){
+        console.warn("[Email] Slip parse error:", ex.message);
+        try{ delete window[cbName]; }catch(e){}
+        _sendClosureEmailPost(caseData, slipB64, "");
+      }
+    };
+    xhr.onerror = function(){
+      console.warn("[Email] Slip XHR error");
+      try{ delete window[cbName]; }catch(e){}
       _sendClosureEmailPost(caseData, slipB64, "");
-    });
+    };
+    xhr.timeout  = 30000;
+    xhr.ontimeout = function(){
+      try{ delete window[cbName]; }catch(e){}
+      _sendClosureEmailPost(caseData, slipB64, "");
+    };
+    xhr.send(JSON.stringify({
+      action   : "upload_slip",
+      case_id  : caseData.id||"",
+      base64   : rawB64,
+      mime_type: mimeType,
+      callback : cbName
+    }));
   } else {
-    // No slip — send email immediately
     _sendClosureEmailPost(caseData, "", caseData.utrSlipUrl||"");
   }
 }
@@ -11118,7 +11229,10 @@ async function loadMyCases(){
   // Fallback: sheet returned nothing — use localStorage only
   if(!myCases.length){
     // Sheet returned nothing — use only this agent's cached cases
-    myCases = Object.values(localMap).filter(function(c){
+    // Safe for...in instead of Object.values (not reliable in all runtimes)
+    var _localArr = [];
+    for(var _lk in localMap){ if(localMap.hasOwnProperty(_lk)) _localArr.push(localMap[_lk]); }
+    myCases = _localArr.filter(function(c){
       return c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
     });
   }
@@ -11271,43 +11385,50 @@ function submitRecovery(){
   showToast("✓ Recovery submitted — UTR: "+utr);
   renderPortalCases();
 }
-function submitEvidence(){
-  // Collect base64 images from the evidence sheet
+async function submitEvidence(){
   var esInput = document.getElementById("es-ph");
   var caption  = (document.getElementById("es-caption")||{}).value||"";
   var caseId   = (document.getElementById("es-id")||{}).textContent||"";
 
-  if(esInput && esInput.files && esInput.files.length > 0){
-    var files = Array.from(esInput.files);
-    var loaded = 0;
-    var evidList = [];
-    files.forEach(function(f){
+  if(!esInput || !esInput.files || !esInput.files.length){
+    showToast("✓ Evidence submitted");
+    closeSheet("sh-evidence");
+    return;
+  }
+
+  // CRITICAL: await ALL FileReader reads before uploading.
+  // Without this, evidList is empty when _uploadEvidenceImages is called.
+  var files = Array.from(esInput.files);
+  var evidList = await new Promise(function(resolve){
+    var results = new Array(files.length);
+    var done = 0;
+    files.forEach(function(f, fi){
       var reader3 = new FileReader();
       reader3.onload = function(ev){
-        evidList.push({base64:ev.target.result, name:f.name, type:f.type});
-        loaded++;
-        if(loaded === files.length){
-          // Upload all to Drive and write URLs to sheet
-          _uploadEvidenceImages(caseId, evidList, function(urls){
-            if(urls.length && caseId){
-              var ecb2 = "fpiEvCb2_"+Date.now();
-              var note  = caption ? caption+" | " : "";
-              var ep2   = new URLSearchParams({action:"update_case_status",case_id:caseId,evidence_images:note+urls.join(", "),callback:ecb2});
-              window[ecb2]=function(){try{delete window[ecb2];}catch(e){}};
-              var es4=document.createElement("script");es4.src=APPS_SCRIPT_URL+"?"+ep2.toString();document.head.appendChild(es4);
-              setTimeout(function(){try{es4.remove();delete window[ecb2];}catch(e){}},8000);
-              showToast("✓ "+urls.length+" evidence image"+(urls.length>1?"s":"")+" uploaded to Drive");
-            } else {
-              showToast("✓ Evidence submitted");
-            }
-          });
-        }
+        results[fi] = {base64:ev.target.result, name:f.name, type:f.type};
+        done++;
+        if(done === files.length) resolve(results.filter(Boolean));
+      };
+      reader3.onerror = function(){
+        done++;
+        if(done === files.length) resolve(results.filter(Boolean));
       };
       reader3.readAsDataURL(f);
     });
-  } else {
-    showToast("✓ Evidence submitted");
-  }
+  });
+
+  showToast("Uploading " + evidList.length + " photo(s) to Drive…");
+
+  // uploadFileToDrive already writes URLs directly to "Evidence Image Link"
+  // column in the sheet server-side — no extra JSONP call needed.
+  _uploadEvidenceImages(caseId, evidList, function(urls){
+    if(urls.length){
+      showToast("✅ "+urls.length+" photo(s) uploaded & saved to sheet");
+    } else {
+      showToast("⚠ Upload failed — check console for details");
+    }
+  });
+
   closeSheet("sh-evidence");
 }
 
@@ -11448,12 +11569,43 @@ function renderClosedCases(){
 // ── History & Profile ─────────────────────────────────────
 function renderHistory(){
   const el=document.getElementById("history-content");if(!el)return;
-  const updates=[];
-  myCases.forEach(c=>{
-    (c.updates||[]).forEach(u=>{
-      updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
-        notes:u.notes||"",date:u.date||"",police:u.police||"",
-        photos:u.photos||0,utr:u.utr||c.utr||"",recovery:u.recovery||c.recovery||0});
+
+  // Load from dedicated update store first (most reliable — survives logout/sheet sync)
+  let updates=[];
+  try{
+    const _updKey3 = "fpi_updates_"+(currentUser.email||"guest");
+    const _storedUpd = JSON.parse(localStorage.getItem(_updKey3)||"[]");
+    if(_storedUpd.length){
+      // Stored updates already have caseId, caseType etc.
+      updates = _storedUpd.map(function(u){
+        return {
+          caseId  : u.caseId   || "",
+          caseType: u.caseType || "",
+          status  : u.status   || "",
+          notes   : u.notes    || "",
+          date    : u.date     || "",
+          police  : u.police   || "",
+          photos  : u.photos   || 0,
+          utr     : u.utr      || "",
+          recovery: u.recovery || 0
+        };
+      });
+    }
+  }catch(_he){}
+
+  // Also merge from myCases in memory (catches updates made this session
+  // before they were saved, and fills gaps)
+  const seenKeys = {};
+  updates.forEach(function(u){ seenKeys[u.caseId+"_"+u.date+"_"+u.status] = true; });
+  myCases.forEach(function(c){
+    (c.updates||[]).forEach(function(u){
+      const key = c.id+"_"+(u.date||"")+"_"+(u.status||"");
+      if(!seenKeys[key]){
+        seenKeys[key] = true;
+        updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
+          notes:u.notes||"",date:u.date||"",police:u.police||"",
+          photos:u.photos||0,utr:u.utr||c.utr||"",recovery:u.recovery||c.recovery||0});
+      }
     });
   });
   if(!updates.length){
