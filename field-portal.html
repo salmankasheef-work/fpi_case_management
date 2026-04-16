@@ -700,11 +700,12 @@ function markStartWorking(){
   c.startDate = startDate;
   // Persist to localStorage
   try{
-    const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+    var _mk = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+    const all = JSON.parse(localStorage.getItem(_mk)||"[]");
     const idx = all.findIndex(x=>x.id===caseId);
     if(idx>=0){all[idx].st="rider_inv"; all[idx].startDate=startDate;}
     else{all.push(Object.assign({},c,{st:"rider_inv",startDate}));}
-    localStorage.setItem("fpi_cases",JSON.stringify(all));
+    localStorage.setItem(_mk,JSON.stringify(all));
   }catch(e){}
   // Sync to sheet — status + Case Start Date
   try{
@@ -812,10 +813,11 @@ function submitUpdate(){
     c.updates.push({date:new Date().toLocaleDateString("en-IN"),status,notes,police,recovery:amt,utr,photos:evidenceBase64List.length});
     // Save to localStorage
     try{
-      const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+      var _su = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+      const all = JSON.parse(localStorage.getItem(_su)||"[]");
       const idx = all.findIndex(x=>x.id===caseId);
       if(idx>=0){ all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||"",closedDate:c.closedDate||""}); }
-      localStorage.setItem("fpi_cases",JSON.stringify(all));
+      localStorage.setItem(_su,JSON.stringify(all));
     }catch(e){}
     renderHistory();
   }
@@ -10998,8 +11000,9 @@ async function loadMyCases(){
   // Snapshot locally-stored cases keyed by id BEFORE fetching from sheet.
   // This preserves agent-made changes (status, startDate, updates) across refreshes.
   var localMap = {};
+  var _fpKey = "fp_cases_" + (currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
   try{
-    var _local = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
+    var _local = JSON.parse(localStorage.getItem(_fpKey)||"[]");
     _local.forEach(function(c){ if(c.id) localMap[c.id]=c; });
   }catch(_e){}
 
@@ -11087,20 +11090,20 @@ async function loadMyCases(){
             });
           });
 
-          // Add locally-known cases not yet in the sheet
-          // (assigned by CM but sheet hasn't synced yet)
+          // Add locally-cached cases for THIS agent that are not yet in the sheet
+          // (e.g. just assigned but sheet sync still in progress)
+          // STRICT: match by email ONLY — never by initials or name
+          // to prevent other agents' cases leaking in via shared localStorage
           Object.keys(localMap).forEach(function(id){
-            if(seenIds[id]) return; // already included
+            if(seenIds[id]) return; // already included from sheet
             var lc = localMap[id];
-            if(!lc.poc_email && !lc.poc) return;
-            var em = lc.poc_email && lc.poc_email.toLowerCase()===currentUser.email.toLowerCase();
-            var im = lc.poc && currentUser.initials && lc.poc.toUpperCase()===currentUser.initials.toUpperCase();
-            var nm = lc.pn  && currentUser.name     && lc.pn.toLowerCase().trim()===currentUser.name.toLowerCase().trim();
-            if(em||im||nm){ seenIds[id]=true; myCases.push(lc); }
+            if(!lc.poc_email) return; // no email = can't safely assign to anyone
+            var emailMatch = lc.poc_email.toLowerCase() === currentUser.email.toLowerCase();
+            if(emailMatch){ seenIds[id]=true; myCases.push(lc); }
           });
 
-          // Persist merged result
-          try{ localStorage.setItem("fpi_cases", JSON.stringify(myCases)); }catch(e){}
+          // Persist merged result to agent-specific key
+          try{ localStorage.setItem(_fpKey, JSON.stringify(myCases)); }catch(e){}
         }
       }catch(e){ console.warn("Cases parse:", e.message); }
       resolve();
@@ -11114,11 +11117,9 @@ async function loadMyCases(){
 
   // Fallback: sheet returned nothing — use localStorage only
   if(!myCases.length){
+    // Sheet returned nothing — use only this agent's cached cases
     myCases = Object.values(localMap).filter(function(c){
-      if(!c.poc && !c.poc_email) return false;
-      var em2 = c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
-      var im2 = c.poc && currentUser.initials && c.poc.toUpperCase()===currentUser.initials.toUpperCase();
-      return em2||im2;
+      return c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
     });
   }
 
