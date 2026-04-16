@@ -831,12 +831,26 @@ async function submitUpdate(){
     };
     c.updates.push(_updateEntry);
 
-    // ── Save to fpi_cases (case state) ──
+    // ── Save case state to the SAME key that loadMyCases reads ────────
     try{
-      const all = JSON.parse(localStorage.getItem("fpi_cases")||"[]");
-      const idx = all.findIndex(x=>x.id===caseId);
-      if(idx>=0){ all[idx]=Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||all[idx].startDate||"",closedDate:c.closedDate||""}); }
-      localStorage.setItem("fpi_cases",JSON.stringify(all));
+      var _caseKey = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+      var all = JSON.parse(localStorage.getItem(_caseKey)||"[]");
+      var idx = all.findIndex(function(x){return x.id===caseId;});
+      if(idx>=0){
+        all[idx] = Object.assign(all[idx],{
+          st          : c.st,
+          policeAction: c.policeAction,
+          recovery    : c.recovery,
+          utr         : c.utr,
+          updates     : c.updates,
+          startDate   : c.startDate||all[idx].startDate||"",
+          closedDate  : c.closedDate||""
+        });
+      } else {
+        // Case not yet in local cache — add the full object
+        all.push(c);
+      }
+      localStorage.setItem(_caseKey, JSON.stringify(all));
     }catch(e){}
 
     // ── ALSO save to dedicated fpi_updates key (survives sheet sync & logout) ──
@@ -11105,11 +11119,9 @@ async function completeOnboarding(){
 }
 
 // ── Cases ─────────────────────────────────────────────────
-function getSharedCases(){try{const r=localStorage.getItem("fpi_cases");return r?JSON.parse(r):[];}catch(e){return[];}}
+function getSharedCases(){try{var _k="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");var r=localStorage.getItem(_k);return r?JSON.parse(r):[];}catch(e){return[];}}
 
 async function loadMyCases(){
-  // Snapshot locally-stored cases keyed by id BEFORE fetching from sheet.
-  // This preserves agent-made changes (status, startDate, updates) across refreshes.
   var localMap = {};
   var _fpKey = "fp_cases_" + (currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
   try{
@@ -11134,39 +11146,38 @@ async function loadMyCases(){
           myCases = [];
           data.cases.forEach(function(row){
             var id = String(row["Case ID"]||"").trim();
-            if(!id || seenIds[id]) return; // skip blank or duplicate Case IDs
+            if(!id || seenIds[id]) return;
             seenIds[id] = true;
 
             var lossType = row["Loss Type"]||row["Fraud Type"]||"";
             var prodVal  = parseFloat(row["Product Value"]||row["Value"]||0)||0;
             var awbList  = row["AWB Numbers"]||row["AWB_Numbers"]||"";
-            var sheetSt  = statusKeyFromLabel(row["Status"]||"");
 
-            // ── Merge local changes ──────────────────────────────────
-            // The sheet is authoritative for "closed".
-            // For all other statuses, if the agent has locally set a
-            // non-default status, keep it so refreshes don't revert work.
+            // ── SHEET IS ALWAYS AUTHORITATIVE ────────────────────────
+            // Convert sheet status to internal key
+            var sheetSt = statusKeyFromLabel(row["Status"]||"");
+
+            // Local data: only used for updates history and startDate
+            // NEVER override the sheet status — the sheet is ground truth
             var local = localMap[id];
-            var mergedSt         = sheetSt;
-            var mergedUpdates    = [];
-            var mergedStartDate  = String(row["Case Start Date"]||"");
-            var mergedClosedDate = String(row["Case Closed Date"]||"");
+            var mergedUpdates    = (local && local.updates && local.updates.length) ? local.updates : [];
+            var mergedStartDate  = String(row["Case Start Date"]||row["Case_Started_Date"]||"");
+            var mergedClosedDate = String(row["Case Closed Date"]||row["Case_Closed_Date"]||"");
+            if(local && local.startDate  && !mergedStartDate)  mergedStartDate  = local.startDate;
+            if(local && local.closedDate && !mergedClosedDate) mergedClosedDate = local.closedDate;
 
-            if(local){
-              if(sheetSt === "closed" && local.st === "closed"){
-                // Both sheet and local agree: case is closed → stay closed
-                mergedSt = "closed";
-              } else if(sheetSt === "closed" && local.st && local.st !== "closed"){
-                // Sheet says closed but local has a newer re-open → local wins
-                mergedSt = local.st;
-              } else if(local.st && local.st !== "pending_date" && local.st !== sheetSt){
-                // Agent has updated locally to a non-default status → keep it
-                mergedSt = local.st;
-              }
-              // else: keep sheetSt (default)
-              if(local.updates && local.updates.length)    mergedUpdates    = local.updates;
-              if(local.startDate  && !mergedStartDate)     mergedStartDate  = local.startDate;
-              if(local.closedDate && !mergedClosedDate)    mergedClosedDate = local.closedDate;
+            // ── Status resolution rules ──────────────────────────
+            // Rule 1: Sheet says "closed" → ALWAYS closed, no exceptions
+            // Rule 2: Sheet has a real status → use it (sheet is authoritative)
+            // Rule 3: Sheet says "pending_date" (blank/unset) AND local has a real
+            //         working status → use local (agent updated but sheet hasn't synced)
+            var finalSt = sheetSt;
+            if(sheetSt === "closed"){
+              finalSt = "closed"; // sheet closed = closed, never override
+            } else if(sheetSt !== "pending_date"){
+              finalSt = sheetSt; // sheet has a real status — trust it
+            } else if(local && local.st && local.st !== "pending_date" && local.st !== "unassigned"){
+              finalSt = local.st; // sheet blank, local has working status — use local
             }
 
             myCases.push({
@@ -11185,7 +11196,7 @@ async function loadMyCases(){
               cxRider     : row["Cx as Rider - Rider Id"]||"",
               lmRider     : row["Last attempt LM rider id"]||"",
               cxName      : row["Customer name"]||row["Customer Name"]||"",
-              st          : mergedSt,
+              st          : finalSt,
               pri         : row["Priority"]||"",
               poc         : row["FPI POC"]||"",
               pn          : row["FPI POC"]||"",
@@ -11201,19 +11212,7 @@ async function loadMyCases(){
             });
           });
 
-          // Add locally-cached cases for THIS agent that are not yet in the sheet
-          // (e.g. just assigned but sheet sync still in progress)
-          // STRICT: match by email ONLY — never by initials or name
-          // to prevent other agents' cases leaking in via shared localStorage
-          Object.keys(localMap).forEach(function(id){
-            if(seenIds[id]) return; // already included from sheet
-            var lc = localMap[id];
-            if(!lc.poc_email) return; // no email = can't safely assign to anyone
-            var emailMatch = lc.poc_email.toLowerCase() === currentUser.email.toLowerCase();
-            if(emailMatch){ seenIds[id]=true; myCases.push(lc); }
-          });
-
-          // Persist merged result to agent-specific key
+          // Save back to localStorage
           try{ localStorage.setItem(_fpKey, JSON.stringify(myCases)); }catch(e){}
         }
       }catch(e){ console.warn("Cases parse:", e.message); }
@@ -11228,8 +11227,6 @@ async function loadMyCases(){
 
   // Fallback: sheet returned nothing — use localStorage only
   if(!myCases.length){
-    // Sheet returned nothing — use only this agent's cached cases
-    // Safe for...in instead of Object.values (not reliable in all runtimes)
     var _localArr = [];
     for(var _lk in localMap){ if(localMap.hasOwnProperty(_lk)) _localArr.push(localMap[_lk]); }
     myCases = _localArr.filter(function(c){
@@ -11242,19 +11239,41 @@ async function loadMyCases(){
 
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 function statusKeyFromLabel(label){
-  const map={
-    "rider investigation" :"rider_inv",
-    "hi/tl investigation" :"hi_tl_inv",
-    "absconded·fir filed"  :"rider_abs_action",
-    "absconded·fir pend"   :"rider_abs_pending",
-    "hi/tl absconded"      :"hi_tl_abs",
-    "cx fraud"             :"cx_fraud",
-    "other pending"        :"other_pending",
-    "closed"               :"closed",
-    "unassigned"           :"unassigned",
-    "pending date"         :"pending_date"
+  // Normalise: lowercase, collapse spaces, strip special chars
+  var l = (label||"").toLowerCase().trim().replace(/\s+/g," ");
+  // Direct key pass-through (sheet already stores internal keys)
+  var direct = {
+    "rider_inv":"rider_inv","hi_tl_inv":"hi_tl_inv",
+    "rider_abs_action":"rider_abs_action","rider_abs_pending":"rider_abs_pending",
+    "hi_tl_abs":"hi_tl_abs","cx_fraud":"cx_fraud","other_pending":"other_pending",
+    "closed":"closed","unassigned":"unassigned","pending_date":"pending_date"
   };
-  return map[(label||"").toLowerCase().trim()]||"pending_date";
+  if(direct[l]) return direct[l];
+  // Human-readable labels
+  var map={
+    "rider investigation":"rider_inv",
+    "rider inv":"rider_inv",
+    "hi/tl investigation":"hi_tl_inv",
+    "hi tl investigation":"hi_tl_inv",
+    "absconded fir filed":"rider_abs_action",
+    "absconded·fir filed":"rider_abs_action",
+    "absconded - fir filed":"rider_abs_action",
+    "absconded fir pend":"rider_abs_pending",
+    "absconded·fir pend":"rider_abs_pending",
+    "absconded - fir pending":"rider_abs_pending",
+    "hi/tl absconded":"hi_tl_abs",
+    "hi tl absconded":"hi_tl_abs",
+    "cx fraud":"cx_fraud",
+    "customer fraud":"cx_fraud",
+    "other pending":"other_pending",
+    "pending":"other_pending",
+    "closed":"closed",
+    "case closed":"closed",
+    "unassigned":"unassigned",
+    "pending date":"pending_date",
+    "":"pending_date"
+  };
+  return map[l]||"pending_date";
 }
 
 
