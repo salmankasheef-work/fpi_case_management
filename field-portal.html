@@ -698,14 +698,14 @@ function markStartWorking(){
   const startDate = new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
   c.st = "rider_inv";
   c.startDate = startDate;
-  // Persist to agent-specific cache key
+  // Persist to agent-specific key (matches what loadMyCases reads)
   try{
-    var _sk = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
-    const all = JSON.parse(localStorage.getItem(_sk)||"[]");
-    const idx = all.findIndex(x=>x.id===caseId);
+    var _sk="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+    var all=JSON.parse(localStorage.getItem(_sk)||"[]");
+    var idx=all.findIndex(function(x){return x.id===caseId;});
     if(idx>=0){all[idx].st="rider_inv"; all[idx].startDate=startDate;}
-    else{all.push(Object.assign({},c,{st:"rider_inv",startDate}));}
-    localStorage.setItem(_sk, JSON.stringify(all));
+    else{all.push(Object.assign({},c,{st:"rider_inv",startDate:startDate}));}
+    localStorage.setItem(_sk,JSON.stringify(all));
   }catch(e){}
   // Sync to sheet — status + Case Start Date
   try{
@@ -831,17 +831,16 @@ async function submitUpdate(){
     };
     c.updates.push(_updateEntry);
 
-    // ── Save case to agent-specific key (matches what loadMyCases reads) ──
+    // ── Save to agent-specific key (matches what loadMyCases reads) ──
     try{
-      var _ck = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
-      var all = JSON.parse(localStorage.getItem(_ck)||"[]");
-      var idx = all.findIndex(function(x){return x.id===caseId;});
-      if(idx>=0){
-        all[idx] = Object.assign(all[idx],{st:c.st,policeAction:c.policeAction,
-          recovery:c.recovery,utr:c.utr,updates:c.updates,
-          startDate:c.startDate||all[idx].startDate||"",closedDate:c.closedDate||""});
-      } else { all.push(c); }
-      localStorage.setItem(_ck, JSON.stringify(all));
+      var _ck="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+      var all=JSON.parse(localStorage.getItem(_ck)||"[]");
+      var _si=all.findIndex(function(x){return x.id===caseId;});
+      if(_si>=0){all[_si]=Object.assign(all[_si],{st:c.st,policeAction:c.policeAction,
+        recovery:c.recovery,utr:c.utr,updates:c.updates,
+        startDate:c.startDate||all[_si].startDate||"",closedDate:c.closedDate||""});}
+      else{all.push(c);}
+      localStorage.setItem(_ck,JSON.stringify(all));
     }catch(e){}
 
     // ── ALSO save to dedicated fpi_updates key (survives sheet sync & logout) ──
@@ -11114,21 +11113,23 @@ async function completeOnboarding(){
 }
 
 // ── Cases ─────────────────────────────────────────────────
-// SHEET IS THE SINGLE SOURCE OF TRUTH for which cases this agent has.
-// localStorage is ONLY used to preserve: update history, startDate, closedDate.
-// It is NEVER used to add extra cases or override status from the sheet.
+// ── SHEET IS THE SINGLE SOURCE OF TRUTH ──────────────────────────────
+// localStorage is used ONLY for: update history, startDate, closedDate.
+// It NEVER adds extra cases or overrides status from the sheet.
+// This prevents the "22 cases vs 8 cases" phantom-case bug.
 function getSharedCases(){
-  var _k = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+  var _k="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
   try{var r=localStorage.getItem(_k);return r?JSON.parse(r):[];}catch(e){return[];}
 }
 
 async function loadMyCases(){
-  // Load only the update history from localStorage (never the case list itself)
-  var updKey = "fpi_updates_"+(currentUser.email||"guest");
+  // Build update-history index from dedicated key (email-scoped, never polluted)
+  var _updKey = "fpi_updates_"+(currentUser.email||"guest");
   var savedUpdates = {};
   try{
-    var _allUpd = JSON.parse(localStorage.getItem(updKey)||"[]");
-    _allUpd.forEach(function(u){ if(u.caseId){ if(!savedUpdates[u.caseId]) savedUpdates[u.caseId]=[]; savedUpdates[u.caseId].push(u); } });
+    JSON.parse(localStorage.getItem(_updKey)||"[]").forEach(function(u){
+      if(u.caseId){ if(!savedUpdates[u.caseId]) savedUpdates[u.caseId]=[]; savedUpdates[u.caseId].push(u); }
+    });
   }catch(_e){}
 
   await new Promise(function(resolve){
@@ -11144,8 +11145,8 @@ async function loadMyCases(){
       cleanup();
       try{
         if(data && data.cases && data.cases.length){
-          myCases = [];
           var seenIds = {};
+          myCases = [];
           data.cases.forEach(function(row){
             var id = String(row["Case ID"]||"").trim();
             if(!id || seenIds[id]) return;
@@ -11155,13 +11156,13 @@ async function loadMyCases(){
             var prodVal  = parseFloat(row["Product Value"]||row["Value"]||0)||0;
             var awbList  = row["AWB Numbers"]||row["AWB_Numbers"]||"";
 
-            // ── Status: sheet is always authoritative ─────────────────
-            // Rule 1: sheet says "closed" → always closed, no override ever
-            // Rule 2: sheet has any real status → use it
-            // Rule 3: sheet says "pending_date" (blank) → keep pending_date
+            // ── STATUS: sheet is ALWAYS authoritative ────────────────
+            // Rule 1: sheet says "closed"  → always closed, no override
+            // Rule 2: sheet has real status → use it directly
+            // Rule 3: sheet is blank/pending_date → use pending_date
             var sheetSt = statusKeyFromLabel(row["Status"]||"");
 
-            // ── Only merge non-status data from local (history, dates) ─
+            // ── Only pull history + dates from local (never status/case list)
             var mergedUpdates    = savedUpdates[id] || [];
             var mergedStartDate  = String(row["Case Start Date"]||"");
             var mergedClosedDate = String(row["Case Closed Date"]||"");
@@ -11197,9 +11198,8 @@ async function loadMyCases(){
               updates     : mergedUpdates
             });
           });
-
-          // Persist to agent-specific key (NOT shared "fpi_cases")
-          var _fpKey = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+          // Persist to agent-specific key so it never mingles with other agents
+          var _fpKey="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
           try{ localStorage.setItem(_fpKey, JSON.stringify(myCases)); }catch(e){}
         }
       }catch(e){ console.warn("Cases parse:", e.message); }
@@ -11212,14 +11212,12 @@ async function loadMyCases(){
     document.head.appendChild(_sc);
   });
 
-  // Fallback: sheet timed out — show last known good cases from agent-specific cache
+  // Fallback: sheet timed out — show agent's last known cases (strict email match only)
   if(!myCases.length){
-    var _fpKey = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+    var _fpKey="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
     try{
-      var _cached = JSON.parse(localStorage.getItem(_fpKey)||"[]");
-      // Only use cases that belong to this agent (by email — strict match only)
-      myCases = _cached.filter(function(c){
-        return c.poc_email && c.poc_email.toLowerCase() === currentUser.email.toLowerCase();
+      myCases = JSON.parse(localStorage.getItem(_fpKey)||"[]").filter(function(c){
+        return c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
       });
     }catch(_e){}
   }
@@ -11230,11 +11228,10 @@ async function loadMyCases(){
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 function statusKeyFromLabel(label){
   var l = (label||"").toLowerCase().trim().replace(/\s+/g," ");
-  // Pass-through: sheet may already store internal keys
-  var direct = {"rider_inv":"rider_inv","hi_tl_inv":"hi_tl_inv",
-    "rider_abs_action":"rider_abs_action","rider_abs_pending":"rider_abs_pending",
-    "hi_tl_abs":"hi_tl_abs","cx_fraud":"cx_fraud","other_pending":"other_pending",
-    "closed":"closed","unassigned":"unassigned","pending_date":"pending_date"};
+  // Direct pass-through — sheet may store internal keys already
+  var direct={rider_inv:"rider_inv",hi_tl_inv:"hi_tl_inv",rider_abs_action:"rider_abs_action",
+    rider_abs_pending:"rider_abs_pending",hi_tl_abs:"hi_tl_abs",cx_fraud:"cx_fraud",
+    other_pending:"other_pending",closed:"closed",unassigned:"unassigned",pending_date:"pending_date"};
   if(direct[l]) return direct[l];
   var map={
     "rider investigation":"rider_inv","rider inv":"rider_inv",
