@@ -182,6 +182,22 @@ textarea.fc{resize:none;min-height:76px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 .utr-detected{background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.3);border-radius:8px;padding:9px 12px;margin-top:8px;display:none;}
 .utr-detected-lbl{font-size:9px;color:var(--grn);font-family:var(--mono);font-weight:600;margin-bottom:3px;}
+/* ── Bifurcation multi-select dropdown ── */
+.bif-wrap{position:relative}
+.bif-field{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:40px;background:var(--sf);border:1.5px solid var(--bd);border-radius:10px;padding:5px 8px;cursor:text;transition:border-color .15s}
+.bif-field:focus-within{border-color:var(--acc)}
+.bif-chip{display:inline-flex;align-items:center;gap:3px;background:rgba(29,78,216,.1);color:var(--acc);border:1px solid rgba(29,78,216,.25);border-radius:5px;padding:2px 6px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.bif-chip-x{cursor:pointer;font-size:12px;font-weight:700;color:var(--acc);line-height:1;padding:0 1px}
+.bif-chip-x:hover{color:var(--red)}
+.bif-search{border:none;outline:none;background:transparent;font-size:12px;color:var(--txt);font-family:var(--sans);min-width:80px;flex:1;padding:2px 4px}
+.bif-dropdown{display:none;position:absolute;z-index:200;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1.5px solid var(--bd);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1);max-height:200px;overflow-y:auto}
+.bif-dropdown.open{display:block}
+.bif-item{padding:8px 12px;font-size:12px;color:var(--txt);cursor:pointer;border-bottom:1px solid var(--sf)}
+.bif-item:last-child{border-bottom:none}
+.bif-item:hover,.bif-item.highlighted{background:rgba(29,78,216,.06);color:var(--acc)}
+.bif-item.selected{color:var(--acc);font-weight:600}
+.bif-item.selected::before{content:"✓ ";font-size:10px}
+.bif-empty{padding:10px 12px;font-size:11px;color:var(--txt3);text-align:center}
 .utr-detected-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--navy);}
 
 /* LOGIN SCREEN */
@@ -365,19 +381,19 @@ textarea.fc{resize:none;min-height:76px;}
 
   <div class="content">
 
-    <!-- ALERTS PAGE -->
-    <div class="page active" id="page-alerts">
-      <div id="alerts-content"></div>
+    <!-- CASES PAGE — unstarted cases (not yet worked on) -->
+    <div class="page active" id="page-cases">
+      <div id="cases-content"></div>
     </div>
 
-    <!-- FEATURED CASES PAGE (not started, not closed) -->
-    <div class="page" id="page-cases">
-      <div id="featured-cases-content"></div>
-    </div>
-
-    <!-- OPEN CASES PAGE (actively working) -->
+    <!-- OPEN CASES PAGE — Daily Status = OPEN only -->
     <div class="page" id="page-open-cases">
       <div id="open-cases-content"></div>
+    </div>
+
+    <!-- WIP PAGE — Daily Status = WIP or Partially Closed -->
+    <div class="page" id="page-wip">
+      <div id="wip-content"></div>
     </div>
 
     <!-- CLOSED CASES PAGE -->
@@ -404,17 +420,17 @@ textarea.fc{resize:none;min-height:76px;}
   </div><!-- /content -->
 
   <div class="bnav">
-    <button class="nb active" onclick="showPage('alerts',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span>Alerts</span><div class="dot"></div>
-    </button>
-    <button class="nb" onclick="showPage('cases',this)">
+    <button class="nb active" onclick="showPage('cases',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      <span>Cases</span>
+      <span>Cases</span><div class="dot"></div>
     </button>
     <button class="nb" onclick="showPage('open-cases',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
       <span>Open</span>
+    </button>
+    <button class="nb" onclick="showPage('wip',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      <span>WIP</span>
     </button>
     <button class="nb" onclick="showPage('closed-cases',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -426,7 +442,7 @@ textarea.fc{resize:none;min-height:76px;}
     </button>
     <button class="nb" onclick="showPage('profile',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span>My Stats</span>
+      <span>Stats</span>
     </button>
   </div>
 </div>
@@ -444,12 +460,35 @@ textarea.fc{resize:none;min-height:76px;}
 
       <!-- START WORKING BANNER (shown if not yet started) -->
       <div id="start-working-banner" style="display:none;margin-bottom:13px">
-        <div style="background:rgba(29,78,216,.06);border:1.5px solid rgba(29,78,216,.2);border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
-          <div style="flex:1">
-            <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">Not started yet</div>
-            <div style="font-size:11px;color:var(--txt3)">Tap to mark this case as actively in progress</div>
+        <div style="background:rgba(29,78,216,.06);border:1.5px solid rgba(29,78,216,.2);border-radius:10px;padding:13px">
+          <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">Not started yet</div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">Upload at least 1 hub photo before starting</div>
+          <!-- Hub image upload — mandatory, shown only before case starts -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px">
+            <div>
+              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-1')">
+                <input type="file" id="sw-hub-img-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1,'sw-hub-img-1','sw-hub-prev-1','sw-hub-ph-1','sw-hub-thumb-1')">
+                <div id="sw-hub-prev-1" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-1" src="" style="width:100%;height:100%;object-fit:cover"></div>
+                <div id="sw-hub-ph-1"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 1 <span style="color:var(--red)">*</span></div></div>
+              </div>
+            </div>
+            <div>
+              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-2')">
+                <input type="file" id="sw-hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2,'sw-hub-img-2','sw-hub-prev-2','sw-hub-ph-2','sw-hub-thumb-2')">
+                <div id="sw-hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
+                <div id="sw-hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2</div></div>
+              </div>
+            </div>
+            <div>
+              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-3')">
+                <input type="file" id="sw-hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3,'sw-hub-img-3','sw-hub-prev-3','sw-hub-ph-3','sw-hub-thumb-3')">
+                <div id="sw-hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
+                <div id="sw-hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3</div></div>
+              </div>
+            </div>
           </div>
-          <button class="btn btn-p btn-sm" onclick="markStartWorking()">
+          <div id="sw-hub-error" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-bottom:8px">⚠ Upload at least 1 hub photo to continue</div>
+          <button class="btn btn-p" style="width:100%" onclick="markStartWorking()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Start Working
           </button>
@@ -460,17 +499,42 @@ textarea.fc{resize:none;min-height:76px;}
       <div class="fgrp"><label class="fl">Daily Status <span class="fr">*</span></label>
         <select class="fc" id="us-status" onchange="handleStatusChange()">
           <option value="">Select today's status...</option>
-          <option value="rider_inv">a. Rider investigation ongoing</option>
-          <option value="hi_tl_inv">b. HI/TL investigation ongoing</option>
-          <option value="rider_abs_action">c. Rider absconded — Police action initiated</option>
-          <option value="rider_abs_pending">d. Rider absconded — Police action pending</option>
-          <option value="hi_tl_abs">e. HI/TL absconded</option>
-          <option value="cx_fraud">f. Customer fraud — Police liaison done</option>
-          <option value="other_pending">g. Other — Pending</option>
-          <option value="closed">h. Case Closed</option>
+          <option value="open">OPEN</option>
+          <option value="wip">WIP — Work In Progress</option>
+          <option value="partial_closed">Partially Closed</option>
+          <option value="closed">Case Closed</option>
         </select>
       </div>
+      <!-- STATUS BIFURCATION — searchable multi-select dropdown -->
+      <div class="fgrp" id="bifurcation-grp">
+        <label class="fl">Status Bifurcation <span style="font-weight:400;color:var(--txt3)">(select all that apply)</span></label>
+        <div class="bif-wrap" id="bif-wrap">
+          <div class="bif-field" id="bif-field" onclick="bifFocus()">
+            <span id="bif-chips"></span>
+            <input type="text" class="bif-search" id="bif-search" placeholder="Search or select…"
+              oninput="bifFilter()" onfocus="bifOpen()" onkeydown="bifKeydown(event)" autocomplete="off">
+          </div>
+          <div class="bif-dropdown" id="bif-dropdown"></div>
+        </div>
+        <!-- Hidden: stores comma-separated selected values for submitUpdate to read -->
+        <input type="hidden" id="bifurcation-hidden" value="">
+      </div>
+
       <div class="fgrp"><label class="fl">Riders Involved (names / IDs)</label><input type="text" class="fc" placeholder="e.g. Deepak Sharma, ID: 12345" id="us-riders"></div>
+      <div class="fgrp">
+        <label class="fl">Riders Involved Count</label>
+        <input type="number" class="fc" id="us-riders-count" placeholder="Enter number of riders"
+          min="0" step="1" pattern="[0-9]*" inputmode="numeric"
+          oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      </div>
+      <div class="fgrp">
+        <label class="fl">Case Continued</label>
+        <select class="fc" id="us-case-continued">
+          <option value="">— Select —</option>
+          <option value="PO">PO</option>
+          <option value="P1">P1</option>
+        </select>
+      </div>
       <div class="fgrp"><label class="fl">Police Action Status</label>
         <select class="fc" id="us-police">
           <option value="No Police Action">No Police Action</option>
@@ -480,14 +544,56 @@ textarea.fc{resize:none;min-height:76px;}
       </div>
       <div class="fgrp"><label class="fl">Remarks</label><textarea class="fc" placeholder="Describe today's ground activity, findings, next steps..." id="us-notes"></textarea></div>
 
+      <!-- HUB IMAGES in form — shown only for unstarted cases (from Cases tab) -->
+      <div id="hub-in-form" style="margin-bottom:13px;display:none">
+        <label class="fl">🏢 Hub Images <span style="font-weight:400;color:var(--txt3)">(up to 3)</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+          <div>
+            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-1')">
+              <input type="file" id="hub-img-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1)">
+              <div id="hub-prev-1" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-1" src="" style="width:100%;height:100%;object-fit:cover"></div>
+              <div id="hub-ph-1"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 1</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-2')">
+              <input type="file" id="hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2)">
+              <div id="hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
+              <div id="hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2</div></div>
+            </div>
+          </div>
+          <div>
+            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-3')">
+              <input type="file" id="hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3)">
+              <div id="hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
+              <div id="hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- EVIDENCE UPLOAD -->
       <div style="margin-bottom:13px">
         <label class="fl">📸 Evidence / Proof Photos</label>
-        <div class="uzone" onclick="triggerUp('ev-up')">
-          <input type="file" id="ev-up" accept="image/*" multiple capture="environment" onchange="handlePhotos('ev-up','ev-gal','ev-prev')">
-          <div class="uicon">📷</div>
-          <div class="utitle">Take Photo / Upload Evidence</div>
-          <div class="usub">CCTV screenshots, site photos, documents</div>
+        <!-- Hidden inputs: one for camera, one for gallery -->
+        <input type="file" id="ev-camera" accept="image/*" capture="environment" multiple style="display:none"
+          onchange="handlePhotosFromInput('ev-camera','ev-gal','ev-prev')">
+        <input type="file" id="ev-gallery" accept="image/*" multiple style="display:none"
+          onchange="handlePhotosFromInput('ev-gallery','ev-gal','ev-prev')">
+        <!-- Also keep ev-up as alias (used internally by _evUpHasFiles guard) -->
+        <input type="file" id="ev-up" accept="image/*" multiple style="display:none"
+          onchange="handlePhotos('ev-up','ev-gal','ev-prev')">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <button type="button" class="btn btn-g" style="padding:10px;font-size:12px"
+            onclick="triggerEvidCamera()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            Open Camera
+          </button>
+          <button type="button" class="btn" style="padding:10px;font-size:12px;background:var(--sf);border:1.5px solid var(--bd);color:var(--txt)"
+            onclick="triggerEvidGallery()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Upload from Gallery
+          </button>
         </div>
         <div class="pgrid" id="ev-gal"></div>
         <div class="fprevs" id="ev-prev"></div>
@@ -512,23 +618,37 @@ textarea.fc{resize:none;min-height:76px;}
 
         <!-- TRANSACTION SLIP UPLOAD -->
         <div class="fgrp">
-          <label class="fl">📷 Upload Transaction Slip</label>
-          <div id="slip-zone" onclick="document.getElementById('slip-input').click()"
-            style="border:2px dashed var(--bd2);border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:var(--sf2);transition:all .15s;position:relative;overflow:hidden">
-            <input type="file" id="slip-input" accept="image/*" capture="environment"
-              style="display:none" onchange="handleSlipUpload(event)">
-            <div id="slip-placeholder">
-              <div style="font-size:22px;margin-bottom:4px">🧾</div>
-              <div style="font-size:12px;font-weight:600;color:var(--navy)">Take Photo / Upload Slip</div>
-              <div style="font-size:10.5px;color:var(--txt3)">Bank screenshot, NEFT/IMPS receipt</div>
-            </div>
-            <img id="slip-preview" src="" alt="" style="display:none;width:100%;border-radius:8px;max-height:180px;object-fit:cover">
+          <label class="fl">🧾 Transaction Slip(s)</label>
+          <!-- Slip inputs: camera + gallery -->
+          <input type="file" id="slip-camera" accept="image/*" capture="environment" multiple
+            style="display:none" onchange="handleSlipUploadFromInput(event)">
+          <input type="file" id="slip-input" accept="image/*" multiple
+            style="display:none" onchange="handleSlipUpload(event)">
+          <!-- Thumbnail grid -->
+          <div id="slip-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px;margin-bottom:7px"></div>
+          <!-- Camera + Gallery buttons -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:7px" id="slip-action-row">
+            <button type="button" class="btn btn-g" style="padding:10px;font-size:12px"
+              onclick="document.getElementById('slip-camera').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Open Camera
+            </button>
+            <button type="button" class="btn" style="padding:10px;font-size:12px;background:var(--sf);border:1.5px solid var(--bd);color:var(--txt)"
+              onclick="document.getElementById('slip-input').click()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Upload from Gallery
+            </button>
           </div>
-          <div id="slip-done" style="display:none;margin-top:7px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.25);border-radius:8px;padding:8px 12px;display:none;align-items:center;gap:8px">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--grn)" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span style="font-size:11.5px;color:var(--grn);font-weight:600">Slip uploaded ✓</span>
-            <span style="font-size:10.5px;color:var(--txt3);margin-left:auto">Tap image to change</span>
+          <!-- Add more row (shown after first upload) -->
+          <div id="slip-add-row" style="display:none;text-align:right;margin-bottom:4px">
+            <button type="button" class="btn" style="font-size:11px;padding:5px 12px;background:var(--sf);border:1.5px solid var(--acc);color:var(--acc)"
+              onclick="document.getElementById('slip-input').click()">➕ Add more slips</button>
           </div>
+          <!-- Status -->
+          <div id="slip-done" style="display:none;margin-top:7px;background:rgba(22,163,74,.07);border:1.5px solid rgba(22,163,74,.25);border-radius:8px;padding:7px 12px;align-items:center;gap:8px">
+            <span id="slip-done-txt" style="font-size:11.5px;color:var(--grn);font-weight:600">Slips attached ✓</span>
+          </div>
+          <img id="slip-preview" src="" alt="" style="display:none">
         </div>
 
         <div class="fgrp">
@@ -639,17 +759,20 @@ textarea.fc{resize:none;min-height:76px;}
 <div class="toast" id="toast">Done</div>
 
 <script>
+var _activePage = "cases"; // track active page — never reset tab on silent renders
 function showPage(id,btn){
+  _activePage = id;
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".nb").forEach(b=>b.classList.remove("active"));
   const pageEl = document.getElementById("page-"+id);
   if(pageEl) pageEl.classList.add("active");
   if(btn) btn.classList.add("active");
+  if(id==="cases")        renderCasesTab();
+  if(id==="open-cases")   renderOpenCases();
+  if(id==="wip")          renderWipCases();
+  if(id==="closed-cases") renderClosedCases();
   if(id==="history")      renderHistory();
   if(id==="profile")      renderProfile();
-  if(id==="cases")        renderFeaturedCases();
-  if(id==="open-cases")   renderOpenCases();
-  if(id==="closed-cases") renderClosedCases();
 }
 function openUpdate(caseId,sub){
   document.getElementById("us-id").textContent=caseId;
@@ -658,18 +781,59 @@ function openUpdate(caseId,sub){
   document.getElementById("us-status").value="";
   document.getElementById("us-notes").value="";
   document.getElementById("us-riders").value="";
+  var ridersCount = document.getElementById("us-riders-count");
+  if(ridersCount) ridersCount.value="";
+  var caseCont = document.getElementById("us-case-continued");
+  if(caseCont) caseCont.value="";
   document.getElementById("us-police").value="No Police Action";
   document.getElementById("cl-box").style.display="none";
   document.getElementById("ev-gal").innerHTML="";
   document.getElementById("ev-prev").innerHTML="";
+  // Reset ev-up file input so previous case's files don't carry over
+  var evInput = document.getElementById("ev-up");
+  if(evInput) evInput.value = "";
+  window._evUpHasFiles = false; // reset flag so ghost uploads don't happen
+  // Reset slip fields
   const slipImg = document.getElementById("slip-preview");
   const slipPh  = document.getElementById("slip-placeholder");
   const slipDone= document.getElementById("slip-done");
+  const slipGal = document.getElementById("slip-gallery");
+  const slipInput = document.getElementById("slip-input");
   if(slipImg){slipImg.src="";slipImg.style.display="none";}
   if(slipPh) slipPh.style.display="block";
   if(slipDone) slipDone.style.display="none";
+  if(slipGal) slipGal.innerHTML="";
+  if(slipInput) slipInput.value="";
   window._slipBase64 = null;
+  window._slipFiles  = [];
+  // Reset new slip UI elements
+  var slipAddRow = document.getElementById("slip-add-row");
+  if(slipAddRow) slipAddRow.style.display = "none";
+  // Reset camera/gallery inputs
+  ["ev-camera","ev-gallery","slip-camera"].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value="";
+  });
+  window._extraEvidFiles = [];
+  // Reset hub images so they don't carry over from previous case
+  window._hubBase64 = {};
+  // Reset both the start-working banner hub inputs AND the in-form hub inputs
+  ["","sw-"].forEach(function(prefix){
+    [1,2,3].forEach(function(n){
+      var prev  = document.getElementById(prefix+"hub-prev-"+n);
+      var ph    = document.getElementById(prefix+"hub-ph-"+n);
+      var thumb = document.getElementById(prefix+"hub-thumb-"+n);
+      var inp   = document.getElementById(prefix+"hub-img-"+n);
+      if(prev)  prev.style.display  = "none";
+      if(ph)    ph.style.display    = "block";
+      if(thumb) thumb.src           = "";
+      if(inp)   inp.value           = "";
+    });
+  });
+  var swErr = document.getElementById("sw-hub-error");
+  if(swErr) swErr.style.display = "none";
   document.getElementById("cl-utr").value="";
+  // Reset bifurcation multi-select widget
+  bifReset();
 
   const c = myCases.find(x=>x.id===caseId);
 
@@ -688,45 +852,135 @@ function openUpdate(caseId,sub){
 
   const isFeatured = c && caseStatusCategory(c.st)==="featured";
   document.getElementById("start-working-banner").style.display = isFeatured ? "block" : "none";
+  // Hub-in-form: show only for unstarted cases (isFeatured) so they can add hub images
+  // Once case is open, hub images are locked (added only once at start)
+  var hubInForm = document.getElementById("hub-in-form");
+  if(hubInForm) hubInForm.style.display = isFeatured ? "block" : "none";
   document.getElementById("sh-update").classList.add("open");
 }
 
-function markStartWorking(){
-  const caseId = document.getElementById("us-id").textContent;
-  const c = myCases.find(x=>x.id===caseId);
+async function markStartWorking(){
+  var caseId = document.getElementById("us-id").textContent;
+  var c = myCases.find(function(x){ return x.id===caseId; });
   if(!c) return;
-  const startDate = new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
-  c.st = "rider_inv";
+
+  // ── Validate: at least 1 hub image must be selected ──────────────
+  var hasHub = window._hubBase64 && (window._hubBase64[1] || window._hubBase64[2] || window._hubBase64[3]);
+  if(!hasHub){
+    var swErr = document.getElementById("sw-hub-error");
+    if(swErr) swErr.style.display = "block";
+    showToast("⚠ Upload at least 1 hub photo first","warn");
+    return;
+  }
+
+  var startDate = new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+  c.st = "open";
   c.startDate = startDate;
-  // Persist to agent-specific key (matches what loadMyCases reads)
-  try{
-    var _sk="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
-    var all=JSON.parse(localStorage.getItem(_sk)||"[]");
-    var idx=all.findIndex(function(x){return x.id===caseId;});
-    if(idx>=0){all[idx].st="rider_inv"; all[idx].startDate=startDate;}
-    else{all.push(Object.assign({},c,{st:"rider_inv",startDate:startDate}));}
-    localStorage.setItem(_sk,JSON.stringify(all));
-  }catch(e){}
-  // Sync to sheet — status + Case Start Date
-  try{
-    const swCb="fpiSwCb_"+Date.now();
-    const swParams=new URLSearchParams({
-      action:"update_case_status", case_id:caseId,
-      status:"Rider Investigation",
-      case_start_date:startDate,
-      callback:swCb
-    });
-    window[swCb]=function(r){try{delete window[swCb];}catch(e){}};
-    const swS=document.createElement("script");
-    swS.src=APPS_SCRIPT_URL+"?"+swParams.toString();
-    swS.onerror=()=>{try{delete window[swCb];}catch(e){}};
-    document.head.appendChild(swS);
-    setTimeout(()=>{try{swS.remove();delete window[swCb];}catch(e){}},8000);
-  }catch(e){}
   document.getElementById("start-working-banner").style.display="none";
-  document.getElementById("us-status").value="rider_inv";
-  showToast("✅ Case marked as In Progress — "+startDate);
-  renderOpenCases(); renderFeaturedCases();
+  document.getElementById("us-status").value="open";
+  showToast("Starting case — uploading hub photos…");
+
+  // ── Upload hub images 1/2/3 if present ────────────────────────────
+  var hubUrls = {1:"", 2:"", 3:""};
+  var hubNums = [1,2,3];
+  var hubPending = 0;
+  var hubDone = 0;
+
+  function syncCaseToSheet(h1, h2, h3){
+    // Persist to localStorage
+    try{
+      var _ck="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+      var all=JSON.parse(localStorage.getItem(_ck)||"[]");
+      var _si=all.findIndex(function(x){return x.id===caseId;});
+      if(_si>=0){all[_si].st="rider_inv"; all[_si].startDate=startDate;}
+      else{all.push(Object.assign({},c,{st:"rider_inv",startDate:startDate}));}
+      localStorage.setItem(_ck,JSON.stringify(all));
+    }catch(e){}
+    // Sync to sheet
+    try{
+      var swCb="fpiSwCb_"+Date.now();
+      var params={action:"update_case_status", case_id:caseId,
+        status:"Rider Investigation", case_start_date:startDate, callback:swCb};
+      if(h1) params.hub_image_1=h1;
+      if(h2) params.hub_image_2=h2;
+      if(h3) params.hub_image_3=h3;
+      var swParams=new URLSearchParams(params);
+      window[swCb]=function(r){try{delete window[swCb];}catch(e){}};
+      var swS=document.createElement("script");
+      swS.src=APPS_SCRIPT_URL+"?"+swParams.toString();
+      swS.onerror=function(){try{delete window[swCb];}catch(e){}};
+      document.head.appendChild(swS);
+      setTimeout(function(){try{swS.remove();delete window[swCb];}catch(e){}},10000);
+    }catch(e){}
+    showToast("✅ Case started — "+startDate);
+    renderCasesTab(); renderOpenCases(); renderWipCases();
+  }
+
+  // Collect hub images that were selected
+  var hubEntries = [];
+  for(var n=1; n<=3; n++){
+    if(window._hubBase64 && window._hubBase64[n]){
+      hubEntries.push({num:n, b64:window._hubBase64[n]});
+    }
+  }
+
+  if(hubEntries.length === 0){
+    // No hub images — go straight to sheet sync
+    syncCaseToSheet("","","");
+    window._hubBase64 = {};
+    return;
+  }
+
+  var uploaded = {1:"", 2:"", 3:""};
+  var remaining = hubEntries.length;
+
+  hubEntries.forEach(function(entry){
+    var rawB64   = entry.b64.replace(/^data:[^;]+;base64,/,"");
+    var mimeType = (entry.b64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+    var cbName   = "fpiHubCb_"+Date.now()+"_"+entry.num;
+
+    window[cbName] = function(data){
+      try{delete window[cbName];}catch(e){}
+      if(data && data.url) uploaded[entry.num] = data.url;
+      remaining--;
+      if(remaining === 0){
+        syncCaseToSheet(uploaded[1], uploaded[2], uploaded[3]);
+        window._hubBase64 = {};
+      }
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", APPS_SCRIPT_URL, true);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.onload = function(){
+      try{
+        var text = xhr.responseText;
+        var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+        var data = JSON.parse(m ? m[1] : text);
+        window[cbName] && window[cbName](data);
+      }catch(ex){
+        try{delete window[cbName];}catch(e){}
+        remaining--;
+        if(remaining === 0){
+          syncCaseToSheet(uploaded[1], uploaded[2], uploaded[3]);
+          window._hubBase64 = {};
+        }
+      }
+    };
+    xhr.onerror = xhr.ontimeout = function(){
+      try{delete window[cbName];}catch(e){}
+      remaining--;
+      if(remaining === 0){
+        syncCaseToSheet(uploaded[1], uploaded[2], uploaded[3]);
+        window._hubBase64 = {};
+      }
+    };
+    xhr.timeout = 30000;
+    xhr.send(JSON.stringify({
+      action:"upload_slip", case_id:caseId,
+      base64:rawB64, mime_type:mimeType, callback:cbName
+    }));
+  });
 }
 function openRecovery(caseId){
   document.getElementById("rs-id").textContent=caseId;
@@ -750,6 +1004,8 @@ function handlePhotos(inputId,galleryId,previewId){
   const input=document.getElementById(inputId);
   const files=Array.from(input.files);
   if(!files.length)return;
+  // Mark that user has actually attached evidence in this update session
+  if(inputId==="ev-up") window._evUpHasFiles = true;
   if(galleryId){
     const gallery=document.getElementById(galleryId);
     files.filter(f=>f.type.startsWith("image/")).forEach(f=>{
@@ -772,6 +1028,50 @@ function handlePhotos(inputId,galleryId,previewId){
   }
   showToast(`${files.length} file${files.length>1?"s":""} attached ✓`);
 }
+
+// ── Evidence: handle files from camera or gallery input ───────────────
+function handlePhotosFromInput(inputId, galleryId, previewId){
+  // Merge files into ev-up (the input guarded by _evUpHasFiles)
+  var src = document.getElementById(inputId);
+  if(!src || !src.files || !src.files.length) return;
+  window._evUpHasFiles = true;
+  // Show thumbnails
+  var gallery = document.getElementById(galleryId);
+  if(gallery){
+    Array.from(src.files).filter(f=>f.type.startsWith("image/")).forEach(f=>{
+      var r = new FileReader();
+      r.onload = function(e){
+        var img = document.createElement("img");
+        img.src = e.target.result; img.className = "pthumb";
+        gallery.appendChild(img);
+      };
+      r.readAsDataURL(f);
+    });
+  }
+  // Accumulate into ev-up's FileList via DataTransfer
+  try{
+    var dt = new DataTransfer();
+    var ev = document.getElementById("ev-up");
+    if(ev && ev.files) Array.from(ev.files).forEach(f=>dt.items.add(f));
+    Array.from(src.files).forEach(f=>dt.items.add(f));
+    ev.files = dt.files;
+  }catch(e){
+    // DataTransfer not supported — fall back: store separately
+    if(!window._extraEvidFiles) window._extraEvidFiles = [];
+    Array.from(src.files).forEach(f=>window._extraEvidFiles.push(f));
+  }
+  showToast(src.files.length+" photo(s) attached ✓");
+}
+function triggerEvidCamera(){ window._evUpHasFiles=true; document.getElementById("ev-camera").click(); }
+function triggerEvidGallery(){ window._evUpHasFiles=true; document.getElementById("ev-gallery").click(); }
+
+// ── Slip: camera path routes through handleSlipUpload ────────────────
+function handleSlipUploadFromInput(event){
+  handleSlipUpload(event);
+  // Show "Add more" row after first upload
+  var addRow = document.getElementById("slip-add-row");
+  if(addRow) addRow.style.display = "block";
+}
 async function submitUpdate(){
   const status = document.getElementById("us-status").value;
   if(!status){ showToast("Select a status first","warn"); return; }
@@ -782,6 +1082,10 @@ async function submitUpdate(){
   // Case was previously closed — sheet will add new row (handled server-side)
 
   const notes  = document.getElementById("us-notes").value.trim();
+  // Read status bifurcation from hidden field (set by the multi-select widget)
+  var bifurcation = (document.getElementById("bifurcation-hidden")||{}).value||"";
+  const ridersCount    = parseInt((document.getElementById("us-riders-count")||{}).value||"0")||0;
+  const caseContinued  = (document.getElementById("us-case-continued")||{}).value||"";
   const utr    = document.getElementById("cl-utr").value.trim();
   const amt    = parseInt(document.getElementById("cl-amt")?.value||"0")||0;
   const police = document.getElementById("us-police").value;
@@ -793,9 +1097,24 @@ async function submitUpdate(){
   // immediately used evidenceBase64List which was always [] (race condition).
   var evidenceBase64List = await (function(){
     return new Promise(function(resolve){
-      var esInput = document.getElementById("ev-up"); // ev-up is the file input inside sh-update
-      if(!esInput || !esInput.files || !esInput.files.length){ resolve([]); return; }
-      var esFiles = Array.from(esInput.files);
+      // Only read files if user actually attached evidence THIS session (prevents ghost uploads)
+      if(!window._evUpHasFiles){ resolve([]); return; }
+      var esInput = document.getElementById("ev-up");
+      // Merge ev-camera, ev-gallery and fallback _extraEvidFiles
+      var extraIds = ["ev-camera","ev-gallery"];
+      var extraFiles = (window._extraEvidFiles||[]).slice();
+      extraIds.forEach(function(id){
+        var el=document.getElementById(id);
+        if(el && el.files) Array.from(el.files).forEach(function(f){ extraFiles.push(f); });
+      });
+      var baseFiles = esInput && esInput.files ? Array.from(esInput.files) : [];
+      // Deduplicate by name+size
+      var seen = {};
+      var esFiles = baseFiles.concat(extraFiles).filter(function(f){
+        var k = f.name+f.size;
+        if(seen[k]) return false; seen[k]=true; return true;
+      });
+      if(!esFiles.length){ resolve([]); return; }
       var results = new Array(esFiles.length);
       var done = 0;
       esFiles.forEach(function(f, fi){
@@ -831,16 +1150,13 @@ async function submitUpdate(){
     };
     c.updates.push(_updateEntry);
 
-    // ── Save to agent-specific key (matches what loadMyCases reads) ──
+    // ── Save to agent-specific cache key ──
     try{
       var _ck="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
-      var all=JSON.parse(localStorage.getItem(_ck)||"[]");
-      var _si=all.findIndex(function(x){return x.id===caseId;});
-      if(_si>=0){all[_si]=Object.assign(all[_si],{st:c.st,policeAction:c.policeAction,
-        recovery:c.recovery,utr:c.utr,updates:c.updates,
-        startDate:c.startDate||all[_si].startDate||"",closedDate:c.closedDate||""});}
-      else{all.push(c);}
-      localStorage.setItem(_ck,JSON.stringify(all));
+      var _all=JSON.parse(localStorage.getItem(_ck)||"[]");
+      var _si=_all.findIndex(function(x){return x.id===caseId;});
+      if(_si>=0){ _all[_si]=Object.assign(_all[_si],{st:c.st,policeAction:c.policeAction,recovery:c.recovery,utr:c.utr,updates:c.updates,startDate:c.startDate||_all[_si].startDate||"",closedDate:c.closedDate||""}); }
+      localStorage.setItem(_ck,JSON.stringify(_all));
     }catch(e){}
 
     // ── ALSO save to dedicated fpi_updates key (survives sheet sync & logout) ──
@@ -860,42 +1176,112 @@ async function submitUpdate(){
   // Step 1: Sync base status fields via JSONP GET
   const syncCb = "fpiUpdCb_"+Date.now();
   const syncParams = new URLSearchParams({
-    action         : "update_case_status",
-    case_id        : caseId,
-    status         : status,
-    recovery       : amt,
-    utr            : utr,
-    police         : police,
-    remarks        : notes,
-    case_closed_date: closedDate,
-    callback       : syncCb
+    action             : "update_case_status",
+    case_id            : caseId,
+    status             : status,
+    recovery           : amt,
+    utr                : utr,
+    police             : police,
+    remarks            : notes,
+    status_bifurcation : bifurcation,
+    riders_count       : ridersCount,
+    case_continued     : caseContinued,
+    case_closed_date   : closedDate,
+    callback           : syncCb
   });
 
   window[syncCb] = function(sheetResult){
     try{ delete window[syncCb]; }catch(e){}
 
+    // ── Log update to Case_History sheet (permanent, cross-device) ──
+    try{
+      window._fpiUploadSeq = (window._fpiUploadSeq||0)+1;
+      var _lcb = "fpiLogCb_"+window._fpiUploadSeq;
+      var _lp  = new URLSearchParams({
+        action       : "log_update",
+        case_id      : caseId,
+        agent_email  : currentUser.email||"",
+        agent_name   : currentUser.name||"",
+        status       : status,
+        remarks      : notes,
+        recovery     : amt,
+        utr          : utr,
+        police       : police,
+        bifurcation  : bifurcation||"",
+        photo_count  : evidenceBase64List.length,
+        callback     : _lcb
+      });
+      window[_lcb] = function(){ try{delete window[_lcb];}catch(e){} };
+      var _ls = document.createElement("script");
+      _ls.src = APPS_SCRIPT_URL+"?"+_lp.toString();
+      document.head.appendChild(_ls);
+      setTimeout(function(){try{_ls.remove();delete window[_lcb];}catch(e){}}, 8000);
+    }catch(_le){}
+
     var evidImgs = evidenceBase64List.slice();
 
-    // Upload evidence images for ALL updates (not just closure)
-    // uploadFileToDrive writes URLs directly to "Evidence Image Link" column server-side
+    function afterEvidUploaded(evidUrls){
+      // ── Write evidence URLs to sheet ──────────────────────────────
+      if(evidUrls.length && caseId){
+        var ecb = "fpiEvSheet_"+Date.now();
+        var ep  = new URLSearchParams({
+          action:"update_case_status", case_id:caseId,
+          evidence_images:evidUrls.join(", "), callback:ecb
+        });
+        window[ecb]=function(){try{delete window[ecb];}catch(e){}};
+        var es=document.createElement("script");
+        es.src=APPS_SCRIPT_URL+"?"+ep.toString();
+        document.head.appendChild(es);
+        setTimeout(function(){try{es.remove();delete window[ecb];}catch(e){}},8000);
+        if(status!=="closed") showToast("✅ "+evidUrls.length+" photo(s) saved to sheet");
+      }
+
+      // ── Upload hub images if agent selected any (works from all tabs) ──
+      var hubEnt = [];
+      for(var hn=1; hn<=3; hn++){
+        if(window._hubBase64 && window._hubBase64[hn])
+          hubEnt.push({num:hn, b64:window._hubBase64[hn]});
+      }
+      if(hubEnt.length){
+        _uploadHubImages(caseId, hubEnt, function(h1,h2,h3){
+          window._hubBase64 = {};
+          if(h1||h2||h3){
+            var hcb="fpiHubSheet_"+Date.now();
+            var hp=new URLSearchParams({action:"update_case_status",case_id:caseId,callback:hcb});
+            if(h1) hp.append("hub_image_1",h1);
+            if(h2) hp.append("hub_image_2",h2);
+            if(h3) hp.append("hub_image_3",h3);
+            window[hcb]=function(){try{delete window[hcb];}catch(e){}};
+            var hs=document.createElement("script");hs.src=APPS_SCRIPT_URL+"?"+hp.toString();
+            document.head.appendChild(hs);
+            setTimeout(function(){try{hs.remove();delete window[hcb];}catch(e){}},10000);
+          }
+        });
+      } else {
+        window._hubBase64 = {};
+      }
+
+      // ── Closure: upload slips then send email ──────────────────────
+      if(status==="closed"){
+        _uploadAllSlips(caseId, function(slipUrls){
+          _doClosureEmail(caseId, c, amt, utr, police, closureNotes, evidUrls, closedDate, slipUrls);
+        });
+      }
+    }
+
     if(evidImgs.length > 0){
-      _uploadEvidenceImages(caseId, evidImgs, function(evidUrls){
-        if(status==="closed"){
-          var slipB64 = window._slipBase64 || "";
-          _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evidUrls, closedDate);
-        } else {
-          if(evidUrls.length) showToast("✅ "+evidUrls.length+" photo(s) saved to sheet");
-        }
-      });
-    } else if(status==="closed"){
-      var slipB64 = window._slipBase64 || "";
-      _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, [], closedDate);
+      _uploadEvidenceImages(caseId, evidImgs, afterEvidUploaded);
+    } else {
+      afterEvidUploaded([]);
     }
   };
 
   const syncS = document.createElement("script");
   syncS.src   = APPS_SCRIPT_URL+"?"+syncParams.toString();
-  syncS.onerror = function(){ try{delete window[syncCb];}catch(e){} if(status==="closed") _doClosureEmail(caseId,c,amt,utr,police,closureNotes,window._slipBase64||"",[],closedDate); };
+  syncS.onerror = function(){
+    try{delete window[syncCb];}catch(e){}
+    if(status==="closed") _doClosureEmail(caseId,c,amt,utr,police,closureNotes,[],closedDate,[]);
+  };
   document.head.appendChild(syncS);
   setTimeout(function(){ try{syncS.remove();delete window[syncCb];}catch(e){}},10000);
 
@@ -913,7 +1299,8 @@ async function submitUpdate(){
     }, 800);
   } else {
     showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
-    renderPortalCases();
+    // Re-render affected tabs without resetting active page
+    renderCasesTab(); renderOpenCases(); renderWipCases();
   }
 }
 
@@ -933,102 +1320,219 @@ function _debugLog(tag, msg, data){
 // FIX: Apps Script POST returns a 302 redirect whose body is JSONP text
 // (callbackName({...})), NOT plain JSON. Using .json() throws a parse error.
 // Fix: use .text() and manually unwrap the JSONP envelope.
-function _uploadEvidenceImages(caseId, imgList, callback){
-  // Uses JSONP: POST body contains a callback name.
-  // Apps Script doPost wraps the JSON response as callbackName({...})
-  // which we inject as a <script> tag — bypasses CORS completely.
-  var urls    = [];
-  var pending = imgList.length;
-  if(!pending){ callback([]); return; }
+// ── Upload one file to Drive via XHR POST ───────────────────────────
+function _uploadOneFile(caseId, rawB64, mimeType, onDone){
+  window._fpiUploadSeq = (window._fpiUploadSeq||0) + 1;
+  var cbName = "fpiUpCb_" + window._fpiUploadSeq;
+  window[cbName] = function(data){
+    try{ delete window[cbName]; }catch(e){}
+    onDone(data && data.url ? data.url : "");
+  };
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", APPS_SCRIPT_URL, true);
+  xhr.setRequestHeader("Content-Type", "text/plain");
+  xhr.onload = function(){
+    try{
+      var text = xhr.responseText;
+      var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+      var data = JSON.parse(m ? m[1] : text);
+      window[cbName] && window[cbName](data);
+    }catch(ex){
+      _debugLog("IMG","parse err: "+ex.message);
+      try{ delete window[cbName]; }catch(e){} onDone("");
+    }
+  };
+  xhr.onerror = xhr.ontimeout = function(){
+    try{ delete window[cbName]; }catch(e){} onDone("");
+  };
+  xhr.timeout = 35000;
+  xhr.send(JSON.stringify({
+    action:"upload_slip", case_id:caseId,
+    base64:rawB64, mime_type:mimeType, callback:cbName
+  }));
+}
 
-  imgList.forEach(function(img, idx){
+// ── Upload evidence images SEQUENTIALLY ─────────────────────────────
+// Sequential = one at a time → all succeed even if Apps Script queues requests.
+// Parallel uploads caused only the last image to save (race condition).
+function _uploadEvidenceImages(caseId, imgList, callback){
+  if(!imgList || !imgList.length){ callback([]); return; }
+  var urls   = [];
+  var i      = 0;
+  function next(){
+    if(i >= imgList.length){ callback(urls); return; }
+    var img = imgList[i]; i++;
     var rawB64   = img.base64.replace(/^data:[^;]+;base64,/,"");
     var mimeType = (img.base64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
-    var cbName   = "fpiUploadCb_" + Date.now() + "_" + idx;
+    _debugLog("IMG","uploading "+(i)+"/"+imgList.length+" seq");
+    _uploadOneFile(caseId, rawB64, mimeType, function(url){
+      if(url){ urls.push(url); _debugLog("IMG","✅ got URL: "+url); }
+      else { _debugLog("IMG","⚠ no URL for image "+(i)); }
+      next();
+    });
+  }
+  next();
+}
 
-    _debugLog("IMG", "Uploading "+(idx+1)+"/"+imgList.length+" case:"+caseId+" size:"+rawB64.length);
+// ── Upload hub images (sequential, returns individual URLs) ──────────
+function _uploadHubImages(caseId, hubEntries, callback){
+  // hubEntries = [{num:1,b64:"..."}, ...]
+  if(!hubEntries.length){ callback("","",""); return; }
+  var results = {};
+  var i = 0;
+  function next(){
+    if(i >= hubEntries.length){
+      callback(results[1]||"", results[2]||"", results[3]||"");
+      return;
+    }
+    var entry = hubEntries[i]; i++;
+    var rawB64   = entry.b64.replace(/^data:[^;]+;base64,/,"");
+    var mimeType = (entry.b64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+    _uploadOneFile(caseId, rawB64, mimeType, function(url){
+      if(url) results[entry.num] = url;
+      next();
+    });
+  }
+  next();
+}
 
-    // Register the JSONP callback
-    window[cbName] = function(data){
-      try{ delete window[cbName]; }catch(e){}
-      if(data && data.ok && data.url){
-        _debugLog("IMG", "✅ Got Drive URL: " + data.url);
-        urls.push(data.url);
-      } else {
-        _debugLog("IMG", "⚠ No URL in response", data);
-      }
-      pending--;
-      if(pending === 0) callback(urls);
-    };
+// ── Upload all slip images (multiple) ────────────────────────────────
+function _uploadAllSlips(caseId, callback){
+  var files = window._slipFiles || [];
+  // Also include legacy single base64
+  var singleB64 = window._slipBase64 || "";
+  if(files.length === 0 && !singleB64){ callback([]); return; }
 
-    // Build a form and POST it — Apps Script receives JSON body + callback param
-    // We use XMLHttpRequest instead of fetch so we can read the response
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", APPS_SCRIPT_URL, true);
-    xhr.setRequestHeader("Content-Type", "text/plain"); // avoids CORS preflight
-    xhr.onload = function(){
-      _debugLog("IMG", "XHR status: " + xhr.status + " response: " + xhr.responseText.substring(0,120));
-      try{
-        var text = xhr.responseText;
-        // Try JSONP unwrap first: cbName({...})
-        var m = text.match(/\w+\((\{[\s\S]*\})\)/);
-        var data = JSON.parse(m ? m[1] : text);
-        window[cbName] && window[cbName](data);
-      }catch(ex){
-        _debugLog("IMG", "⚠ Parse error: "+ex.message+" raw:"+xhr.responseText.substring(0,80));
-        if(window[cbName]){
-          try{ delete window[cbName]; }catch(e){}
-          pending--;
-          if(pending===0) callback(urls);
-        }
-      }
+  // Build list from window._slipFiles FileObjects → base64
+  if(files.length === 0){
+    // Only single base64 available (old path)
+    _uploadSingleSlipB64(caseId, singleB64, function(url){
+      callback(url ? [url] : []);
+    });
+    return;
+  }
+
+  var urls    = new Array(files.length);
+  var pending = files.length;
+
+  files.forEach(function(file, fi){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      _uploadSingleSlipB64(caseId, ev.target.result, function(url){
+        if(url) urls[fi] = url;
+        pending--;
+        if(pending === 0) callback(urls.filter(Boolean));
+      });
     };
-    xhr.onerror = function(){
-      _debugLog("IMG", "❌ XHR network error");
-      try{ delete window[cbName]; }catch(e){}
+    reader.onerror = function(){
       pending--;
-      if(pending===0) callback(urls);
+      if(pending === 0) callback(urls.filter(Boolean));
     };
-    xhr.ontimeout = function(){
-      _debugLog("IMG", "❌ XHR timeout");
-      try{ delete window[cbName]; }catch(e){}
-      pending--;
-      if(pending===0) callback(urls);
-    };
-    xhr.timeout = 30000;
-    xhr.send(JSON.stringify({
-      action   : "upload_slip",
-      case_id  : caseId,
-      base64   : rawB64,
-      mime_type: mimeType,
-      callback : cbName
-    }));
+    reader.readAsDataURL(file);
   });
 }
 
-// ── Fire closure email after sheet is updated ─────────────────────
-function _doClosureEmail(caseId, c, amt, utr, police, closureNotes, slipB64, evidUrls, closedDate){
-  var emailPayload = {
-    id          : caseId,
-    cat         : c ? (c.cat ||"") : "",
-    type        : c ? (c.type||"") : "",
-    hub         : c ? (c.hub ||"") : "",
-    city        : c ? (c.city||"") : "",
-    state       : c ? (c.state||"") : "",
-    val         : c ? (c.val ||0)  : 0,
-    recovery    : amt,
-    utr         : utr,
-    policeAction: police,
-    closureNotes: closureNotes,
-    pn          : currentUser.name  || (c ? c.pn        : "") || "",
-    poc_email   : currentUser.email || (c ? c.poc_email : "") || "",
-    slipBase64  : slipB64,
-    utrSlipUrl  : window._utrSlipUrl || "",
-    evidenceUrls: evidUrls.join(", "),
-    closedDate  : closedDate
+function _uploadSingleSlipB64(caseId, b64, callback){
+  if(!b64){ callback(""); return; }
+  var rawB64   = b64.replace(/^data:[^;]+;base64,/,"");
+  var mimeType = (b64.match(/^data:([^;]+);/) || ["","image/jpeg"])[1];
+  window._fpiUploadSeq = (window._fpiUploadSeq||0) + 1;
+  var cbName = "fpiSlipSingle_"+window._fpiUploadSeq;
+
+  window[cbName] = function(data){
+    try{delete window[cbName];}catch(e){}
+    callback(data && data.url ? data.url : "");
   };
-  console.log("[Close] Triggering closure email for", caseId);
-  triggerClosureEmail(emailPayload);
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", APPS_SCRIPT_URL, true);
+  xhr.setRequestHeader("Content-Type", "text/plain");
+  xhr.onload = function(){
+    try{
+      var text = xhr.responseText;
+      var m = text.match(/\w+\((\{[\s\S]*\})\)/);
+      var data = JSON.parse(m ? m[1] : text);
+      window[cbName] && window[cbName](data);
+    }catch(ex){
+      try{delete window[cbName];}catch(e){}
+      callback("");
+    }
+  };
+  xhr.onerror = xhr.ontimeout = function(){
+    try{delete window[cbName];}catch(e){}
+    callback("");
+  };
+  xhr.timeout = 30000;
+  xhr.send(JSON.stringify({
+    action:"upload_slip", case_id:caseId,
+    base64:rawB64, mime_type:mimeType, callback:cbName
+  }));
+}
+
+// ── Fire closure email after sheet is updated ─────────────────────
+function _doClosureEmail(caseId, c, amt, utr, police, closureNotes, evidUrls, closedDate, slipUrls){
+  slipUrls = slipUrls || [];
+  evidUrls = evidUrls || [];
+  var slipUrlStr = slipUrls.join(", ");
+  var evidUrlStr = evidUrls.join(", ");
+
+  // Write slip URLs to sheet (comma-separated in UTR Slip Image column)
+  if(slipUrlStr && caseId){
+    var scb = "fpiSlipSheet_"+Date.now();
+    var sp  = new URLSearchParams({action:"update_case_status", case_id:caseId,
+      utr_slip_url:slipUrlStr, callback:scb});
+    window[scb]=function(){try{delete window[scb];}catch(e){}};
+    var ss2=document.createElement("script");
+    ss2.src=APPS_SCRIPT_URL+"?"+sp.toString();
+    document.head.appendChild(ss2);
+    setTimeout(function(){try{ss2.remove();delete window[scb];}catch(e){}},8000);
+  }
+
+  // Send closure email via JSONP GET — pass Drive URLs (already uploaded)
+  // No re-upload needed; Apps Script will fetch images from Drive for attachment
+  var cb = "fpEmailCb_"+Date.now();
+  var params = new URLSearchParams({
+    action        : "close_case_email",
+    case_id       : caseId,
+    category      : c ? (c.cat ||"") : "",
+    fraud_type    : c ? (c.type||"") : "",
+    hub           : c ? (c.hub ||"") : "",
+    city          : c ? (c.city||"") : "",
+    state         : c ? (c.state||"") : "",
+    value         : c ? (c.val ||0)  : 0,
+    recovery      : amt,
+    utr           : utr,
+    poc_name      : currentUser.name  || (c ? c.pn       : "") || "",
+    poc_email     : currentUser.email || (c ? c.poc_email: "") || "",
+    police_action : police,
+    closure_notes : closureNotes,
+    utr_slip_url  : slipUrlStr,
+    evidence_urls : evidUrlStr,
+    closed_date   : closedDate,
+    callback      : cb
+  });
+
+  window[cb] = function(data){
+    try{ delete window[cb]; }catch(e){}
+    if(data && data.ok){
+      showToast("📧 Closure email sent to manager");
+      console.log("[Email] Sent OK for", caseId);
+    } else {
+      var msg = data ? (data.error||data.msg||"Unknown error") : "No response";
+      showToast("⚠ Email: "+String(msg).substring(0,60));
+      console.error("[Email] Failed:", data);
+    }
+  };
+
+  var emailS = document.createElement("script");
+  emailS.src = APPS_SCRIPT_URL+"?"+params.toString();
+  emailS.onerror = function(){
+    try{delete window[cb];}catch(e){}
+    showToast("Case closed ✓ (email delivery unknown)");
+  };
+  document.head.appendChild(emailS);
+  setTimeout(function(){try{emailS.remove();delete window[cb];}catch(e){}}, 20000);
+  console.log("[Close] Closure email triggered for", caseId);
 }
 
 // ── OCR: extract UTR from payment slip image ──────────────
@@ -1081,22 +1585,83 @@ function uploadSlipToDrive(caseId, base64DataUrl, syncCbName){
 }
 
 function handleSlipUpload(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const img     = document.getElementById("slip-preview");
-    const ph      = document.getElementById("slip-placeholder");
-    const doneBox = document.getElementById("slip-done");
-    if(img){ img.src = e.target.result; img.style.display = "block"; }
-    if(ph)  ph.style.display = "none";
-    if(doneBox){ doneBox.style.display = "flex"; doneBox.innerHTML = '<span style="font-size:11.5px;color:var(--acc)">📷 Slip uploaded — reading UTR…</span>'; }
-    window._slipBase64 = e.target.result;
-    showToast("✓ Slip uploaded — scanning for UTR…");
-    extractUTRFromImage(e.target.result);
-  };
-  reader.readAsDataURL(file);
+  const newFiles = Array.from(event.target.files);
+  if(!newFiles.length) return;
+
+  // Accumulate across multiple selections
+  if(!window._slipFiles) window._slipFiles = [];
+  window._slipFiles = window._slipFiles.concat(newFiles);
+  const files = window._slipFiles;
+
+  const ph      = document.getElementById("slip-placeholder-btn");
+  const addBtn  = document.getElementById("slip-add-btn");
+  const doneBox = document.getElementById("slip-done");
+  const doneText= document.getElementById("slip-done-txt");
+  const gallery = document.getElementById("slip-gallery");
+
+  // After first upload: hide big placeholder, show "+ Add Slip" button
+  if(ph) ph.style.display = files.length > 0 ? "none" : "block";
+  if(addBtn) addBtn.style.display = files.length > 0 ? "block" : "none";
+  if(doneBox) doneBox.style.display = "flex";
+  if(doneText) doneText.textContent = "🧾 " + files.length + " slip" + (files.length>1?"s":"") + " attached ✓";
+
+  // Add thumbnails for newly added files
+  newFiles.forEach(function(f){
+    const r = new FileReader();
+    r.onload = function(e){
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#f0f0f0";
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block";
+      wrap.appendChild(img);
+      if(gallery) gallery.appendChild(wrap);
+    };
+    r.readAsDataURL(f);
+  });
+
+  // UTR extraction from first file (only once)
+  if(!window._slipBase64){
+    const readerUTR = new FileReader();
+    readerUTR.onload = function(e){
+      window._slipBase64 = e.target.result;
+      extractUTRFromImage(e.target.result);
+    };
+    readerUTR.readAsDataURL(files[0]);
+  }
+
+  showToast("✓ " + files.length + " slip" + (files.length>1?"s":"") + " attached");
+  var addRow = document.getElementById("slip-add-row");
+  if(addRow) addRow.style.display = "block";
 }
+// ── Hub image preview (for Start Working) ────────────────────────────
+window._hubBase64 = {};  // {1: base64, 2: base64, 3: base64}
+function handleHubImage(num, inputId, prevId, phId, thumbId){
+  // Works for both banner inputs (sw-hub-img-N) and form inputs (hub-img-N)
+  var iId    = inputId  || "hub-img-"+num;
+  var pId    = prevId   || "hub-prev-"+num;
+  var phElId = phId     || "hub-ph-"+num;
+  var tId    = thumbId  || "hub-thumb-"+num;
+  var input  = document.getElementById(iId);
+  if(!input || !input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    if(!window._hubBase64) window._hubBase64 = {};
+    window._hubBase64[num] = e.target.result;
+    var prev  = document.getElementById(pId);
+    var ph    = document.getElementById(phElId);
+    var thumb = document.getElementById(tId);
+    if(thumb) thumb.src = e.target.result;
+    if(prev)  prev.style.display = "block";
+    if(ph)    ph.style.display   = "none";
+    // Hide validation error if user uploads
+    var swErr = document.getElementById("sw-hub-error");
+    if(swErr) swErr.style.display = "none";
+    showToast("Hub photo "+num+" attached ✓");
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
 
 /* ── UTR Extraction — no-Tesseract approach using Anthropic Claude API ──
    Strategy: Use the Anthropic API (already available in this app) to read
@@ -10805,6 +11370,119 @@ function extractUTRFromImage(base64){
 })();
 
 // ── Sign out ──────────────────────────────────────────────
+// ── Status Bifurcation multi-select widget ────────────────────────────
+var _BIF_OPTIONS = ["Riders blacklisted/terminated", "HI Removed", "TL Removed", "Franchise termination raised", "Overall loss recovered", "Partial loss recovered", "Rider absconding", "FPI actions underway", "Add on recovery expected", "Riders inactive", "Briefing done", "FR Payout deduction raised", "Held shipments recovered", "Franchise inactive", "LMA vendor debit raised", "Rider debit raised", "HOV merchandise recovered", "HI salary hold", "Police actions", "Police complaint registered", "FIR initiated", "Partner absconding", "Payout/SD on hold", "Visit in pipeline", "TL salary hold", "Zero Net risk", "Remotely handled/long distance", "Seller fraud", "Franchise VBO case"];
+var _bifSelected = [];   // array of selected option strings
+var _bifHighlight = -1;
+
+function bifReset(){
+  _bifSelected = [];
+  _bifHighlight = -1;
+  var h = document.getElementById("bifurcation-hidden");
+  var ch = document.getElementById("bif-chips");
+  var dd = document.getElementById("bif-dropdown");
+  var s  = document.getElementById("bif-search");
+  if(h)  h.value = "";
+  if(ch) ch.innerHTML = "";
+  if(dd) dd.innerHTML = "";
+  if(dd) dd.classList.remove("open");
+  if(s)  s.value = "";
+  if(s)  s.placeholder = "Search or select…";
+}
+
+function bifRenderChips(){
+  var ch = document.getElementById("bif-chips");
+  var h  = document.getElementById("bifurcation-hidden");
+  if(!ch) return;
+  ch.innerHTML = _bifSelected.map(function(v){
+    return '<span class="bif-chip">'+v+'<span class="bif-chip-x" onclick="bifRemove(event,\''+v.replace(/'/g,"\\'")+'\')">&times;</span></span>';
+  }).join("");
+  if(h) h.value = _bifSelected.join(", ");
+  var s = document.getElementById("bif-search");
+  if(s) s.placeholder = _bifSelected.length ? "" : "Search or select…";
+}
+
+function bifRemove(e, val){
+  e.stopPropagation();
+  _bifSelected = _bifSelected.filter(function(v){ return v !== val; });
+  bifRenderChips();
+  bifRenderDropdown(document.getElementById("bif-search")?document.getElementById("bif-search").value:"");
+}
+
+function bifRenderDropdown(query){
+  var dd = document.getElementById("bif-dropdown");
+  if(!dd) return;
+  var q = (query||"").toLowerCase();
+  var filtered = _BIF_OPTIONS.filter(function(o){ return o.toLowerCase().indexOf(q) >= 0; });
+  if(!filtered.length){
+    dd.innerHTML = '<div class="bif-empty">No matches</div>';
+    return;
+  }
+  _bifHighlight = -1;
+  dd.innerHTML = filtered.map(function(o, i){
+    var sel = _bifSelected.indexOf(o) >= 0;
+    return '<div class="bif-item'+(sel?" selected":"")+'" data-val="'+o.replace(/"/g,"&quot;")+'" data-idx="'+i+'" onclick="bifToggle(\''+o.replace(/'/g,"\\'")+'\')">'+(sel?"✓ ":"")+o+'</div>';
+  }).join("");
+}
+
+function bifToggle(val){
+  var idx = _bifSelected.indexOf(val);
+  if(idx >= 0) _bifSelected.splice(idx, 1);
+  else _bifSelected.push(val);
+  bifRenderChips();
+  var s = document.getElementById("bif-search");
+  bifRenderDropdown(s ? s.value : "");
+  if(s) s.focus();
+}
+
+function bifFilter(){
+  var s = document.getElementById("bif-search");
+  var dd = document.getElementById("bif-dropdown");
+  if(dd) dd.classList.add("open");
+  bifRenderDropdown(s ? s.value : "");
+}
+
+function bifOpen(){
+  var dd = document.getElementById("bif-dropdown");
+  if(dd){ dd.classList.add("open"); bifRenderDropdown(""); }
+}
+
+function bifFocus(){
+  var s = document.getElementById("bif-search");
+  if(s) s.focus();
+  bifOpen();
+}
+
+function bifKeydown(e){
+  var dd = document.getElementById("bif-dropdown");
+  var items = dd ? dd.querySelectorAll(".bif-item") : [];
+  if(e.key === "ArrowDown"){
+    e.preventDefault();
+    _bifHighlight = Math.min(_bifHighlight + 1, items.length - 1);
+  } else if(e.key === "ArrowUp"){
+    e.preventDefault();
+    _bifHighlight = Math.max(_bifHighlight - 1, 0);
+  } else if(e.key === "Enter" && _bifHighlight >= 0){
+    e.preventDefault();
+    if(items[_bifHighlight]) bifToggle(items[_bifHighlight].getAttribute("data-val"));
+    return;
+  } else if(e.key === "Escape"){
+    if(dd) dd.classList.remove("open");
+    return;
+  } else { return; }
+  items.forEach(function(it, i){ it.classList.toggle("highlighted", i === _bifHighlight); });
+  if(items[_bifHighlight]) items[_bifHighlight].scrollIntoView({block:"nearest"});
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", function(e){
+  var wrap = document.getElementById("bif-wrap");
+  if(wrap && !wrap.contains(e.target)){
+    var dd = document.getElementById("bif-dropdown");
+    if(dd) dd.classList.remove("open");
+  }
+});
+
 document.addEventListener("DOMContentLoaded",()=>{
   const profilePage=document.getElementById("page-profile");
   if(profilePage){
@@ -11113,29 +11791,35 @@ async function completeOnboarding(){
 }
 
 // ── Cases ─────────────────────────────────────────────────
-// ── SHEET IS THE SINGLE SOURCE OF TRUTH ──────────────────────────────
-// localStorage is used ONLY for: update history, startDate, closedDate.
-// It NEVER adds extra cases or overrides status from the sheet.
-// This prevents the "22 cases vs 8 cases" phantom-case bug.
 function getSharedCases(){
   var _k="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
   try{var r=localStorage.getItem(_k);return r?JSON.parse(r):[];}catch(e){return[];}
 }
 
 async function loadMyCases(){
-  // Build update-history index from dedicated key (email-scoped, never polluted)
-  var _updKey = "fpi_updates_"+(currentUser.email||"guest");
-  var savedUpdates = {};
+  // ── Concurrency lock: prevent duplicate fetches on mobile ─────────
+  // On mobile, login + 60s timer can fire simultaneously — lock prevents
+  // two concurrent fetches from returning duplicate data.
+  if(window._casesLoading){
+    console.log("[FPI] loadMyCases already in progress — skipped");
+    return;
+  }
+  window._casesLoading = true;
+
+  // Read from the agent-specific cache key (same key all writes use)
+  var _fpKey = "fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+  var localMap = {};
   try{
-    JSON.parse(localStorage.getItem(_updKey)||"[]").forEach(function(u){
-      if(u.caseId){ if(!savedUpdates[u.caseId]) savedUpdates[u.caseId]=[]; savedUpdates[u.caseId].push(u); }
-    });
+    var _local = JSON.parse(localStorage.getItem(_fpKey)||"[]");
+    _local.forEach(function(c){ if(c.id) localMap[c.id]=c; });
   }catch(_e){}
 
   await new Promise(function(resolve){
-    var cb    = "fpicb_"+Date.now();
+    // Use a monotonic counter (not Date.now) to avoid collision on same ms
+    window._fpiCbSeq = (window._fpiCbSeq||0) + 1;
+    var cb    = "fpicb_"+window._fpiCbSeq;
     var url   = APPS_SCRIPT_URL+"?action=get_cases&email="+encodeURIComponent(currentUser.email)+"&callback="+cb;
-    var timer = setTimeout(function(){ cleanup(); resolve(); }, 8000);
+    var timer = setTimeout(function(){ cleanup(); resolve(); }, 10000);
     function cleanup(){
       try{delete window[cb];}catch(e){}
       var _s=document.getElementById("fpi-cases-s"); if(_s)_s.remove();
@@ -11146,28 +11830,51 @@ async function loadMyCases(){
       try{
         if(data && data.cases && data.cases.length){
           var seenIds = {};
-          myCases = [];
+          var newCases = [];
           data.cases.forEach(function(row){
             var id = String(row["Case ID"]||"").trim();
-            if(!id || seenIds[id]) return;
+            if(!id || seenIds[id]) return; // skip blank or duplicate Case IDs
             seenIds[id] = true;
 
             var lossType = row["Loss Type"]||row["Fraud Type"]||"";
             var prodVal  = parseFloat(row["Product Value"]||row["Value"]||0)||0;
             var awbList  = row["AWB Numbers"]||row["AWB_Numbers"]||"";
+            var sheetSt  = statusKeyFromLabel(row["Status"]||"");
 
-            // ── STATUS: sheet is ALWAYS authoritative ────────────────
-            // Rule 1: sheet says "closed"  → always closed, no override
-            // Rule 2: sheet has real status → use it directly
-            // Rule 3: sheet is blank/pending_date → use pending_date
-            var sheetSt = statusKeyFromLabel(row["Status"]||"");
-
-            // ── Only pull history + dates from local (never status/case list)
-            var mergedUpdates    = savedUpdates[id] || [];
+            // ── Merge local changes ──────────────────────────────────
+            // The sheet is authoritative for "closed".
+            // For all other statuses, if the agent has locally set a
+            // non-default status, keep it so refreshes don't revert work.
+            var local = localMap[id];
+            var mergedSt         = sheetSt;
+            var mergedUpdates    = [];
             var mergedStartDate  = String(row["Case Start Date"]||"");
             var mergedClosedDate = String(row["Case Closed Date"]||"");
 
-            myCases.push({
+            if(local){
+              if(sheetSt === "closed"){
+                // Sheet closed is always final — never override with local
+                mergedSt = "closed";
+              } else if(local.st && local.st !== "pending_date"){
+                // Agent has set a real status locally → always keep it until sheet catches up
+                // This prevents the case jumping back to "pending_date" / Cases tab
+                // on the next loadMyCases before the sheet write completes
+                mergedSt = local.st;
+              }
+              // else: sheetSt wins (sheet has a real status, local is still pending_date)
+              // Restore updates: prefer dedicated key (survives sheet sync), fall back to case object
+              try{
+                const _updKey2 = "fpi_updates_"+(currentUser.email||"guest");
+                const _savedUpd = JSON.parse(localStorage.getItem(_updKey2)||"[]");
+                const _caseUpd  = _savedUpd.filter(function(u){ return u.caseId === id; });
+                if(_caseUpd.length)          mergedUpdates = _caseUpd;
+                else if(local.updates && local.updates.length) mergedUpdates = local.updates;
+              }catch(_ue){ if(local.updates && local.updates.length) mergedUpdates = local.updates; }
+              if(local.startDate  && !mergedStartDate)     mergedStartDate  = local.startDate;
+              if(local.closedDate && !mergedClosedDate)    mergedClosedDate = local.closedDate;
+            }
+
+            newCases.push({
               id          : id,
               cat         : row["Category"]||"Shipment Fraud",
               type        : lossType,
@@ -11183,7 +11890,7 @@ async function loadMyCases(){
               cxRider     : row["Cx as Rider - Rider Id"]||"",
               lmRider     : row["Last attempt LM rider id"]||"",
               cxName      : row["Customer name"]||row["Customer Name"]||"",
-              st          : sheetSt,
+              st          : mergedSt,
               pri         : row["Priority"]||"",
               poc         : row["FPI POC"]||"",
               pn          : row["FPI POC"]||"",
@@ -11198,8 +11905,13 @@ async function loadMyCases(){
               updates     : mergedUpdates
             });
           });
-          // Persist to agent-specific key so it never mingles with other agents
-          var _fpKey="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
+
+          // Final dedup pass on the assembled list (double-safety)
+          var finalMap = {};
+          newCases.forEach(function(c){ if(c.id && !finalMap[c.id]) finalMap[c.id]=c; });
+          myCases = Object.keys(finalMap).map(function(k){ return finalMap[k]; });
+
+          // Persist to agent-specific key — matches what submitUpdate/markStartWorking write
           try{ localStorage.setItem(_fpKey, JSON.stringify(myCases)); }catch(e){}
         }
       }catch(e){ console.warn("Cases parse:", e.message); }
@@ -11212,9 +11924,8 @@ async function loadMyCases(){
     document.head.appendChild(_sc);
   });
 
-  // Fallback: sheet timed out — show agent's last known cases (strict email match only)
+  // Fallback: sheet timed out — use agent-specific cache (strict email match only)
   if(!myCases.length){
-    var _fpKey="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
     try{
       myCases = JSON.parse(localStorage.getItem(_fpKey)||"[]").filter(function(c){
         return c.poc_email && c.poc_email.toLowerCase()===currentUser.email.toLowerCase();
@@ -11222,32 +11933,35 @@ async function loadMyCases(){
     }catch(_e){}
   }
 
+  window._casesLoading = false;
   renderPortalCases();
 }
 
 function fpFromType(t){if(!t)return"fp-q";t=t.toLowerCase();if(t.includes("x-ray"))return"fp-x";if(t.includes("pv"))return"fp-p";if(t.includes("dbnu"))return"fp-d";if(t.includes("rtod"))return"fp-r";if(t.includes("lh"))return"fp-l";return"fp-q";}
 function statusKeyFromLabel(label){
-  var l = (label||"").toLowerCase().trim().replace(/\s+/g," ");
-  // Direct pass-through — sheet may store internal keys already
-  var direct={rider_inv:"rider_inv",hi_tl_inv:"hi_tl_inv",rider_abs_action:"rider_abs_action",
-    rider_abs_pending:"rider_abs_pending",hi_tl_abs:"hi_tl_abs",cx_fraud:"cx_fraud",
-    other_pending:"other_pending",closed:"closed",unassigned:"unassigned",pending_date:"pending_date"};
-  if(direct[l]) return direct[l];
-  var map={
-    "rider investigation":"rider_inv","rider inv":"rider_inv",
-    "hi/tl investigation":"hi_tl_inv","hi tl investigation":"hi_tl_inv",
-    "absconded fir filed":"rider_abs_action","absconded·fir filed":"rider_abs_action",
-    "absconded - fir filed":"rider_abs_action",
-    "absconded fir pend":"rider_abs_pending","absconded·fir pend":"rider_abs_pending",
-    "absconded - fir pending":"rider_abs_pending",
-    "hi/tl absconded":"hi_tl_abs","hi tl absconded":"hi_tl_abs",
-    "cx fraud":"cx_fraud","customer fraud":"cx_fraud",
-    "other pending":"other_pending","pending":"other_pending",
-    "closed":"closed","case closed":"closed",
-    "unassigned":"unassigned",
-    "pending date":"pending_date","":"pending_date"
+  const map={
+    // New simplified statuses
+    "open"                 :"open",
+    "wip"                  :"wip",
+    "wip — work in progress":"wip",
+    "work in progress"     :"wip",
+    "partially closed"     :"partial_closed",
+    "partial closed"       :"partial_closed",
+    "partial_closed"       :"partial_closed",
+    "case closed"          :"closed",
+    "closed"               :"closed",
+    // Legacy statuses (for backward compat with existing sheet data)
+    "rider investigation"  :"open",
+    "hi/tl investigation"  :"open",
+    "absconded·fir filed"  :"open",
+    "absconded·fir pend"   :"open",
+    "hi/tl absconded"      :"open",
+    "cx fraud"             :"open",
+    "other pending"        :"open",
+    "unassigned"           :"unassigned",
+    "pending date"         :"pending_date"
   };
-  return map[l]||"pending_date";
+  return map[(label||"").toLowerCase().trim()]||"pending_date";
 }
 
 
@@ -11376,7 +12090,7 @@ function submitRecovery(){
   if(c){c.utr=utr;c.recovery=parseInt(document.getElementById("rs-amount").value)||0;}
   closeSheet("sh-recovery");
   showToast("✓ Recovery submitted — UTR: "+utr);
-  renderPortalCases();
+  renderCasesTab(); renderOpenCases(); renderWipCases();
 }
 async function submitEvidence(){
   var esInput = document.getElementById("es-ph");
@@ -11416,6 +12130,15 @@ async function submitEvidence(){
   // column in the sheet server-side — no extra JSONP call needed.
   _uploadEvidenceImages(caseId, evidList, function(urls){
     if(urls.length){
+      // Write evidence URLs to sheet
+      var ecb = "fpiEvSheet2_"+Date.now();
+      var ep  = new URLSearchParams({action:"update_case_status", case_id:caseId,
+        evidence_images:urls.join(", "), callback:ecb});
+      window[ecb]=function(){try{delete window[ecb];}catch(e){}};
+      var es=document.createElement("script");
+      es.src=APPS_SCRIPT_URL+"?"+ep.toString();
+      document.head.appendChild(es);
+      setTimeout(function(){try{es.remove();delete window[ecb];}catch(e){}},8000);
       showToast("✅ "+urls.length+" photo(s) uploaded & saved to sheet");
     } else {
       showToast("⚠ Upload failed — check console for details");
@@ -11427,9 +12150,13 @@ async function submitEvidence(){
 
 // ── Case status categories ────────────────────────────────
 function caseStatusCategory(st){
-  if(st==="closed") return "closed";
+  if(st==="closed")                            return "closed";
+  if(st==="open")                              return "open";
+  if(st==="wip" || st==="partial_closed")      return "wip";
+  // Legacy statuses from old dropdown → treat as open
   if(["rider_inv","hi_tl_inv","rider_abs_action","rider_abs_pending",
-      "hi_tl_abs","cx_fraud","other_pending"].includes(st)) return "open";
+      "hi_tl_abs","cx_fraud","other_pending"].includes(st))  return "open";
+  // Not yet started: pending_date, unassigned, or anything else
   return "featured";
 }
 
@@ -11469,15 +12196,16 @@ function caseCard(c,showActions=true){
 function caseCardFull(c){
   const cat=caseStatusCategory(c.st);
   const isOpen=cat==="open";
-  const barCol=c.st==="closed"?"var(--grn)":isOpen?"var(--acc)":"var(--yel)";
+  const isWip=cat==="wip";
+  const isActive=isOpen||isWip;
+  const barCol=c.st==="closed"?"var(--grn)":isOpen?"var(--acc)":isWip?"var(--org)":"var(--yel)";
   const priCls=c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr";
   const cid=(c.id||"").replace(/'/g,"");
   const ctype=(c.type||"").replace(/'/g,"");
   const chub=(c.hub||"").replace(/'/g,"");
   return`<div class="cc"><div class="cbar" style="background:${barCol}"></div><div class="ci">
     <div class="cmr"><span class="cid">${c.id}</span><span class="fp ${c.fp||"fp-q"}">${c.type||""}</span>
-    ${isOpen?`<span class="working-badge" style="margin-left:auto">Working</span>`:
-      c.pri?`<span class="bdg ${priCls}" style="margin-left:auto">${c.pri}</span>`:""}</div>
+    ${isActive?`<span class="working-badge" style="margin-left:auto;background:${isWip?'rgba(234,88,12,.12)':'rgba(22,163,74,.12)'};border-color:${isWip?'rgba(234,88,12,.3)':'rgba(22,163,74,.3)'};">${isWip?c.st==='partial_closed'?'Partial':'WIP':'Open'}</span>`:c.pri?`<span class="bdg ${priCls}" style="margin-left:auto">${c.pri}</span>`:""}</div>
     <div class="ctitle">${c.trend||c.type||"Case"}</div>
     <div class="cinfo"><span class="ic">🏢 ${c.hub||"—"}, ${c.city||"—"}</span>
     ${c.val?`<span class="ic">₹${(c.val||0).toLocaleString()}</span>`:""}</div>
@@ -11493,62 +12221,72 @@ function caseCardFull(c){
 
 // ── Render cases pages ────────────────────────────────────
 function renderPortalCases(){
-  const highAlert=myCases.filter(c=>c.pri==="High"&&c.st!=="closed");
-  const activePg =myCases.filter(c=>["rider_inv","hi_tl_inv","other_pending","cx_fraud","rider_abs_action","rider_abs_pending"].includes(c.st));
-  const closed   =myCases.filter(c=>c.st==="closed").slice(0,3);
-  renderAlertsList(highAlert,activePg,closed);
-  renderFeaturedCases();
+  renderCasesTab();
   renderOpenCases();
+  renderWipCases();
   renderClosedCases();
   renderHistory();
   renderProfile();
-}
-
-function renderAlertsList(alerts,activePg,recentClosed){
-  const page=document.getElementById("alerts-content");if(!page)return;
-  const ac=myCases.filter(c=>!["closed","unassigned"].includes(c.st)).length;
-  const pc=myCases.filter(c=>c.st==="pending_date").length;
-  const cc=myCases.filter(c=>c.st==="closed").length;
-  let html=`<div class="stat-row">
-    <div class="sc"><div class="sv" style="color:var(--red)">${ac}</div><div class="sl">Active</div></div>
-    <div class="sc"><div class="sv" style="color:var(--yel)">${pc}</div><div class="sl">Pending</div></div>
-    <div class="sc"><div class="sv" style="color:var(--grn)">${cc}</div><div class="sl">Closed</div></div>
-  </div>`;
-  if(!myCases.length){
-    html+=emptyState("✅","No cases assigned yet","Cases assigned to<br><strong>"+currentUser.email+"</strong><br>will appear here.");
-  } else if(!alerts.length){
-    html+=`<div class="slbl">NEW ALERTS</div>`+
-      `<div style="text-align:center;padding:24px;color:var(--txt3)">
-        <div style="font-size:24px;margin-bottom:6px">🔔</div>
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:3px">No new alerts</div>
-        <div style="font-size:11.5px">You have ${ac} active case${ac!==1?"s":""}. Check the Open tab.</div>
-      </div>`;
-  } else {
-    html+=`<div class="slbl">NEW ALERTS <span style="background:var(--red);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px">${alerts.length}</span></div>`;
-    html+=alerts.map(c=>caseCard(c)).join("");
+  // Restore the active page — background refreshes must not reset the tab
+  if(_activePage && _activePage !== "cases"){
+    var pageEl = document.getElementById("page-"+_activePage);
+    if(pageEl && !pageEl.classList.contains("active")){
+      document.querySelectorAll(".page").forEach(function(p){p.classList.remove("active");});
+      pageEl.classList.add("active");
+      document.querySelectorAll(".nb").forEach(function(b){
+        var m = b.getAttribute("onclick")||"";
+        if(m.indexOf("'"+_activePage+"'")>=0) b.classList.add("active");
+        else b.classList.remove("active");
+      });
+    }
   }
-  page.innerHTML=html;
 }
 
-function renderMyCasesList(){ renderFeaturedCases(); }
+// renderAlertsList removed — superseded by renderCasesTab
 
-function renderFeaturedCases(){
-  const el=document.getElementById("featured-cases-content");if(!el)return;
-  const list=myCases.filter(c=>caseStatusCategory(c.st)==="featured");
-  el.innerHTML=list.length
-    ?`<div class="slbl">FEATURED CASES <span style="background:var(--yel);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px">${list.length}</span></div>
-      <div style="background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.2);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:11.5px;color:var(--txt2)">
-        Assigned but not started. Open a case and tap <strong>Start Working</strong>.
-      </div>`+list.map(c=>caseCardFull(c)).join("")
-    :emptyState("📋","No featured cases","All your cases are open or closed.");
+function renderMyCasesList(){ renderCasesTab(); }
+
+// Cases tab — all unstarted cases (no Start Working taken yet)
+function renderCasesTab(){
+  var el = document.getElementById("cases-content"); if(!el) return;
+  var unstarted = myCases.filter(function(c){ return caseStatusCategory(c.st)==="featured"; });
+  var openCount = myCases.filter(function(c){ return caseStatusCategory(c.st)==="open"; }).length;
+  var wipCount  = myCases.filter(function(c){ return caseStatusCategory(c.st)==="wip"; }).length;
+  var cc        = myCases.filter(function(c){ return c.st==="closed"; }).length;
+  var html = '<div class="stat-row">'
+    + '<div class="sc"><div class="sv" style="color:var(--yel)">'+unstarted.length+'</div><div class="sl">New</div></div>'
+    + '<div class="sc"><div class="sv" style="color:var(--acc)">'+openCount+'</div><div class="sl">Open</div></div>'
+    + '<div class="sc"><div class="sv" style="color:var(--org)">'+wipCount+'</div><div class="sl">WIP</div></div>'
+    + '<div class="sc"><div class="sv" style="color:var(--grn)">'+cc+'</div><div class="sl">Closed</div></div>'
+    + '</div>';
+  if(!unstarted.length){
+    html += emptyState("📋","No new cases","All assigned cases have been started.");
+  } else {
+    html += '<div class="slbl">NEW CASES — NOT YET STARTED <span style="background:var(--yel);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px">'+unstarted.length+'</span></div>'
+      + '<div style="background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.2);border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:11.5px;color:var(--txt2)">Open a case and tap <strong>Start Working</strong> to begin investigation.</div>'
+      + unstarted.map(function(c){ return caseCardFull(c); }).join("");
+  }
+  el.innerHTML = html;
 }
 
+// Open tab — only cases with Daily Status = OPEN
 function renderOpenCases(){
   const el=document.getElementById("open-cases-content");if(!el)return;
   const list=myCases.filter(c=>caseStatusCategory(c.st)==="open");
   el.innerHTML=list.length
     ?`<div class="slbl">OPEN CASES <span style="background:var(--acc);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px">${list.length}</span></div>`+list.map(c=>caseCardFull(c)).join("")
-    :emptyState("🔍","No open cases","Cases you start working on appear here.");
+    :emptyState("🔍","No open cases","Cases with status OPEN appear here.");
+}
+
+// WIP tab — cases with Daily Status = WIP or Partially Closed
+function renderWipCases(){
+  var el = document.getElementById("wip-content"); if(!el) return;
+  var list = myCases.filter(function(c){ return caseStatusCategory(c.st)==="wip"; });
+  var html = list.length
+    ? '<div class="slbl">WIP / PARTIALLY CLOSED <span style="background:var(--org);color:#fff;padding:1px 7px;border-radius:10px;font-size:9px">'+list.length+'</span></div>'
+      + list.map(function(c){ return caseCardFull(c); }).join("")
+    : emptyState("⏳","No WIP cases","Cases marked WIP or Partially Closed appear here.");
+  el.innerHTML = html;
 }
 
 function renderClosedCases(){
@@ -11563,54 +12301,107 @@ function renderClosedCases(){
 function renderHistory(){
   const el=document.getElementById("history-content");if(!el)return;
 
-  // Load from dedicated update store first (most reliable — survives logout/sheet sync)
-  let updates=[];
-  try{
-    const _updKey3 = "fpi_updates_"+(currentUser.email||"guest");
-    const _storedUpd = JSON.parse(localStorage.getItem(_updKey3)||"[]");
-    if(_storedUpd.length){
-      // Stored updates already have caseId, caseType etc.
-      updates = _storedUpd.map(function(u){
+  // Show loading state immediately
+  el.innerHTML='<div class="slbl">MY UPDATE HISTORY</div>'
+    +'<div style="text-align:center;padding:30px;color:var(--txt3);font-size:12px">Loading history…</div>';
+
+  // ── Fetch from Case_History sheet (permanent, cross-device) ──────
+  window._fpiUploadSeq = (window._fpiUploadSeq||0)+1;
+  var _hcb = "fpiHistCb_"+window._fpiUploadSeq;
+  var _hTimer = setTimeout(function(){
+    // Sheet timed out — fall back to localStorage
+    try{delete window[_hcb];}catch(e){}
+    renderHistoryFromLocal(el);
+  }, 8000);
+
+  window[_hcb] = function(data){
+    clearTimeout(_hTimer);
+    try{delete window[_hcb];}catch(e){}
+    if(data && data.history && data.history.length){
+      // Normalise rows from Case_History sheet
+      var updates = data.history.map(function(row){
         return {
-          caseId  : u.caseId   || "",
-          caseType: u.caseType || "",
-          status  : u.status   || "",
-          notes   : u.notes    || "",
-          date    : u.date     || "",
-          police  : u.police   || "",
-          photos  : u.photos   || 0,
-          utr     : u.utr      || "",
-          recovery: u.recovery || 0
+          caseId  : row["Case ID"]   || "",
+          caseType: "",
+          status  : row["Status"]    || "",
+          notes   : row["Remarks"]   || "",
+          date    : (row["Timestamp"]||"").substring(0,10),
+          police  : row["Police"]    || "",
+          photos  : parseInt(row["Photos"]||0)||0,
+          utr     : row["UTR"]       || "",
+          recovery: parseFloat(row["Recovery"]||0)||0
         };
       });
+      // Also merge unsaved session updates (belt-and-suspenders)
+      var seenKeys={};
+      updates.forEach(function(u){ seenKeys[u.caseId+"_"+u.date+"_"+u.status]=true; });
+      myCases.forEach(function(c){
+        (c.updates||[]).forEach(function(u){
+          var k=c.id+"_"+(u.date||"")+"_"+(u.status||"");
+          if(!seenKeys[k]){ seenKeys[k]=true;
+            updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
+              notes:u.notes||"",date:u.date||"",police:u.police||"",
+              photos:u.photos||0,utr:u.utr||"",recovery:u.recovery||0}); }
+        });
+      });
+      renderHistoryList(el, updates);
+    } else {
+      renderHistoryFromLocal(el);
     }
-  }catch(_he){}
+  };
 
-  // Also merge from myCases in memory (catches updates made this session
-  // before they were saved, and fills gaps)
-  const seenKeys = {};
-  updates.forEach(function(u){ seenKeys[u.caseId+"_"+u.date+"_"+u.status] = true; });
+  var _hs = document.createElement("script");
+  _hs.src = APPS_SCRIPT_URL+"?action=get_history&email="+encodeURIComponent(currentUser.email||"")
+    +"&callback="+_hcb;
+  _hs.onerror = function(){ clearTimeout(_hTimer); try{delete window[_hcb];}catch(e){}
+    renderHistoryFromLocal(el); };
+  document.head.appendChild(_hs);
+  return; // async — renderHistoryList called from callback
+}
+
+function renderHistoryFromLocal(el){
+  // Fallback: build history from localStorage + in-memory myCases
+  var updates = [];
+  try{
+    var _updKey3 = "fpi_updates_"+(currentUser.email||"guest");
+    var _storedUpd = JSON.parse(localStorage.getItem(_updKey3)||"[]");
+    updates = _storedUpd.map(function(u){
+      return { caseId:u.caseId||"", caseType:u.caseType||"", status:u.status||"",
+        notes:u.notes||"", date:u.date||"", police:u.police||"",
+        photos:u.photos||0, utr:u.utr||"", recovery:u.recovery||0 };
+    });
+  }catch(_he){}
+  var seenKeys={};
+  updates.forEach(function(u){ seenKeys[u.caseId+"_"+u.date+"_"+u.status]=true; });
   myCases.forEach(function(c){
     (c.updates||[]).forEach(function(u){
-      const key = c.id+"_"+(u.date||"")+"_"+(u.status||"");
-      if(!seenKeys[key]){
-        seenKeys[key] = true;
+      var k=c.id+"_"+(u.date||"")+"_"+(u.status||"");
+      if(!seenKeys[k]){ seenKeys[k]=true;
         updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
           notes:u.notes||"",date:u.date||"",police:u.police||"",
-          photos:u.photos||0,utr:u.utr||c.utr||"",recovery:u.recovery||c.recovery||0});
-      }
+          photos:u.photos||0,utr:u.utr||c.utr||"",recovery:u.recovery||c.recovery||0}); }
     });
   });
+  renderHistoryList(el, updates);
+}
+
+function renderHistoryList(el, updates){
   if(!updates.length){
-    el.innerHTML=`<div class="slbl">MY UPDATE HISTORY</div>`+emptyState("📋","No updates yet","Your field updates will appear here.");
+    el.innerHTML='<div class="slbl">MY UPDATE HISTORY</div>'
+      +emptyState("📋","No updates yet","Your field updates will appear here.");
     return;
   }
   updates.sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const statusColors={rider_inv:"var(--acc)",hi_tl_inv:"var(--acc)",closed:"var(--grn)",
-    rider_abs_action:"var(--red)",rider_abs_pending:"var(--red)",cx_fraud:"var(--pur)",other_pending:"var(--txt3)"};
-  const statusLabels={rider_inv:"Rider investigation",hi_tl_inv:"HI/TL investigation",
-    closed:"Case Closed",rider_abs_action:"Absconded — FIR filed",
-    rider_abs_pending:"Absconded — FIR pending",cx_fraud:"Customer fraud",other_pending:"Pending"};
+  const statusColors={
+    open:"var(--acc)",wip:"var(--org)",partial_closed:"var(--yel)",closed:"var(--grn)",
+    rider_inv:"var(--acc)",hi_tl_inv:"var(--acc)",
+    rider_abs_action:"var(--red)",rider_abs_pending:"var(--red)",
+    cx_fraud:"var(--pur)",other_pending:"var(--txt3)"};
+  const statusLabels={
+    open:"Open",wip:"WIP",partial_closed:"Partially Closed",closed:"Case Closed",
+    rider_inv:"Open",hi_tl_inv:"Open",
+    rider_abs_action:"Open",rider_abs_pending:"Open",
+    cx_fraud:"Open",other_pending:"Open"};
   el.innerHTML=`<div class="slbl">MY UPDATE HISTORY (${updates.length})</div>`+
     updates.map(u=>{
       const col=statusColors[u.status]||"var(--org)";
