@@ -619,7 +619,7 @@ textarea.fc{resize:none;min-height:76px;}
       <div class="clbox" id="cl-box">
         <div class="cltitle">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          Case Closure Details
+          <span id="cl-box-title">Case Closure Details</span>
         </div>
         <div class="fgrp"><label class="fl">Recovery Status</label>
           <select class="fc" id="cl-rs">
@@ -1036,7 +1036,13 @@ function openEvidence(caseId){
 function closeSheet(id){document.getElementById(id).classList.remove("open");}
 function handleStatusChange(){
   const v=document.getElementById("us-status").value;
-  document.getElementById("cl-box").style.display=v==="closed"?"block":"none";
+  const showBox = v==="closed" || v==="partial_closed";
+  document.getElementById("cl-box").style.display=showBox?"block":"none";
+  // Rename the section title based on status
+  const titleEl = document.getElementById("cl-box-title");
+  if(titleEl){
+    titleEl.textContent = v==="partial_closed" ? "Partially Closed Details" : "Case Closure Details";
+  }
 }
 function triggerUp(id){document.getElementById(id).click();}
 function handlePhotos(inputId,galleryId,previewId){
@@ -1314,10 +1320,26 @@ async function submitUpdate(){
         window._hubBase64 = {};
       }
 
-      // ── Closure: upload slips then send email ──────────────────────
+      // ── Upload slips: closed → upload then email; partial_closed → upload only ──
       if(status==="closed"){
         _uploadAllSlips(caseId, function(slipUrls){
           _doClosureEmail(caseId, c, amt, utr, police, closureNotes, evidUrls, closedDate, slipUrls);
+        });
+      } else if(status==="partial_closed"){
+        _uploadAllSlips(caseId, function(slipUrls){
+          // No email for partial_closed — slips are uploaded and saved to sheet only
+          if(slipUrls && slipUrls.length){
+            var pcb = "fpiPcSlip_"+Date.now();
+            var pp  = new URLSearchParams({
+              action:"update_case_status", case_id:caseId,
+              utr_slip_url:slipUrls.join(", "), callback:pcb
+            });
+            window[pcb]=function(){try{delete window[pcb];}catch(e){}};
+            var ps=document.createElement("script");
+            ps.src=APPS_SCRIPT_URL+"?"+pp.toString();
+            document.head.appendChild(ps);
+            setTimeout(function(){try{ps.remove();delete window[pcb];}catch(e){}},10000);
+          }
         });
       }
     }
@@ -1350,6 +1372,9 @@ async function submitUpdate(){
       var closedBtn=document.querySelector(".nb[onclick*=\"closed-cases\"]");
       if(closedBtn) closedBtn.click();
     }, 800);
+  } else if(status==="partial_closed"){
+    showToast("✓ Partially closed — recovery updated cumulatively");
+    renderCasesTab(); renderOpenCases(); renderWipCases();
   } else {
     showToast("✓ Update submitted"+(utr?" · UTR: "+utr:""));
     // Re-render affected tabs without resetting active page
