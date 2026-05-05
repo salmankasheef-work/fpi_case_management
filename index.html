@@ -1133,7 +1133,7 @@ function renderReassignCard(c){
       '<div class="fgrp"><label class="fl">Reassign To</label>'+
         '<select class="fc" id="rp-'+c.id+'"><option value="">New POC...</option>'+
         FPI.filter(function(pp){return pp.id!==c.poc;}).map(function(pp){
-          return '<option value="'+pp.id+'">'+pp.name+' — '+pp.pod+' · '+(pp.email||'no email')+' ('+pp.active+' active)</option>';
+          return '<option value="'+(pp.email||pp.id)+'">'+pp.name+' — '+pp.pod+' · '+(pp.email||'no email')+' ('+pp.active+' active)</option>';
         }).join("")+
         '</select></div>'+
       '<div class="fgrp"><label class="fl">Reason</label>'+
@@ -1157,6 +1157,49 @@ function renderReassignCard(c){
 }
 
 function renderReassignTab(){
+  // Always fetch fresh agents from sheet so newly added POCs appear immediately
+  var ts  = Date.now();
+  var cb  = "fpiRACb_"+ts;
+  var url = APPS_SCRIPT_URL_CM+"?action=get_agents&_t="+ts+"&callback="+cb;
+  var timer = setTimeout(function(){
+    try{delete window[cb];}catch(e){}
+    var s=document.getElementById("fpi-ra-s");if(s)s.remove();
+    _doRenderReassignTab(); // render with existing FPI if fetch times out
+  }, 8000);
+  window[cb] = function(data){
+    clearTimeout(timer);
+    try{delete window[cb];}catch(e){}
+    var s=document.getElementById("fpi-ra-s");if(s)s.remove();
+    if(data&&data.agents&&data.agents.length){
+      // Merge fresh agents into FPI — preserve workload counts
+      data.agents.forEach(function(a){
+        var existing=FPI.find(function(p){return(p.email||"").toLowerCase()===(a.email||"").toLowerCase();});
+        if(existing){
+          // Update name/pod/hub in case they changed
+          existing.name=a.name||existing.name;
+          existing.pod =a.pod ||existing.pod;
+          existing.hub =a.hub ||existing.hub;
+        } else {
+          // New agent — add to FPI array
+          FPI.push(Object.assign({active:0,closed:0,pending:0,score:75,
+            color:a.color||COLORS[FPI.length%COLORS.length]},a));
+        }
+      });
+    }
+    _doRenderReassignTab();
+  };
+  var sc=document.createElement("script");
+  sc.id="fpi-ra-s";
+  sc.src=url;
+  sc.onerror=function(){
+    clearTimeout(timer);
+    try{delete window[cb];}catch(e){}
+    _doRenderReassignTab();
+  };
+  document.head.appendChild(sc);
+}
+
+function _doRenderReassignTab(){
   var a=cases.filter(function(c){return c.poc&&c.st!=="closed";});
   _reassignCards=a.map(function(c){
     var p=FPI.find(function(x){var pe=(x.email||"").toLowerCase().trim();return pe&&c.poc_email?pe===c.poc_email:x.id===c.poc;})||{};
@@ -1488,7 +1531,8 @@ function reassignCase(cid){
   const rr=document.getElementById("rr-"+cid).value;
   if(!np||!rr){showToast("Select new POC and reason","warn");return;}
   const c=cases.find(x=>x.id===cid);
-  const newP=FPI.find(p=>p.id===np);
+  // np is now email (unique) — look up by email first, fall back to id for legacy
+  const newP=FPI.find(p=>(p.email||"").toLowerCase().trim()===np.toLowerCase())||FPI.find(p=>p.id===np);
   if(!c||!newP){showToast("Case or agent not found","warn");return;}
   if(!c.rh)c.rh=[];
   c.rh.push({date:new Date().toLocaleDateString("en-IN"),from:c.pn,to:newP.name,reason:rr});
