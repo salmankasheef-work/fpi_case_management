@@ -1,7 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"><meta http-equiv="Permissions-Policy" content="geolocation=*"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache">
+  <!-- CRITICAL: Kill stale service workers BEFORE any other script runs.
+       This fixes "Cannot connect / App server not found" on normal mobile browsers. -->
+  <script>
+  (function(){
+    // 1. Unregister ALL service workers immediately
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        regs.forEach(function(r){ r.unregister(); });
+      });
+      // Also claim any waiting SW so it doesn't intercept requests
+      if(navigator.serviceWorker.controller){
+        navigator.serviceWorker.controller.postMessage({type:"SKIP_WAITING"});
+      }
+    }
+    // 2. Clear ALL caches (Cache Storage API)
+    if("caches" in window){
+      caches.keys().then(function(keys){
+        keys.forEach(function(k){ caches.delete(k); });
+      });
+    }
+    // 3. Version stamp — if version changed, hard-reload once to bust HTTP cache
+    var APP_VER = "v15";
+    var storedVer = "";
+    try{ storedVer = localStorage.getItem("fpi_app_ver")||""; }catch(e){}
+    if(storedVer !== APP_VER){
+      try{ localStorage.setItem("fpi_app_ver", APP_VER); }catch(e){}
+      // Force reload bypassing cache (only on first visit after update)
+      if(storedVer !== ""){
+        // storedVer exists but is old — user has cached old version
+        window.location.reload(true);
+      }
+    }
+  })();
+  </script>
 <title>FPI Field Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -297,6 +331,30 @@ textarea.fc{resize:none;min-height:76px;}
       <!-- Dropdown list -->
       <div id="hub-dropdown" style="display:none;max-height:220px;overflow-y:auto;border:1.5px solid var(--bd);border-radius:9px;background:#fff;margin-bottom:10px;box-shadow:0 4px 16px rgba(15,23,42,.1)">
         <div id="hub-list-inner"></div>
+        <!-- Always-visible "Others" option at bottom of dropdown -->
+        <div onmousedown="event.preventDefault()" onclick="selectOthersHub()"
+          style="padding:11px 14px;font-size:12.5px;cursor:pointer;border-top:2px solid var(--bd);color:var(--acc);font-weight:700;display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:rgba(29,78,216,.08)"
+          ontouchstart="this.style.background='var(--sf2)'" ontouchend="this.style.background=''">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;flex-shrink:0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Others — type hub name manually
+        </div>
+      </div>
+
+      <!-- Manual hub input (shown when Others is selected) -->
+      <div id="hub-manual-wrap" style="display:none;margin-bottom:10px">
+        <input id="hub-manual-input" type="text" placeholder="Type your hub name…"
+          autocomplete="off"
+          style="width:100%;padding:11px 12px;border:1.5px solid var(--acc);border-radius:9px;font-size:13px;font-family:var(--sans);outline:none;color:var(--txt);background:#fff;-webkit-appearance:none;box-shadow:0 0 0 3px rgba(29,78,216,.1)"
+          oninput="handleManualHub(this.value)"
+          onkeydown="if(event.key==='Enter'){confirmManualHub();event.preventDefault();}">
+        <div style="display:flex;gap:8px;margin-top:7px">
+          <button type="button" class="btn btn-g" style="flex:1;padding:9px;font-size:12px" onclick="confirmManualHub()">
+            Confirm Hub
+          </button>
+          <button type="button" class="btn" style="padding:9px 14px;font-size:12px;background:var(--sf);border:1.5px solid var(--bd);color:var(--txt)" onclick="cancelManualHub()">
+            Cancel
+          </button>
+        </div>
       </div>
 
       <!-- Selected hub display -->
@@ -332,9 +390,9 @@ textarea.fc{resize:none;min-height:76px;}
           style="flex:1;padding:11px;border-radius:10px;border:2px solid var(--bd);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--txt3);transition:all .15s">
           ✅ Present
         </button>
-        <button id="btn-absent" onclick="setAttendance('Absent',this)"
+        <button id="btn-absent" onclick="setAttendance('On Leave',this)"
           style="flex:1;padding:11px;border-radius:10px;border:2px solid var(--bd);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--txt3);transition:all .15s">
-          ❌ Absent
+          🏖 On Leave
         </button>
       </div>
 
@@ -478,7 +536,7 @@ textarea.fc{resize:none;min-height:76px;}
       <div id="start-working-banner" style="display:none;margin-bottom:13px">
         <div style="background:rgba(29,78,216,.06);border:1.5px solid rgba(29,78,216,.2);border-radius:10px;padding:13px">
           <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px">Not started yet</div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">Upload at least 1 hub photo before starting</div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">Upload all 3 hub photos before starting <span style="color:var(--red);font-weight:600">(mandatory)</span></div>
           <!-- Hub image upload — mandatory, shown only before case starts -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px">
             <div>
@@ -492,18 +550,18 @@ textarea.fc{resize:none;min-height:76px;}
               <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-2')">
                 <input type="file" id="sw-hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2,'sw-hub-img-2','sw-hub-prev-2','sw-hub-ph-2','sw-hub-thumb-2')">
                 <div id="sw-hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
-                <div id="sw-hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2</div></div>
+                <div id="sw-hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2 <span style="color:var(--red)">*</span></div></div>
               </div>
             </div>
             <div>
               <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-3')">
                 <input type="file" id="sw-hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3,'sw-hub-img-3','sw-hub-prev-3','sw-hub-ph-3','sw-hub-thumb-3')">
                 <div id="sw-hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
-                <div id="sw-hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3</div></div>
+                <div id="sw-hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3 <span style="color:var(--red)">*</span></div></div>
               </div>
             </div>
           </div>
-          <div id="sw-hub-error" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-bottom:8px">⚠ Upload at least 1 hub photo to continue</div>
+          <div id="sw-hub-error" style="display:none;color:var(--red);font-size:11px;font-weight:600;margin-bottom:8px">⚠ All 3 hub photos are required to continue</div>
           <button class="btn btn-p" style="width:100%" onclick="markStartWorking()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Start Working
@@ -575,14 +633,14 @@ textarea.fc{resize:none;min-height:76px;}
             <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-2')">
               <input type="file" id="hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2)">
               <div id="hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
-              <div id="hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2</div></div>
+              <div id="hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2 <span style="color:var(--red)">*</span></div></div>
             </div>
           </div>
           <div>
             <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-3')">
               <input type="file" id="hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3)">
               <div id="hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
-              <div id="hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3</div></div>
+              <div id="hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3 <span style="color:var(--red)">*</span></div></div>
             </div>
           </div>
         </div>
@@ -881,11 +939,12 @@ async function markStartWorking(){
   if(!c) return;
 
   // ── Validate: at least 1 hub image must be selected ──────────────
-  var hasHub = window._hubBase64 && (window._hubBase64[1] || window._hubBase64[2] || window._hubBase64[3]);
+  // All 3 hub images are mandatory
+  var hasHub = window._hubBase64 && window._hubBase64[1] && window._hubBase64[2] && window._hubBase64[3];
   if(!hasHub){
     var swErr = document.getElementById("sw-hub-error");
     if(swErr) swErr.style.display = "block";
-    showToast("⚠ Upload at least 1 hub photo first","warn");
+    showToast("⚠ All 3 hub photos are required to start","warn");
     return;
   }
 
@@ -908,15 +967,15 @@ async function markStartWorking(){
       var _ck="fp_cases_"+(currentUser.email||"").toLowerCase().replace(/[^a-z0-9]/g,"_");
       var all=JSON.parse(localStorage.getItem(_ck)||"[]");
       var _si=all.findIndex(function(x){return x.id===caseId;});
-      if(_si>=0){all[_si].st="rider_inv"; all[_si].startDate=startDate;}
-      else{all.push(Object.assign({},c,{st:"rider_inv",startDate:startDate}));}
+      if(_si>=0){all[_si].st="open"; all[_si].startDate=startDate;}
+      else{all.push(Object.assign({},c,{st:"open",startDate:startDate}));}
       localStorage.setItem(_ck,JSON.stringify(all));
     }catch(e){}
     // Sync to sheet
     try{
       var swCb="fpiSwCb_"+Date.now();
       var params={action:"update_case_status", case_id:caseId,
-        status:"Rider Investigation", case_start_date:startDate, callback:swCb};
+        status:"Open", case_start_date:startDate, callback:swCb};
       if(h1) params.hub_image_1=h1;
       if(h2) params.hub_image_2=h2;
       if(h3) params.hub_image_3=h3;
@@ -12458,7 +12517,7 @@ function renderHubList(){
   const inner=document.getElementById("hub-list-inner");
   if(!inner)return;
   if(!hubFiltered.length){
-    inner.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--txt3)">No hubs found</div>';
+    inner.innerHTML='<div style="padding:12px 14px;font-size:12px;color:var(--txt3)">No matching hub — use <b>Others</b> below to type manually</div>';
     return;
   }
   inner.innerHTML=hubFiltered.map(h=>
@@ -12488,6 +12547,36 @@ function clearHub(){
   const inp=document.getElementById("hub-search");if(inp) inp.value="";
   const box=document.getElementById("selected-hub-box");if(box) box.style.display="none";
   const btn=document.getElementById("loc-next-btn");if(btn){btn.disabled=true;btn.style.opacity=".35";}
+  cancelManualHub();
+}
+
+// ── Others: manual hub entry ──────────────────────────────────────────
+function selectOthersHub(){
+  hideHubList();
+  document.getElementById("hub-search").value="";
+  document.getElementById("hub-manual-wrap").style.display="block";
+  const mi=document.getElementById("hub-manual-input");
+  if(mi){ mi.value=""; mi.focus(); }
+  // Hide selected-hub-box if previously chosen
+  const box=document.getElementById("selected-hub-box");if(box) box.style.display="none";
+}
+function handleManualHub(val){
+  // Enable confirm button only if non-empty
+  const btn=document.getElementById("loc-next-btn");
+  if(btn){
+    if(val&&val.trim()){ btn.disabled=false; btn.style.opacity="1"; }
+    else               { btn.disabled=true;  btn.style.opacity=".35"; }
+  }
+}
+function confirmManualHub(){
+  const val=(document.getElementById("hub-manual-input").value||"").trim();
+  if(!val){ showWarn("Please type a hub name."); return; }
+  selectHub(val);
+  document.getElementById("hub-manual-wrap").style.display="none";
+}
+function cancelManualHub(){
+  document.getElementById("hub-manual-wrap").style.display="none";
+  const mi=document.getElementById("hub-manual-input");if(mi) mi.value="";
 }
 function showWarn(msg){
   const el=document.getElementById("loc-warn");
@@ -12507,63 +12596,69 @@ function goOnboardStep2(){
 
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
+// clearAppCache is now handled in the <head> script before page load
+function clearAppCache(){ /* handled at page start */ }
+
 function startGPSDetection(){
-  const statusBox = document.getElementById("gps-status-box");
   const statusTxt = document.getElementById("gps-status-text");
   const spinner   = document.getElementById("gps-spinner");
   const retryBtn  = document.getElementById("gps-retry-btn");
+
   if(!navigator.geolocation){
-    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(statusTxt) statusTxt.textContent = "GPS not supported — hub selection is enough";
     if(spinner) spinner.style.display="none";
     return;
   }
-  let done = false;
-  const safe = setTimeout(()=>{
-    if(done) return; done=true;
-    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+
+  if(statusTxt) statusTxt.textContent = "Detecting your location…";
+  if(spinner) spinner.style.display="block";
+  if(retryBtn) retryBtn.style.display="none";
+
+  // Location: try low accuracy first (WiFi/IP, fast, all devices), then high accuracy (GPS)
+  function _onGeoSuccess(pos){
+    userLocation.lat = pos.coords.latitude;
+    userLocation.lng = pos.coords.longitude;
+    userLocation.isFresh = true;
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="none";
+    if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; Getting address…</span>';
+    fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en",{headers:{"Accept":"application/json"}})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var a=d.address||{};
+        var city=a.city||a.town||a.suburb||a.village||"";
+        var state=a.state||"";
+        userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; '+userLocation.address+'</span>';
+      })
+      .catch(function(){
+        userLocation.address=pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3);
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; '+userLocation.address+'</span>';
+      });
+  }
+  function _onGeoErr(err,triedHigh){
+    if(!triedHigh){
+      navigator.geolocation.getCurrentPosition(_onGeoSuccess,function(e){_onGeoErr(e,true);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+      return;
+    }
     if(spinner) spinner.style.display="none";
     if(retryBtn) retryBtn.style.display="inline";
-  }, 10000);
-
-  navigator.geolocation.watchPosition(
-    pos=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      userLocation.lat = pos.coords.latitude;
-      userLocation.lng = pos.coords.longitude;
-      userLocation.isFresh = true;
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="none";
-      // Reverse geocode
-      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
-        .then(r=>r.json()).then(d=>{
-          const a=d.address||{};
-          const city=a.city||a.town||a.suburb||a.village||"";
-          const state=a.state||"";
-          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
-        }).catch(()=>{
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
-        });
-    },
-    err=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="inline";
-      const prev=getSavedLocation();
-      if(prev&&prev.city){
-        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
-        userLocation.address=prev.city;
-        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
-      } else {
-        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
-      }
-    },
-    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
-  );
+    var msg=err.code===1?"Location denied — allow in settings, tap Retry":err.code===2?"Location unavailable — check WiFi/GPS":"Location timed out — tap Retry";
+    var prev=getSavedLocation();
+    if(prev&&prev.city){
+      userLocation.lat=prev.lat;userLocation.lng=prev.lng;userLocation.address=prev.city;
+      if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+' <span style="font-size:10px;color:var(--txt3)">('+msg+')</span></span>';
+    } else {
+      if(statusTxt) statusTxt.innerHTML='<span style="color:var(--red)">'+msg+'</span>';
+    }
+  }
+  navigator.geolocation.getCurrentPosition(_onGeoSuccess,function(err){_onGeoErr(err,false);},{enableHighAccuracy:false,timeout:10000,maximumAge:60000});
 }
-function retryGPS(){ startGPSDetection(); }
+function retryGPS(){
+  const retryBtn=document.getElementById("gps-retry-btn");
+  if(retryBtn) retryBtn.style.display="none";
+  startGPSDetection();
+}
 
 // ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
 // Store selfie as base64 string in sheet (short thumbnail)
@@ -12932,9 +13027,10 @@ function setUserHeader(){
 function loadAgentsFromSheet(){
   return new Promise(resolve=>{
     const ts     = Date.now();
+    const nonce  = Math.random().toString(36).slice(2);
     const cb     = "fpiAgCb_"+ts;
-    const url    = APPS_SCRIPT_URL+"?action=get_agents&_t="+ts+"&callback="+cb;
-    const cached = getCachedAgents(); // keep stale cache as safety net
+    const url    = APPS_SCRIPT_URL+"?action=get_agents&_t="+ts+"&_n="+nonce+"&callback="+cb;
+    const cached = getCachedAgents();
 
     const timer = setTimeout(()=>{
       cleanup();
@@ -12966,7 +13062,7 @@ function loadAgentsFromSheet(){
     s.src   = url;
     s.onerror = ()=>{
       cleanup();
-      console.warn("[Login] Apps Script fetch failed (401/network) — using cache:", cached.length);
+      console.warn("[Login] Apps Script fetch failed — using cache:", cached.length);
       resolve(cached.length ? cached : agentsList);
     };
     document.head.appendChild(s);
@@ -12987,17 +13083,29 @@ async function handleEmailSignIn(){
   if(!emailRaw.endsWith("@shadowfax.in")){showLoginError("Only @shadowfax.in accounts are allowed.");return;}
   const ld=document.getElementById("login-loading");
   if(ld) ld.style.display="block";
-  // Try fresh fetch first; if it fails fall back to cache so login still works offline
-  const agents=await loadAgentsFromSheet();
+
+  // ── Retry logic: try once, wait 2s, try again if failed ──────────
+  // Covers case where SW was just unregistered and first request races
+  var agents = await loadAgentsFromSheet();
+  if(!agents.length){
+    // First attempt failed — wait 2s then retry (SW may have just been killed)
+    await new Promise(function(res){ setTimeout(res, 2000); });
+    agents = await loadAgentsFromSheet();
+  }
+  // Still nothing — fall back to localStorage cache before giving up
+  if(!agents.length){
+    agents = getCachedAgents();
+  }
+
   const match=agents.find(a=>a.email===emailRaw);
   if(!agents.length){
-    // No agents at all — Apps Script unreachable AND no local cache
+    // Truly unreachable — no cache, no network
     showLoginError(
       "⚠ Cannot connect to FPI server.<br>"+
-      "<small>Make sure your Apps Script is deployed as <strong>Anyone</strong> (not restricted to Shadowfax org).<br>"+
-      "Or try again in a moment.</small>"
+      "<small>Please check your internet connection and try again.<br>"+
+      "If the problem persists, open in a new tab or clear browser data.</small>"
     );
-    const ld=document.getElementById("login-loading");if(ld)ld.style.display="none";
+    const ld2=document.getElementById("login-loading");if(ld2)ld2.style.display="none";
     return;
   }
   if(!match){
@@ -13037,7 +13145,7 @@ function setAttendance(val,btn){
     btn.style.borderColor=val==="Present"?"var(--grn)":"var(--red)";
   }
   const hint=document.getElementById("selfie-hint");
-  if(val==="Absent"){
+  if(val==="On Leave"){
     if(hint) hint.textContent="Selfie optional when absent";
     document.getElementById("selfie-next-btn").disabled=false;
   }else{
@@ -13170,19 +13278,15 @@ async function loadMyCases(){
     _local.forEach(function(c){ if(c.id) localMap[c.id]=c; });
   }catch(_e){}
 
-  await new Promise(function(resolve){
-    // Use a monotonic counter (not Date.now) to avoid collision on same ms
+  // ── Fetch cases: try fetch() first (works on all mobile browsers),
+  // fall back to JSONP script tag if fetch is blocked ──────────────────
+  await (function(){
     window._fpiCbSeq = (window._fpiCbSeq||0) + 1;
+    var _bust = Date.now()+"_"+Math.random().toString(36).slice(2);
     var cb    = "fpicb_"+window._fpiCbSeq;
-    var url   = APPS_SCRIPT_URL+"?action=get_cases&email="+encodeURIComponent(currentUser.email)+"&callback="+cb;
-    var timer = setTimeout(function(){ cleanup(); resolve(); }, 10000);
-    function cleanup(){
-      try{delete window[cb];}catch(e){}
-      var _s=document.getElementById("fpi-cases-s"); if(_s)_s.remove();
-      clearTimeout(timer);
-    }
-    window[cb] = function(data){
-      cleanup();
+
+    // Shared case-processing logic used by both fetch and JSONP paths
+    function processCases(data, resolve){
       try{
         if(data && data.cases && data.cases.length){
           var seenIds = {};
@@ -13207,15 +13311,29 @@ async function loadMyCases(){
             var mergedStartDate  = String(row["Case Start Date"]||"");
             var mergedClosedDate = String(row["Case Closed Date"]||"");
 
+            // Status priority: higher = more progressed
+            function _stPri(s){
+              var sl=(s||"").toLowerCase().trim();
+              if(sl==="closed"||sl==="case closed") return 6;
+              if(sl==="partial_closed"||sl.indexOf("partial")!==-1) return 5;
+              if(sl==="wip") return 4;
+              if(sl==="open"||sl==="rider_inv"||sl==="hi_tl_inv"||sl==="cx_fraud"||
+                 sl==="rider_abs_action"||sl==="rider_abs_pending"||sl==="other_pending") return 3;
+              if(sl==="pending_date"||sl==="pending date") return 2;
+              if(sl==="new") return 1;
+              return 0;
+            }
             if(local){
               if(sheetSt === "closed"){
                 // Sheet closed is always final — never override with local
                 mergedSt = "closed";
-              } else if(local.st && local.st !== "pending_date"){
-                // Agent has set a real status locally → always keep it until sheet catches up
-                // This prevents the case jumping back to "pending_date" / Cases tab
-                // on the next loadMyCases before the sheet write completes
+              } else if(local.st && _stPri(local.st) > _stPri(sheetSt)){
+                // Local has a more-progressed status than sheet → keep local
+                // (sheet hasn't caught up yet from this device's last update)
                 mergedSt = local.st;
+              } else {
+                // Sheet has same or higher priority — sheet wins
+                mergedSt = sheetSt;
               }
               // else: sheetSt wins (sheet has a real status, local is still pending_date)
               // Restore updates: prefer dedicated key (survives sheet sync), fall back to case object
@@ -13266,19 +13384,58 @@ async function loadMyCases(){
           var finalMap = {};
           newCases.forEach(function(c){ if(c.id && !finalMap[c.id]) finalMap[c.id]=c; });
           myCases = Object.keys(finalMap).map(function(k){ return finalMap[k]; });
-
-          // Persist to agent-specific key — matches what submitUpdate/markStartWorking write
           try{ localStorage.setItem(_fpKey, JSON.stringify(myCases)); }catch(e){}
         }
       }catch(e){ console.warn("Cases parse:", e.message); }
       resolve();
-    };
-    var _sc = document.createElement("script");
-    _sc.id  = "fpi-cases-s";
-    _sc.src = url;
-    _sc.onerror = function(){ cleanup(); resolve(); };
-    document.head.appendChild(_sc);
-  });
+    }
+
+    // ── Path 1: fetch() — bypasses script-tag blocking on mobile ──────
+    return new Promise(function(resolve){
+      var fetchUrl = APPS_SCRIPT_URL+"?action=get_cases&email="+encodeURIComponent(currentUser.email)+"&_t="+_bust;
+      var fetchTimer = setTimeout(function(){
+        console.warn("[Cases] fetch timed out — trying JSONP");
+        tryJSONP(resolve);
+      }, 8000);
+
+      fetch(fetchUrl, {method:"GET", cache:"no-store"})
+        .then(function(r){ return r.text(); })
+        .then(function(text){
+          clearTimeout(fetchTimer);
+          var data = null;
+          try{ data = JSON.parse(text); }catch(e){
+            var m = text.match(/\{[\s\S]*\}/);
+            if(m) try{ data = JSON.parse(m[0]); }catch(e2){}
+          }
+          if(data && data.cases && data.cases.length){
+            processCases(data, resolve);
+          } else {
+            tryJSONP(resolve);
+          }
+        })
+        .catch(function(err){
+          clearTimeout(fetchTimer);
+          tryJSONP(resolve);
+        });
+
+      // ── Path 2: JSONP script tag fallback ──────────────────────────
+      function tryJSONP(res){
+        var url = APPS_SCRIPT_URL+"?action=get_cases&email="+encodeURIComponent(currentUser.email)+"&_t="+_bust+"&callback="+cb;
+        var timer = setTimeout(function(){ cleanup(); res(); }, 10000);
+        function cleanup(){
+          try{delete window[cb];}catch(e){}
+          var _s=document.getElementById("fpi-cases-s"); if(_s)_s.remove();
+          clearTimeout(timer);
+        }
+        window[cb] = function(data){ cleanup(); processCases(data, res); };
+        var _sc = document.createElement("script");
+        _sc.id  = "fpi-cases-s";
+        _sc.src = url;
+        _sc.onerror = function(){ cleanup(); res(); };
+        document.head.appendChild(_sc);
+      }
+    });
+  })();
 
   // Fallback: sheet timed out — use agent-specific cache (strict email match only)
   if(!myCases.length){
@@ -13315,6 +13472,7 @@ function statusKeyFromLabel(label){
     "cx fraud"             :"open",
     "other pending"        :"open",
     "unassigned"           :"unassigned",
+    "new"                  :"new",
     "pending date"         :"pending_date"
   };
   return map[(label||"").toLowerCase().trim()]||"pending_date";
@@ -13323,63 +13481,69 @@ function statusKeyFromLabel(label){
 
 
 // ── Auto GPS on onboarding step 1 ────────────────────────
+// clearAppCache is now handled in the <head> script before page load
+function clearAppCache(){ /* handled at page start */ }
+
 function startGPSDetection(){
-  const statusBox = document.getElementById("gps-status-box");
   const statusTxt = document.getElementById("gps-status-text");
   const spinner   = document.getElementById("gps-spinner");
   const retryBtn  = document.getElementById("gps-retry-btn");
+
   if(!navigator.geolocation){
-    if(statusTxt) statusTxt.textContent = "GPS not available — hub selection only";
+    if(statusTxt) statusTxt.textContent = "GPS not supported — hub selection is enough";
     if(spinner) spinner.style.display="none";
     return;
   }
-  let done = false;
-  const safe = setTimeout(()=>{
-    if(done) return; done=true;
-    if(statusTxt) statusTxt.textContent = "GPS timed out — hub used for assignment";
+
+  if(statusTxt) statusTxt.textContent = "Detecting your location…";
+  if(spinner) spinner.style.display="block";
+  if(retryBtn) retryBtn.style.display="none";
+
+  // Location: try low accuracy first (WiFi/IP, fast, all devices), then high accuracy (GPS)
+  function _onGeoSuccess(pos){
+    userLocation.lat = pos.coords.latitude;
+    userLocation.lng = pos.coords.longitude;
+    userLocation.isFresh = true;
+    if(spinner) spinner.style.display="none";
+    if(retryBtn) retryBtn.style.display="none";
+    if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; Getting address…</span>';
+    fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en",{headers:{"Accept":"application/json"}})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var a=d.address||{};
+        var city=a.city||a.town||a.suburb||a.village||"";
+        var state=a.state||"";
+        userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; '+userLocation.address+'</span>';
+      })
+      .catch(function(){
+        userLocation.address=pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3);
+        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">&#128205; '+userLocation.address+'</span>';
+      });
+  }
+  function _onGeoErr(err,triedHigh){
+    if(!triedHigh){
+      navigator.geolocation.getCurrentPosition(_onGeoSuccess,function(e){_onGeoErr(e,true);},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+      return;
+    }
     if(spinner) spinner.style.display="none";
     if(retryBtn) retryBtn.style.display="inline";
-  }, 10000);
-
-  navigator.geolocation.watchPosition(
-    pos=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      userLocation.lat = pos.coords.latitude;
-      userLocation.lng = pos.coords.longitude;
-      userLocation.isFresh = true;
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="none";
-      // Reverse geocode
-      fetch("https://nominatim.openstreetmap.org/reverse?lat="+pos.coords.latitude+"&lon="+pos.coords.longitude+"&format=json&accept-language=en")
-        .then(r=>r.json()).then(d=>{
-          const a=d.address||{};
-          const city=a.city||a.town||a.suburb||a.village||"";
-          const state=a.state||"";
-          userLocation.address=(city&&state)?city+", "+state:(pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3));
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 '+userLocation.address+'</span>';
-        }).catch(()=>{
-          if(statusTxt) statusTxt.innerHTML='<span style="color:var(--grn)">📍 GPS detected</span>';
-        });
-    },
-    err=>{
-      if(done) return; done=true;
-      clearTimeout(safe);
-      if(spinner) spinner.style.display="none";
-      if(retryBtn) retryBtn.style.display="inline";
-      const prev=getSavedLocation();
-      if(prev&&prev.city){
-        userLocation.lat=prev.lat; userLocation.lng=prev.lng;
-        userLocation.address=prev.city;
-        if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+'</span>';
-      } else {
-        if(statusTxt) statusTxt.textContent="Location unavailable — hub used for assignment";
-      }
-    },
-    {enableHighAccuracy:false, timeout:8000, maximumAge:30000}
-  );
+    var msg=err.code===1?"Location denied — allow in settings, tap Retry":err.code===2?"Location unavailable — check WiFi/GPS":"Location timed out — tap Retry";
+    var prev=getSavedLocation();
+    if(prev&&prev.city){
+      userLocation.lat=prev.lat;userLocation.lng=prev.lng;userLocation.address=prev.city;
+      if(statusTxt) statusTxt.innerHTML='<span style="color:var(--yel)">⏱ Using previous: '+prev.city+' <span style="font-size:10px;color:var(--txt3)">('+msg+')</span></span>';
+    } else {
+      if(statusTxt) statusTxt.innerHTML='<span style="color:var(--red)">'+msg+'</span>';
+    }
+  }
+  navigator.geolocation.getCurrentPosition(_onGeoSuccess,function(err){_onGeoErr(err,false);},{enableHighAccuracy:false,timeout:10000,maximumAge:60000});
 }
-function retryGPS(){ startGPSDetection(); }
+function retryGPS(){
+  const retryBtn=document.getElementById("gps-retry-btn");
+  if(retryBtn) retryBtn.style.display="none";
+  startGPSDetection();
+}
 
 // ── Upload selfie to Cloudinary/imgbb/base64 in sheet ─────
 // Store selfie as base64 string in sheet (short thumbnail)
@@ -13527,7 +13691,7 @@ function emptyState(icon,title,sub){
 
 // ── Case card ─────────────────────────────────────────────
 function caseCard(c,showActions=true){
-  const barCol=c.st==="closed"?"var(--grn)":c.pri==="High"?"var(--red)":c.st==="pending_date"?"var(--yel)":"var(--acc)";
+  const barCol=c.st==="closed"?"var(--grn)":c.pri==="High"?"var(--red)":(c.st==="pending_date"||c.st==="new")?"var(--yel)":"var(--acc)";
   const priCls=c.pri==="High"?"br":c.pri==="Medium"?"by":"bgr";
   const cid=(c.id||"").replace(/'/g,"");
   const ctype=(c.type||"").replace(/'/g,"");
@@ -13655,74 +13819,84 @@ function renderClosedCases(){
 
 // ── History & Profile ─────────────────────────────────────
 function renderHistory(){
-  const el=document.getElementById("history-content");if(!el)return;
+  var el=document.getElementById("history-content");if(!el)return;
 
-  // Show loading state immediately
+  // Clean up any stale pending requests
+  document.querySelectorAll("script[data-hist]").forEach(function(s){s.remove();});
+
+  // Show spinner while loading
   el.innerHTML='<div class="slbl">MY UPDATE HISTORY</div>'
-    +'<div style="text-align:center;padding:30px;color:var(--txt3);font-size:12px">Loading history…</div>';
+    +'<div style="text-align:center;padding:30px;color:var(--txt3);font-size:12px">蘵 Loading history…</div>';
 
-  // ── Fetch from Case_History sheet (permanent, cross-device) ──────
-  window._fpiUploadSeq = (window._fpiUploadSeq||0)+1;
-  var _hcb = "fpiHistCb_"+window._fpiUploadSeq;
-  var _hTimer = setTimeout(function(){
-    // Sheet timed out — fall back to localStorage
-    try{delete window[_hcb];}catch(e){}
+  var _email=(currentUser.email||"").toLowerCase().trim();
+  var _cbId ="fpiHistCb_"+Date.now()+"_"+(Math.random()*9999|0);
+  var _done =false;
+
+  // Timeout: if sheet doesn't respond in 15s fall back to local
+  var _timer=setTimeout(function(){
+    if(_done) return;
+    _done=true;
+    try{delete window[_cbId];}catch(e){}
     renderHistoryFromLocal(el);
-  }, 8000);
+  }, 15000);
 
-  window[_hcb] = function(data){
-    clearTimeout(_hTimer);
-    try{delete window[_hcb];}catch(e){}
-    if(data && data.history && data.history.length){
-      // Normalise ALL columns from Case_History sheet
-      var updates = data.history.map(function(row){
-        return {
-          caseId        : row["Case ID"]            || "",
-          caseType      : row["Category"]            || "",
-          status        : row["Status"]              || "",
-          bifurcation   : row["Status Bifurcation"]  || "",
-          notes         : row["Remarks"]             || "",
-          closureNotes  : row["Closure Notes"]       || "",
-          date          : (row["Timestamp"]||"").substring(0,10),
-          police        : row["Police Action"]       || "",
-          photos        : parseInt(row["Evidence Photos"]||row["Photos"]||0)||0,
-          utr           : row["UTR / Ref No"]        || row["UTR"] || "",
-          recovery      : parseFloat(row["Recovery (Rs)"]||row["Recovery"]||0)||0,
-          riders        : row["Riders Involved"]     || "",
-          ridersCount   : parseInt(row["Riders Count"]||0)||0,
-          caseContinued : row["Case Continued"]      || "",
-          hub           : row["Hub"]                 || "",
-          city          : row["City"]                || "",
-          closedDate    : row["Closed Date"]         || "",
-          agentName     : row["Agent Name"]           || "",
-          agentEmail    : row["Agent Email"]          || ""
-        };
+  window[_cbId]=function(data){
+    if(_done) return;
+    _done=true;
+    clearTimeout(_timer);
+    try{delete window[_cbId];}catch(e){}
+
+    if(!data){ renderHistoryFromLocal(el); return; }
+
+    // data.history is the array from Case_History sheet
+    var rows=data.history||[];
+    var updates=rows.map(function(row){
+      return {
+        caseId      : String(row["Case ID"]||""),
+        caseType    : String(row["Category"]||""),
+        status      : String(row["Status"]||""),
+        bifurcation : String(row["Status Bifurcation"]||""),
+        notes       : String(row["Remarks"]||""),
+        closureNotes: String(row["Closure Notes"]||""),
+        date        : String(row["Timestamp"]||"").substring(0,10),
+        police      : String(row["Police Action"]||""),
+        photos      : parseInt(row["Evidence Photos"]||row["Photos"]||0)||0,
+        utr         : String(row["UTR / Ref No"]||row["UTR"]||""),
+        recovery    : parseFloat(row["Recovery (Rs)"]||row["Recovery"]||0)||0,
+        riders      : String(row["Riders Involved"]||""),
+        hub         : String(row["Hub"]||""),
+        city        : String(row["City"]||"")
+      };
+    });
+
+    // Merge any in-session (not-yet-synced) updates from this device
+    var seen={};
+    updates.forEach(function(u){ seen[u.caseId+"|||"+u.date+"|||"+u.status]=true; });
+    myCases.forEach(function(c){
+      (c.updates||[]).forEach(function(u){
+        var k=c.id+"|||"+(u.date||"")+"||"+(u.status||"");
+        if(!seen[k]){ seen[k]=true;
+          updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
+            notes:u.notes||"",date:u.date||"",police:u.police||"",
+            photos:u.photos||0,utr:u.utr||"",recovery:u.recovery||0,hub:"",city:""}); }
       });
-      // Also merge unsaved session updates (belt-and-suspenders)
-      var seenKeys={};
-      updates.forEach(function(u){ seenKeys[u.caseId+"_"+u.date+"_"+u.status]=true; });
-      myCases.forEach(function(c){
-        (c.updates||[]).forEach(function(u){
-          var k=c.id+"_"+(u.date||"")+"_"+(u.status||"");
-          if(!seenKeys[k]){ seenKeys[k]=true;
-            updates.push({caseId:c.id,caseType:c.cat||"",status:u.status||"",
-              notes:u.notes||"",date:u.date||"",police:u.police||"",
-              photos:u.photos||0,utr:u.utr||"",recovery:u.recovery||0}); }
-        });
-      });
-      renderHistoryList(el, updates);
-    } else {
-      renderHistoryFromLocal(el);
-    }
+    });
+
+    // Always render sheet data (even if empty — shows "No updates yet")
+    renderHistoryList(el, updates);
   };
 
-  var _hs = document.createElement("script");
-  _hs.src = APPS_SCRIPT_URL+"?action=get_history&email="+encodeURIComponent(currentUser.email||"")
-    +"&callback="+_hcb;
-  _hs.onerror = function(){ clearTimeout(_hTimer); try{delete window[_hcb];}catch(e){}
-    renderHistoryFromLocal(el); };
+  var _hs=document.createElement("script");
+  _hs.setAttribute("data-hist","1");
+  _hs.src=APPS_SCRIPT_URL+"?action=get_history&email="+encodeURIComponent(_email)+"&_t="+Date.now()+"&callback="+_cbId;
+  _hs.onerror=function(){
+    if(_done) return;
+    _done=true;
+    clearTimeout(_timer);
+    try{delete window[_cbId];}catch(e){}
+    renderHistoryFromLocal(el);
+  };
   document.head.appendChild(_hs);
-  return; // async — renderHistoryList called from callback
 }
 
 function renderHistoryFromLocal(el){
@@ -13806,7 +13980,7 @@ function openHistoryDetail(idx){
   var u = (window._historyData||[])[idx];
   if(!u) return;
 
-  var statusLabels={open:"Open",wip:"WIP",partial_closed:"Partially Closed",closed:"Case Closed",
+  var statusLabels={open:"Open",new:"New",wip:"WIP",partial_closed:"Partially Closed",closed:"Case Closed",
     rider_inv:"Open",hi_tl_inv:"Open",rider_abs_action:"Open",rider_abs_pending:"Open",
     cx_fraud:"Open",other_pending:"Open"};
   var statusColors={
