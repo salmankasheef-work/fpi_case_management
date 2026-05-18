@@ -13236,8 +13236,8 @@ async function completeOnboarding(){
   }catch(e){console.warn("Login log error:",e);}
 
   // Upload selfie to dedicated selfie sheet via POST (base64 too large for GET)
-  // Upload selfie — resize to thumbnail first (keeps URL short for JSONP GET)
-  // fetch POST fails on Apps Script due to CORS; JSONP GET is the only reliable method
+  // Upload selfie — resize to 80x80 thumbnail (~1.5KB) safe for JSONP GET URL
+  // fetch POST is blocked by CORS on Apps Script; JSONP GET is the only reliable method
   if(selfieBase64){
     try{
       var _now2=new Date();
@@ -13245,45 +13245,47 @@ async function completeOnboarding(){
       var _h=_now2.getHours(),_m=_now2.getMinutes();
       var _timeStr=(_h%12||12)+":"+("0"+_m).slice(-2)+(_h>=12?" PM":" AM");
 
-      // Resize selfie to 240×240 thumbnail via canvas (reduces ~2MB → ~8KB)
-      var _img=new Image();
-      _img.onload=function(){
+      // Resize selfie to 80x80 square thumbnail — produces ~1-2KB base64, safe for URL
+      var _img2=new Image();
+      _img2.onload=function(){
         try{
-          var _sz=240;
-          var _cv=document.createElement("canvas");
-          _cv.width=_sz; _cv.height=_sz;
-          var _ctx=_cv.getContext("2d");
-          // Centre-crop to square
-          var _sw=_img.naturalWidth, _sh=_img.naturalHeight;
+          var _sz=80;
+          var _cv2=document.createElement("canvas");
+          _cv2.width=_sz; _cv2.height=_sz;
+          var _ctx2=_cv2.getContext("2d");
+          var _sw=_img2.naturalWidth, _sh=_img2.naturalHeight;
           var _side=Math.min(_sw,_sh);
-          var _sx=(_sw-_side)/2, _sy=(_sh-_side)/2;
-          _ctx.drawImage(_img,_sx,_sy,_side,_side,0,0,_sz,_sz);
-          var _thumb=_cv.toDataURL("image/jpeg",0.6); // ~6-10KB
+          _ctx2.drawImage(_img2,(_sw-_side)/2,(_sh-_side)/2,_side,_side,0,0,_sz,_sz);
+          var _thumb=_cv2.toDataURL("image/jpeg",0.5); // ~1.5KB
 
-          // Send via JSONP GET (same pattern as all other API calls)
-          var _scb="fpiSelfieCb_"+Date.now();
-          var _sp=new URLSearchParams({
-            action    :"log_selfie",
-            email     :currentUser.email||"",
-            name      :currentUser.name||"",
-            hub       :selectedHub||"",
-            date      :_dateStr,
-            time      :_timeStr,
-            selfie_b64:_thumb,
-            callback  :_scb
-          });
-          window[_scb]=function(r){
+          console.log("Selfie thumbnail size:",_thumb.length,"chars");
+
+          // Send via JSONP GET
+          var _scb2="fpiSelfieCb_"+Date.now();
+          var _params=[
+            "action=log_selfie",
+            "email="+encodeURIComponent(currentUser.email||""),
+            "name="+encodeURIComponent(currentUser.name||""),
+            "hub="+encodeURIComponent(selectedHub||""),
+            "date="+encodeURIComponent(_dateStr),
+            "time="+encodeURIComponent(_timeStr),
+            "selfie_b64="+encodeURIComponent(_thumb),
+            "callback="+_scb2
+          ].join("&");
+
+          window[_scb2]=function(r){
             console.log("Selfie stored:",r&&r.ok?"✅ row "+r.row:"❌",r);
-            try{delete window[_scb];}catch(e){}
+            try{delete window[_scb2];}catch(e){}
           };
-          var _ss=document.createElement("script");
-          _ss.src=APPS_SCRIPT_URL+"?"+_sp.toString();
-          _ss.onerror=function(){console.warn("Selfie JSONP failed");try{delete window[_scb];}catch(e){}};
-          document.head.appendChild(_ss);
-          setTimeout(function(){try{_ss.remove();delete window[_scb];}catch(e){}},15000);
+          var _ss2=document.createElement("script");
+          _ss2.src=APPS_SCRIPT_URL+"?"+_params;
+          _ss2.onerror=function(){console.warn("Selfie JSONP failed");try{delete window[_scb2];}catch(e){}};
+          document.head.appendChild(_ss2);
+          setTimeout(function(){try{_ss2.remove();delete window[_scb2];}catch(e){}},15000);
         }catch(e2){console.warn("Selfie canvas error:",e2);}
       };
-      _img.src=selfieBase64;
+      _img2.onerror=function(){console.warn("Selfie img load failed");};
+      _img2.src=selfieBase64;
     }catch(e){console.warn("Selfie upload error:",e);}
   }
 
