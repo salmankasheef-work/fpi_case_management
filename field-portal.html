@@ -540,24 +540,48 @@ textarea.fc{resize:none;min-height:76px;}
           <!-- Hub image upload — mandatory, shown only before case starts -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:10px">
             <div>
-              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-1')">
-                <input type="file" id="sw-hub-img-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1,'sw-hub-img-1','sw-hub-prev-1','sw-hub-ph-1','sw-hub-thumb-1')">
+              <div class="uzone" style="padding:8px 4px;min-height:64px">
+                <input type="file" id="sw-hub-cam-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1,'sw-hub-cam-1','sw-hub-prev-1','sw-hub-ph-1','sw-hub-thumb-1')">
+                <input type="file" id="sw-hub-gal-1" accept="image/*" style="display:none" onchange="handleHubImage(1,'sw-hub-gal-1','sw-hub-prev-1','sw-hub-ph-1','sw-hub-thumb-1')">
                 <div id="sw-hub-prev-1" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-1" src="" style="width:100%;height:100%;object-fit:cover"></div>
-                <div id="sw-hub-ph-1"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 1 <span style="color:var(--red)">*</span></div></div>
+                <div id="sw-hub-ph-1">
+                  <div class="uicon" style="font-size:16px">📷</div>
+                  <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 1 <span style="color:var(--red)">*</span></div>
+                  <div style="display:flex;gap:4px;justify-content:center">
+                    <button onclick="document.getElementById('sw-hub-cam-1').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                    <button onclick="document.getElementById('sw-hub-gal-1').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div>
-              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-2')">
-                <input type="file" id="sw-hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2,'sw-hub-img-2','sw-hub-prev-2','sw-hub-ph-2','sw-hub-thumb-2')">
+              <div class="uzone" style="padding:8px 4px;min-height:64px">
+                <input type="file" id="sw-hub-cam-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2,'sw-hub-cam-2','sw-hub-prev-2','sw-hub-ph-2','sw-hub-thumb-2')">
+                <input type="file" id="sw-hub-gal-2" accept="image/*" style="display:none" onchange="handleHubImage(2,'sw-hub-gal-2','sw-hub-prev-2','sw-hub-ph-2','sw-hub-thumb-2')">
                 <div id="sw-hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
-                <div id="sw-hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2 <span style="color:var(--red)">*</span></div></div>
+                <div id="sw-hub-ph-2">
+                  <div class="uicon" style="font-size:16px">📷</div>
+                  <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 2 <span style="color:var(--red)">*</span></div>
+                  <div style="display:flex;gap:4px;justify-content:center">
+                    <button onclick="document.getElementById('sw-hub-cam-2').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                    <button onclick="document.getElementById('sw-hub-gal-2').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div>
-              <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('sw-hub-img-3')">
-                <input type="file" id="sw-hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3,'sw-hub-img-3','sw-hub-prev-3','sw-hub-ph-3','sw-hub-thumb-3')">
+              <div class="uzone" style="padding:8px 4px;min-height:64px">
+                <input type="file" id="sw-hub-cam-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3,'sw-hub-cam-3','sw-hub-prev-3','sw-hub-ph-3','sw-hub-thumb-3')">
+                <input type="file" id="sw-hub-gal-3" accept="image/*" style="display:none" onchange="handleHubImage(3,'sw-hub-gal-3','sw-hub-prev-3','sw-hub-ph-3','sw-hub-thumb-3')">
                 <div id="sw-hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="sw-hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
-                <div id="sw-hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3 <span style="color:var(--red)">*</span></div></div>
+                <div id="sw-hub-ph-3">
+                  <div class="uicon" style="font-size:16px">📷</div>
+                  <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 3 <span style="color:var(--red)">*</span></div>
+                  <div style="display:flex;gap:4px;justify-content:center">
+                    <button onclick="document.getElementById('sw-hub-cam-3').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                    <button onclick="document.getElementById('sw-hub-gal-3').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -623,24 +647,48 @@ textarea.fc{resize:none;min-height:76px;}
         <label class="fl">🏢 Hub Images <span style="font-weight:400;color:var(--txt3)">(up to 3)</span></label>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
           <div>
-            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-1')">
-              <input type="file" id="hub-img-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1)">
+            <div class="uzone" style="padding:8px 4px;min-height:64px">
+              <input type="file" id="hub-cam-1" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(1,'hub-cam-1')">
+              <input type="file" id="hub-gal-1" accept="image/*" style="display:none" onchange="handleHubImage(1,'hub-gal-1')">
               <div id="hub-prev-1" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-1" src="" style="width:100%;height:100%;object-fit:cover"></div>
-              <div id="hub-ph-1"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 1</div></div>
+              <div id="hub-ph-1">
+                <div class="uicon" style="font-size:16px">📷</div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 1</div>
+                <div style="display:flex;gap:4px;justify-content:center">
+                  <button onclick="document.getElementById('hub-cam-1').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                  <button onclick="document.getElementById('hub-gal-1').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                </div>
+              </div>
             </div>
           </div>
           <div>
-            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-2')">
-              <input type="file" id="hub-img-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2)">
+            <div class="uzone" style="padding:8px 4px;min-height:64px">
+              <input type="file" id="hub-cam-2" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(2,'hub-cam-2')">
+              <input type="file" id="hub-gal-2" accept="image/*" style="display:none" onchange="handleHubImage(2,'hub-gal-2')">
               <div id="hub-prev-2" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-2" src="" style="width:100%;height:100%;object-fit:cover"></div>
-              <div id="hub-ph-2"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 2 <span style="color:var(--red)">*</span></div></div>
+              <div id="hub-ph-2">
+                <div class="uicon" style="font-size:16px">📷</div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 2 <span style="color:var(--red)">*</span></div>
+                <div style="display:flex;gap:4px;justify-content:center">
+                  <button onclick="document.getElementById('hub-cam-2').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                  <button onclick="document.getElementById('hub-gal-2').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                </div>
+              </div>
             </div>
           </div>
           <div>
-            <div class="uzone" style="padding:8px 4px;min-height:64px" onclick="triggerUp('hub-img-3')">
-              <input type="file" id="hub-img-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3)">
+            <div class="uzone" style="padding:8px 4px;min-height:64px">
+              <input type="file" id="hub-cam-3" accept="image/*" capture="environment" style="display:none" onchange="handleHubImage(3,'hub-cam-3')">
+              <input type="file" id="hub-gal-3" accept="image/*" style="display:none" onchange="handleHubImage(3,'hub-gal-3')">
               <div id="hub-prev-3" style="display:none;width:100%;height:56px;border-radius:5px;overflow:hidden"><img id="hub-thumb-3" src="" style="width:100%;height:100%;object-fit:cover"></div>
-              <div id="hub-ph-3"><div class="uicon" style="font-size:16px">📷</div><div style="font-size:9px;color:var(--txt3)">Hub 3 <span style="color:var(--red)">*</span></div></div>
+              <div id="hub-ph-3">
+                <div class="uicon" style="font-size:16px">📷</div>
+                <div style="font-size:9px;color:var(--txt3);margin-bottom:4px">Hub 3 <span style="color:var(--red)">*</span></div>
+                <div style="display:flex;gap:4px;justify-content:center">
+                  <button onclick="document.getElementById('hub-cam-3').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer">&#128247; Camera</button>
+                  <button onclick="document.getElementById('hub-gal-3').click()" style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid var(--acc);background:transparent;color:var(--acc);cursor:pointer">&#128444; Gallery</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
